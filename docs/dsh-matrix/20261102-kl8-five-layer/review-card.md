@@ -1,7 +1,7 @@
 # P8 代码定稿体检卡（review-card）
 
 > 审查人：审大关（review-audit）｜ 审查时间：2026-11-02 17:56–18:2x ｜ 模式：**只读审查**（未改任何业务代码）
-> 卡版本：**v2（复审，2026-11-02 19:2x，基线 HEAD=`70ab253`）**；v1.1 含首轮+裁决回执；v1 首轮结论保留于 §0–§9 可追溯；**复审结论见顶部块与 §11**。
+> 卡版本：**v3（终审，2026-11-02 19:1x，基线 HEAD=`5b2e462`）** —— 结论 **G4 放行**；v2（复审，`70ab253`，仍阻断）与 v1（首轮，6 High/15 Medium）保留可追溯。
 > 审查基线：`git diff d9bc139..HEAD`，HEAD=`3281992`（工作区），预重构快照 `d9bc139`
 > 变更规模：**166 files changed, 15580 insertions(+), 9318 deletions(-)**
 > 契约基线：`contract.md` **v1.2.0**（提交 `e15d50c`，与 HEAD 对齐）+ `config-schema.md` v1.2.0；需求原文 `docs/8.md`（202 行，**最高效力**）
@@ -9,7 +9,25 @@
 
 ---
 
-## 复审结论 v2（2026-11-02，HEAD=`70ab253`）
+## 终审结论 v3（2026-11-02，HEAD=`5b2e462`）
+
+**结论：G4 放行（PASS）。** High=0、Medium=0；M16 已闭合；红线 12 项中 **11 项严格通过**，仅红线 1 余 3 类 Low 级字面量（L3′，零行为影响，不阻断）。
+
+**G4 放行依据：High=0、Medium=0（M16 已修复并经我独立四判据复验）；红线 v3 = 11/12 严格通过 + 红线 1「零魔法数字」的 5 处 Low 级字面量（`min(200,n_hist)`×2 / `40.5` / `1.96`×2）不阻断；剩余 Low 清单见 §12.5。**
+
+| 项 | v2 | v3 | 证据 |
+| :-- | :-- | :--- | :--- |
+| M16 | Medium（唯一阻断项） | **已修复（关闭）** | ①`max_same_tail=1` → `relaxed==('same_tail',)`、池满 12、留痕「尾数 1 出现 3 次（原上限 1）」；②多项冲突 → `('same_tail','parity')` 有序前缀、池满 13、留痕含占比统计；③mock 恒 3 码 → **恰 5 次调用**后抛错含「3/12」；④`_relax_detail`(:473)/`remaining_relaxed`(:497) 均活代码（§12.2） |
+| H2 | 部分修复 | **已修复（随 M16 闭合）** | 约束真执行 + B7 逐项放宽/留痕双向闭环 |
+| L15 | Low | **已修复** | 附录 B「ROI: N/A（本次未生成注单）」；选七/微信「官方奖级未确认」为正确归因 |
+| 红线 | 11 通过 / 1 违规 | **11 严格通过 + 1 条件通过** | 红线 11 翻绿；红线 1 余 Low 字面量（§12.4） |
+| G4 | 仍阻断 | **放行** | 见上；放行附带条件（非阻断）见 §12.6 |
+
+（v2 结论表保留于下，可追溯。）
+
+---
+
+## 复审结论 v2（历史：HEAD=`70ab253`，M16 已由 v3 关闭）
 
 **结论：仍阻断（BLOCK），但阻断面已从「6 High / 15 Medium」收敛为「1 项 Medium（B7 放宽路径不可达，新增 M16）」。**
 - 6 个 High：**5 个已修复**（H1/H3/H4/H5/H6），**H2 主体修复**（四约束已在贪心扫描中真实生效）但契约 B7「逐项放宽+留痕」路径**不可达** → 记 M16。
@@ -371,4 +389,84 @@
 
 ---
 
-*本卡仅写入 `docs/dsh-matrix/20261102-kl8-five-layer/review-card.md`；未改任何业务代码、未提交、未删除文件。v2 结论：**仍阻断**，唯一阻断项 M16（B7 放宽路径不可达），其余 H1–H6/M1–M15 均已复核并给状态。*
+## 12. 终审详情 v3（2026-11-02，HEAD=`5b2e462`）
+
+### 12.1 基线与独立复跑
+
+- 基线：`git rev-parse --short HEAD` = **`5b2e462`**（"fix(p8): 归档 M16（B7 有序放宽路径可达）+ L15（ROI N/A 三态文案）+ 294 用例全绿"）；`git status --porcelain` **空 → 工作区 clean**（**P1 关闭**：`tests/test_qa_rework.py` 已入库）。
+- 修复提交：`70ab253..5b2e462`，**19 files changed, +1043/−276**（含 `filter.py`、`tests/test_filter.py:217/237/248/259` 四条正向断言、QA 反向用例改写）。
+- 我方**独立复跑**（本机，与 Lead 互不依赖）：
+  - `python -m compileall -q kl8 main.py tools` → **exit 0**
+  - `python -m unittest discover -s tests -b` → **`Ran 294 tests in 32.387s` / `OK` / exit 0**（Lead：34.861s，环境差异）
+  - `python main.py --no-sync --mode audit --backtest 30` → **exit 0**；四项机检全 True（`sample_count_matches / lift_recalculated / bankroll_recalculated / no_lookahead`）；防穿越 **30 期 / 越界 0**；达显著 Top-K：**无**；指纹 **`9095ab31c5c7bb5e`**（与 Lead 完全一致）
+- 交付件实物：附录 B 资金段 `ROI: N/A（本次未生成注单）；回测期无注单，无资金流水可披露`（**L15 生效**）；段落 5 选七 `ROI: N/A（官方奖级未确认）`（奖级未知，归因正确）；金胆 4 码「09 41 44 73」；`C(12,5,4,5) 17注`；`C(v,k,t)/TODO/待填/★显著`=0。
+- Lead 提供、我方**未复跑**（保持标记）：500 期 no-tickets 244.9s、500 期 R4 z=−2.77 / R1 z=−2.03；daily 17.9s。
+
+### 12.2 M16 四判据自跑结果（§10.3「H2 放宽侧」）
+
+| # | 构造 | 期望 | 实测 | 判定 |
+| :-- | :--- | :--- | :--- | :--- |
+| ① | `max_same_tail=1` + 极端打分（61–80=1.0、其余 0.1）+ 上期=1–20 + size=12 | `relaxed==('same_tail',)`、池满 12、留痕含真实放开值 | `relaxed=('same_tail',)`；`main=(1,2,3,4,21,22,23,61,62,63,64,65)` **12 码**；trace「放宽 [same_tail]：尾数 1 出现 3 次（原上限 1）」；`feasible=False` | **PASS** |
+| ② | size=13 + `max_same_tail=1` + `max_parity_ratio=0.5`（奇数 13 → 单边上限 6 < 7，数学不可避免） | 多项冲突 → `relaxed==('same_tail','parity')` **有序前缀**、池满 13 | `relaxed=('same_tail','parity')` ≡ `relax_order[:2]`；`len(main)=13` 且无重复；trace「尾数 1 出现 3 次（原上限 1）」「奇数 7 / 偶数 6，占比 53.8%（原上限 50.0%）」 | **PASS** |
+| ③ | mock `greedy_pool` 恒返 3 码 | 恰 **5 次**调用（1 次初始 + 4 次放宽）后抛 `InfeasibleConstraintError`，信息含不足码数 | `call_count==5`；抛错文案「在放宽 4 项形态约束（same_tail→parity→zone4→repeat_ratio）后仍只能选出 **3/12** 码」 | **PASS** |
+| ④ | `_relax_detail` / `remaining_relaxed` 是否死代码 | 均为活代码 | ①② 的 trace 由 `_relax_detail`（`filter.py:473`）产出；`remaining_relaxed`（`:497-498`）参与最终防御判定；`active.discard`(:441)/`relaxed.append`(:442) **累积放开**、每轮重跑 greedy | **PASS** |
+
+**第二层根因复核（我上轮指出的 "active 每轮重置"）**：已改为**累积放开** → `relaxed` 只可能是 `relax_order` 的有序前缀；`greedy_pool` 已删除无约束补齐（凑不满如实返回不足码数）→ 最终复核见到的违约项必属"已放宽项"，不会出现"只放宽 A 却带着未放宽的 B 出单"（判据②已实证：parity 未放宽前不会放行）。
+
+### 12.3 测试侧抽查（修复真实落地）
+
+- `tests/test_filter.py`：`:217` 真实前缀、`:237` 放宽统计留痕、`:248` 池满目标规模、`:259` 仅全放宽后才抛错（mock 恒 3 码 + 5 次调用）。
+- `tests/test_qa_rework.py:161`：原"锁旧 bug 行为"用例已由 Lead 改为正向断言 `test_empty_last_draw_relaxes_repeat_ratio_with_trace`（池满 12、`relaxed` 含 `repeat_ratio`、有序前缀、docstring 记口径修订）→ 我 v2 指出的"测试固化偏差"风险已消除。
+- 用例总数 269 → **294**（+25），`unittest` 全绿。
+
+### 12.4 12 红线 v3 判定
+
+| # | 红线 | v3 | 依据 |
+| :-- | :--- | :--- | :--- |
+| 1 | 零魔法数字 | **条件通过（Low 残留 3 类 5 处）** | `entropy.py:217`/`features.py:171` `min(200, n_hist)`；`morphology.py:151` `40.5`；`metrics.py:212`/`priors.py:111-112` `1.96`（应取 `constants.Z_SIG`） |
+| 2 | 零裸 except / 零 silent pass | ✅ 通过 | 全仓 `except Exception:` = 0；均分类异常 + 中文提示 |
+| 3 | 零浮点金额 | ✅ 通过 | 金额 int；`roi_bp` 整数万分比唯一展示源 |
+| 4 | 循环/组合规模封顶 | ✅ 通过 | `max_m_subsets/max_pool_v/ilp_*_cap` 保留 |
+| 5 | 除零与空安全 | ✅ 通过 | 分母守卫 + 不可行显式抛错 |
+| 6 | 时间标准化 | ✅ 通过 | `_resolve_target_date` 解析失败回溯/抛 `DataFormatError` |
+| 7 | 零循环内重计算 | ✅ 通过 | ML 缓存 + `refit_every`；`build_pool` 复用 ranks/base/verdicts |
+| 8 | 幂等防重 | ✅ 通过 | prev_prediction 按 period upsert + 原子写；交付件 `.bak` |
+| 9 | 确定性（seed） | ✅ 通过 | `seed=cfg.seed` 全链路 |
+| 10 | 资源释放 | ✅ 通过 | `atomic_write_text`/`atomic_copy` + `with` + 超时 |
+| 11 | 零死代码/半成品 | ✅ **v3 由 M16 修复翻绿** | 放宽分支可达、`_relax_detail`/`remaining_relaxed` 活代码、无补齐旁路 |
+| 12 | 中文文档与命名 | ✅ 通过 | 仅 `filter.py` 嵌套局部 `sort_key` 无 docstring（可接受） |
+
+→ **严格通过 11/12，条件通过 1/12（红线 1，Low 级）**；High=0、Medium=0。
+
+### 12.5 仍开放 Low 清单（不阻断，建议随下次提交清）
+
+| # | Low | 位置 | 建议 |
+| :-- | :--- | :--- | :--- |
+| L16 | 回撤/连挂未随 `roi_available` 门控 | `main.py:366-367`、`text_report.py:454-455` | 随 ROI 三态一并门控 |
+| L17 | NIST Runs/APE 仍用「预警」措辞（已有免责） | `text_report.py:293-302`、交付件 L19–L23 | 改「偏离 iid 假设（20/80 结构使然）」 |
+| L18 | nx 异常降级不记 `backend`/warning | `graph.py:111,149,198,251` | 降级时更新 backend + 告警 |
+| L1′ | 24 处未使用导入 | AST 清单（`config.py:38` 等） | `ruff --select F401` 清理 |
+| L3′ | 红线 1 的 5 处字面量 | 见 §12.4 | 收敛到 `constants`/`config` |
+
+已关闭：**L15**（三态文案）、L2/L4/L5/L12/L13/L14（v2 复核）、**P1**（未提交文件已入库）。
+
+### 12.6 G4 终审
+
+**G4：放行（PASS）。**
+
+**G4 放行依据：High=0、Medium=0（M16 已修复并经独立四判据复验）；红线 v3 = 11/12 严格通过，唯一未严格通过项为红线 1「零魔法数字」的 3 类 5 处 Low 级字面量（零行为影响，不阻断）；剩余 Low 清单见 §12.5。**
+
+放行附带条件（**非阻断**，建议发布前完成）：
+1. 清 L3′ 的 5 处字面量以达严格 12/12（≤5 分钟，可不重跑全量用例）；
+2. L16/L17/L18/L1′ 随发布后首个维护提交清理；
+3. 发布物料以本卡 v3 + `release/acceptance.md` 终稿为准，`docs/8.md` 原文不改（0.155% 勘误以契约 §7.4 为准）。
+
+### 12.7 未验证项（保持标记）
+
+- 500 期 no-tickets 244.9s、500 期规则归因 R4 z=−2.77 / R1 z=−2.03：**Lead 实测，我方未复跑**，不代背书。
+- `--ml` 开启后端到端耗时：仍未实测（默认关闭，不影响 G4 结论）。
+- Live 网络同步（`--sync`）：沿用 v1 结论（超时/分类异常/上下文管理齐备），本轮未重跑。
+
+---
+
+*本卡仅写入 `docs/dsh-matrix/20261102-kl8-five-layer/review-card.md`；未改任何业务代码、未提交、未删除文件。**v3 终审结论：G4 放行**（High=0、Medium=0、红线 11/12 严格通过 + 红线 1 Low 残留不阻断），v1/v2 结论与证据保留可追溯。*
