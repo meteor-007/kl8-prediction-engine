@@ -1,7 +1,7 @@
 # 快乐8 五层重构 · 配置契约（config-schema.md）
 
 > 配套文档：[contract.md](./contract.md)（§3.3 为 `AppConfig` 签名冻结源）
-> 版本：**v1.1.0**（同步 contract.md v1.1.0：`m_margin` 语义修正、新增 `lift_signal`、叶子字段计数修正）｜ 2026-11-02 ｜ 作者：req-architect（智小研）
+> 版本：**v1.2.0**（2026-11-02，与落地代码 HEAD=`f170147` 对齐：`ml.enabled=False`、新增 `--ml`/`--no-tickets` / `--backtest` 模式分派、ScoreWeights 七维实测默认值、Σω 语义更正〔`ml` 为额外叠加项〕、删除未实现的 `--no-table`、性能预算与实测同步）｜ 作者：req-architect（智小研）
 > 定位：本项目**不含数据库/ACL**，G2 的「ACL + DB 脚本伴随物」以**本配置契约**替代 —— 即"所有可调参数有 schema、有默认值、有合法范围、有校验规则、有 CLI 覆盖路径、有可审计的报错文案"。审大关可用本文件逐条核对"零魔法数字"红线。
 
 ---
@@ -57,15 +57,15 @@ AppConfig
 
 | 字段 | 类型 | 默认值 | 合法范围 | 校验规则 | 关联需求 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `follow_10` | `float` | `0.10` | `[0, 1]` | 参与 Σω 校验 | R31 |
-| `follow_25` | `float` | `0.15` | `[0, 1]` | 同上 | R31 |
-| `follow_50` | `float` | `0.15` | `[0, 1]` | 同上 | R31 |
-| `follow_all` | `float` | `0.15` | `[0, 1]` | 同上 | R31 |
-| `co` | `float` | `0.15` | `[0, 1]` | 同上 | R28、R31 |
-| `trend` | `float` | `0.20` | `[0, 1]` | 同上 | R27、R31 |
-| `omission` | `float` | `0.10` | `[0, 1]` | 同上 | R14、R31 |
-| `ml` | `float` | `0.0` | `[0, 0.30]` | 默认 0（只诊断）；`>0` 时计入 Σω | R23、R31 |
-| `lambda_vote` | `float` | `0.08` | `[0.05, 0.10]` | 8.md L145 建议区间，越界 `ConfigError` | R32 |
+| `follow_10` | `float` | `0.02` | `[0, 1]` | 参与七维 Σω 校验 | R31 |
+| `follow_25` | `float` | `0.08` | `[0, 1]` | 同上 | R31 |
+| `follow_50` | `float` | `0.20` | `[0, 1]` | 同上 | R31 |
+| `follow_all` | `float` | `0.25` | `[0, 1]` | 同上 | R31 |
+| `co` | `float` | `0.05` | `[0, 1]` | 同上 | R28、R31 |
+| `trend` | `float` | `0.05` | `[0, 1]` | 同上 | R27、R31 |
+| `omission` | `float` | `0.35` | `[0, 1]` | 同上 | R14、R31 |
+| `ml` | `float` | `0.0` | `[0, 1]` | **额外叠加项**（v1.2.0）：默认 0（只诊断）；`>0` 时叠加到 BaseScore，**不计入 Σω、不做再归一化** | R23、R31 |
+| `lambda_vote` | `float` | `0.05` | `[0.05, 0.10]` | 8.md L145 建议区间（实现取下沿 0.05），越界 `ConfigError` | R32 |
 | `trend_w_f10` | `float` | `0.5` | `[0, 1]` | 三项和 = 1（裁决 A1） | R31 |
 | `trend_w_mom_10_25` | `float` | `0.3` | `[0, 1]` | 同上 | R31 |
 | `trend_w_mom_25_50` | `float` | `0.2` | `[0, 1]` | 同上 | R31 |
@@ -74,10 +74,11 @@ AppConfig
 
 | 编号 | 约束 | 失败文案（示例） |
 | :--- | :--- | :--- |
-| V1 | `follow_10+follow_25+follow_50+follow_all+co+trend+omission+ml == 1.0 ± 1e-9` | `配置项 weights：融合权重之和 = 1.080000，要求 1.0（±1e-9）；建议按比例缩减 follow_50` |
+| V1 | `follow_10+follow_25+follow_50+follow_all+co+trend+omission == 1.0 ± 1e-9`（**七维核心权重；`ml` 不参与**） | `配置项 weights：融合权重之和 = 1.080000，要求 1.0（±1e-9）；建议按比例缩减 omission` |
 | V2 | 每个 ω `≥ 0` | `配置项 weights.co = -0.15 非法：权重不得为负` |
 | V3 | `trend_w_*` 三项和 `== 1.0 ± 1e-9` | 同上格式 |
-| V4 | `lambda_vote ∈ [0.05, 0.10]` | `配置项 weights.lambda_vote = 0.20 非法：要求 ∈[0.05, 0.10]；建议 0.08` |
+| V4 | `lambda_vote ∈ [0.05, 0.10]` | `配置项 weights.lambda_vote = 0.20 非法：要求 ∈[0.05, 0.10]；建议 0.05` |
+| V4b | `weights.ml ∈ [0, 1]`，独立于 V1（**v1.2.0**：ml 为额外叠加项，不参与归一化） | `配置项 weights.ml = 1.5 非法：要求 ∈[0, 1]` |
 
 ---
 
@@ -164,7 +165,7 @@ AppConfig
 | `max_consecutive_in_ticket` | `int` | `2` | `[1, 4]` | 单注最大连号长度，超过剔除 | R41 |
 | `forbid_all_odd_even` | `bool` | `True` | `{True, False}` | 剔除全奇/全偶注 | R41 |
 | `sum_margin` | `float` | `0.45` | `[0.2, 0.8]` | 单注和值安全带宽（相对 `池均值×k`） | R41 |
-| `table_path` | `str` | `"kl8/layer5_combinatorial/covering_tables.json"` | 非空 | 不存在 → `CoveringError`（可 `--no-table` 跳过，见 §12） | R38 |
+| `table_path` | `str` | `"kl8/layer5_combinatorial/covering_tables.json"` | 非空 | 文件不存在/读取失败 → 写 warning 并**回落 ILP/贪心**（不中断）；`""` 等价强制走 ILP（调试用，无 CLI 开关；v1.2.0 删除 `--no-table` 行） | R38 |
 
 **跨字段约束（V5–V9）**
 
@@ -182,8 +183,8 @@ AppConfig
 
 | 字段 | 类型 | 默认值 | 合法范围 | 校验规则 | 关联需求 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `enabled` | `bool` | `True` | `{True, False}` | False → `ml_prob` 全 0.25、`ml_available=False` | R23 |
-| `weight` | `float` | `0.0` | `[0, 0.30]` | 默认 0（只诊断）；`>0` 计入 Σω | R23、R31 |
+| `enabled` | `bool` | **`False`** | `{True, False}` | **v1.2.0：默认关闭**（B4 诊断通道）；`False` → `ml_prob` 全 0.25、`ml_available=False`、单期 0.34s；需要诊断时用 CLI **`--ml`** 开启（`ml_available=True`），开启后单期 ≈2.03s | R23 |
+| `weight` | `float` | `0.0` | `[0, 1]` | **额外叠加项**（v1.2.0）：默认 0（只诊断）；`>0` 时叠加到 BaseScore，不计入七维 Σω、不做再归一化 | R23、R31 |
 | `train_window` | `int` | `160` | `[60, 600]` | 训练回溯期数 | R23 |
 | `refit_every` | `int` | `25` | `[1, 200]` | 重训间隔（缓存 key 含窗口起点） | R23、R48 |
 | `n_estimators` | `int` | `40` | `[10, 500]` | LightGBM 弱学习器数 | R23 |
@@ -197,7 +198,7 @@ AppConfig
 | `fallback` | `str` | `"ema"` | `{"ema","uniform"}` | LightGBM 缺失时降级策略 | R23 |
 | `cache_size` | `int` | `8` | `[1, 64]` | `MLCache` 容量（LRU） | R23 |
 
-**跨字段约束**：`num_leaves ≤ 2^min(10, n_estimators)`（防过参数化，仅 warning 级）；`weight > 0` 时 `enabled` 必须 True。
+**跨字段约束**：`num_leaves ≤ 2^min(10, n_estimators)`（防过参数化，仅 warning 级）；**（v1.2.0 定级）`weight > 0` 时 `enabled` 应为 `True`，但违反时【不阻断】** —— `validate_config` 只做单字段范围校验、不抛 `ConfigError`，运行期表现为 ML 通道静默忽略（`ml_prob` 恒 0.25，对排序无实质影响，仅 BaseScore 上界 >1）。P8 记为**低优先建议**：后续版本在 `DailyResult.warnings` 补一条「`ml.weight>0` 但 `ml.enabled=False`，ML 通道被忽略（启用请加 `--ml`）」提示。
 
 ---
 
@@ -206,7 +207,7 @@ AppConfig
 | 字段 | 类型 | 默认值 | 合法范围 | 校验规则 | 关联需求 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `warmup` | `int` | `300` | `[60, 1000]` | 8.md L179 例：前 300 期冷启动 | R42 |
-| `default_n` | `int` | `100` | `[1, 2000]` | 默认回测期数；CLI `--backtest` 覆盖 | R42、R48-b |
+| `default_n` | `int` | `100` | `[1, 2000]` | 配置层默认**不变**；CLI 未指定 `--backtest` 时按模式分派：`daily→30`、`backtest/audit→100`（v1.2.0） | R42、R48-b |
 | `ks` | `tuple[int, ...]` | `(3, 5, 7, 10, 12)` | 子集 `[1,20]`、升序、无重复 | 8.md L186 的 K 集合 | R43 |
 | `t0_min` | `int` | `60` | `[20, 300]` | `T - warmup < t0_min` → `InsufficientDataError` | R42 |
 | `include_tickets` | `bool` | `True` | `{True, False}` | 回测是否生成注单（关掉可提速） | R42、R46 |
@@ -240,14 +241,16 @@ AppConfig
 | `--quick` / `--full-sync` | flag（互斥） | 不落配置 | `sync_history(quick=…)`；同时给出 → `--quick` 优先并 warning | R48-c |
 | `--period N` | `int` | 不落配置 | `target_period=N`，必须 `> 最新期`（否则 `DataFormatError`） | R48-b |
 | `--date S` | `str` | 不落配置 | `target_date`，必须 `YYYY-MM-DD` 正则合法 | R48-b |
-| `--backtest N` | `int` | `backtest.default_n` | `0` = 跳过回测与审计（报告 [附录B] 输出"未执行"）；`>0` 覆盖期数 | R42、R48-b |
+| `--backtest N` | `int`，默认 `None` | `backtest.default_n`（配置层）；运行期按模式分派 | **`None` → `daily` 用 30、`backtest/audit` 用 100**（v1.2.0）；显式 `0` = daily 关闭伴随回测（报告 [附录B] 输出"未执行"）；`>0` 覆盖期数 | R42、R48-b |
+| `--no-tickets` | flag | `backtest.include_tickets=False` | 回测跳过注单退火与奖金核算，仅评估 Top-K Lift（大幅提速） | R42、R46 |
 | `--warmup N` | `int` | `backtest.warmup` | 覆盖冷启动期数；`N < t0_min` → `ConfigError` | R42 |
+| **`--ml`** | flag（**v1.2.0 新增**） | `ml.enabled=True` | 开启 LightGBM 诊断通道；默认 `ml.enabled=False`（单期 0.34s），开启后 `ml_available=True`、单期 ≈2.03s；`ml.weight` 仍默认 0 | R23、R48-b |
 | `--pool-size N` | `int` | `pool.main_default` | 必须 ∈ `[pool.main_min, pool.main_max]` = `[10,15]` | R35 |
-| `--k` | `{5,7}` | `covering.k` + `covering.play` | `5→pick5`、`7→pick7`；同时写 `play`（V7 校验） | R41 |
+| `--k` | `{5,7}` | `covering.k` + `covering.play` | `5→pick5`、`7→pick7`；同时写 `play`（V7 校验）；其它值 → `ConfigError` | R41 |
 | `--budget N` | `int` | `covering.budget` + `budget_by_play[play]` | 只覆盖当前 `play` 的预算；`> max_budget` → `ConfigError` | R41、A8 |
 | `--seed N` | `int` | `seed` | 覆盖全局随机源（影响 Louvain/SA/抽样；`ml.seed` 保持独立） | C7、R40 |
 | `--full-print` | flag | 不落配置 | 控制台打印完整报告（否则只打核心精要） | R48-b |
-| `--no-table` | flag | `covering.table_path=""`（视同未配置） | 强制跳过查表，走 ILP/贪心（调试与核验用） | R38 |
+| `--no-sweep` | flag | 不落配置 | 兼容旧批处理脚本的空操作（no-op） | R48-b |
 | `--config PATH` | `str` | `load_config(path=…)` | 与默认值深合并；CLI 仍可二次覆盖 | R48-a |
 
 **覆盖优先级示例**：`--k 7 --budget 15` ⇒ `covering.k=7, covering.play="pick7", covering.budget=15, budget_by_play["pick7"]=15`，`budget_by_play["pick5"]` 保持 20 不变。
@@ -262,17 +265,17 @@ AppConfig
   "windows": { "short": 10, "mid": 25, "long": 50, "min_history": 40 },
   "markov": { "alpha": 1.0, "order": 2, "diag_split": true },
   "weights": {
-    "follow_10": 0.10, "follow_25": 0.15, "follow_50": 0.15, "follow_all": 0.15,
-    "co": 0.15, "trend": 0.20, "omission": 0.10, "ml": 0.0,
-    "lambda_vote": 0.08,
+    "follow_10": 0.02, "follow_25": 0.08, "follow_50": 0.20, "follow_all": 0.25,
+    "co": 0.05, "trend": 0.05, "omission": 0.35, "ml": 0.0,
+    "lambda_vote": 0.05,
     "trend_w_f10": 0.5, "trend_w_mom_10_25": 0.3, "trend_w_mom_25_50": 0.2
   },
   "rules": { "r1_min_windows": 3, "r1_rank_threshold": 0.65, "r2_base_freq": 0.24 },
   "adaptive": { "lookback_m": 8, "min_periods": 3 },
   "pool": { "main_default": 12, "repeat_ratio": 0.30 },
-  "covering": { "play": "pick5", "k": 5, "t": 4, "budget": 20 },
-  "ml": { "enabled": true, "weight": 0.0 },
-  "backtest": { "warmup": 300, "default_n": 100 }
+  "covering": { "play": "pick5", "k": 5, "t": 4, "m_margin": 1, "budget": 20 },
+  "ml": { "enabled": false, "weight": 0.0 },
+  "backtest": { "warmup": 300, "default_n": 100, "lift_signal": 1.05 }
 }
 ```
 
@@ -288,9 +291,9 @@ AppConfig
 
 | 场景 | 消息 |
 | :--- | :--- |
-| 权重和不为 1 | `配置项 weights：融合权重之和 = 1.080000，要求 1.0（±1e-9）；建议按比例缩减 follow_50` |
+| 权重和不为 1 | `配置项 weights：融合权重之和 = 1.080000，要求 1.0（±1e-9）；建议按比例缩减 omission` |
 | α 越界 | `配置项 markov.alpha = 2.5 非法：要求 ∈[0.5, 2.0]；建议 1.0` |
-| λ 越界 | `配置项 weights.lambda_vote = 0.20 非法：要求 ∈[0.05, 0.10]；建议 0.08` |
+| λ 越界 | `配置项 weights.lambda_vote = 0.20 非法：要求 ∈[0.05, 0.10]；建议 0.05` |
 | 金胆不小于复式池 | `配置项 pool：gold_max = 15 必须 < main_min = 10；建议 gold_max = 5` |
 | k 超池 | `配置项 covering：k = 7 > 池大小 v = 5 非法；请增大复式池或改用 --k 5` |
 | 预算超上限 | `配置项 covering.budget = 500 超过 max_budget = 200；建议 ≤ 200` |
@@ -307,8 +310,8 @@ AppConfig
 | `rules.*` | 五规则榜、票数 V、FinalScore 加成 | `test_rules.py`（边界双点） | 中（阈值边界必须成对改测试） |
 | `pool.*` | 金胆/复式池规模、形态体检 | `test_filter.py` | 高（池规模影响覆盖注数与预算） |
 | `covering.budget/k/t/m_*` | 注单数、成本、保底等级、ROI | `test_covering.py`、`test_tickets.py` | 高（保底与预算直接互斥） |
-| `ml.weight` > 0 | FinalScore（新增通道）、Σω 重算 | `test_ml.py`、`test_scoring.py` | 高（需 Lead 批准） |
-| `backtest.warmup/default_n` | 回测样本、Lift 显著性、资金曲线 | `test_walkforward.py` | 低 |
+| `ml.enabled` / `ml.weight` | `ml.enabled` 只控制是否训练（诊断通道）；`ml.weight>0` 才会进 FinalScore（叠加项，七维 Σω 不变） | `test_ml.py`、`test_scoring.py` | 高（`weight>0` 需 Lead 批准）；`enabled` 仅影响耗时（0.34s ↔ 2.03s） |
+| `backtest.warmup/default_n/lift_signal` | 回测样本、Lift 显著性、`is_signal` 判定、资金曲线 | `test_walkforward.py`、`test_metrics.py` | 低 |
 | `seed` | Louvain 社区、SA 注单、ML | `test_adaptive.py`、`test_covering.py` | 低（仅重跑） |
 
 ---
@@ -316,7 +319,12 @@ AppConfig
 ## §16 机检清单（P7/P8 可直接照此核验）
 
 1. **零魔法数字**：`grep -rnE "(0\.(65|24|75|45|70|60|08|25|35)|\[\[?10|25|50)" --include=*.py kl8/` 命中处必须来自 `config.py`/`constants.py` 的字段读取，而非字面量直用。
-2. **schema 完整性**：`python -c "from kl8.config import default_config, to_dict; print(len(to_dict(default_config())))"` 得到的键集合必须覆盖 §2–§11 全部字段（v1.1.0 实数 **102** 个可配置叶子字段：WindowConfig 5 + MarkovConfig 3 + ScoreWeights 12 + RuleConfig 12 + AdaptiveConfig 9 + PoolConfig 12 + CoveringConfig 22 + MLConfig 14 + BacktestConfig 7（含 `lift_signal`）+ AppConfig 6；`budget_by_play`/`prize_table` 两个映射键已含在上述 22/6 内，不重复计数。v1.0.0 曾误写 104，已修正）。
+2. **schema 完整性（v1.2.0 两个口径都要对）**：
+   - **dataclass 字段数 = 102**（映射字段按 1 键计）：`python -c "import dataclasses as d, typing as t; from kl8.config import AppConfig; n=lambda c: sum(n(t.get_type_hints(c)[f.name]) if d.is_dataclass(t.get_type_hints(c)[f.name]) else 1 for f in d.fields(c)); print(n(AppConfig))"` → `102`。分模块：Window 5 + Markov 3 + ScoreWeights 12 + Rule 12 + Adaptive 9 + Pool 12 + Covering 22 + ML 14 + Backtest 7（含 `lift_signal`）+ AppConfig 6。
+   - **`to_dict()` 递归叶子数 = 107**：`python -c "from kl8.config import default_config, to_dict; n=lambda o: sum(n(v) if isinstance(v, dict) else 1 for v in o.values()); print(n(to_dict(default_config())))"` → `107`（比 102 多出 `budget_by_play` +1、`prize_table` +4）。
+   - 两个口径都硬对齐，任何不一致即判"契约漂移"（v1.0.0 曾误写 104，v1.1.0 修正为 102，v1.2.0 补第二口径）
 3. **校验可触发**：对每个 `V*` 约束构造非法配置，必须抛 `ConfigError` 且消息符合 §14 模板（`tests/test_config.py` 逐条覆盖）。
-4. **CLI 覆盖可审计**：`python main.py --no-sync --k 7 --budget 5 --pool-size 12 --seed 7 --backtest 5 --full-print` 输出的配置摘要（不止阈值）必须与本文件 §12 一致。
+4. **CLI 覆盖可审计**：`python main.py --no-sync --k 7 --budget 5 --pool-size 12 --seed 7 --backtest 5 --full-print` 输出的配置摘要（不止阈值）必须与本文件 §12 一致；并核对 `--ml`（→`ml.enabled=True`）、`--no-tickets`（→`include_tickets=False`）、`--backtest` 省略时的模式分派（daily→30 / backtest·audit→100）。
 5. **默认值可复现**：`config_hash(default_config())` 在所有机器上一致（不含时间戳/路径）。
+6. **默认值与实现一致（v1.2.0 新增，P8 必查）**：逐项比对 `default_config()` 与本文件 §2–§11 的默认值列，任何不一致即判"契约漂移"；重点字段：`ml.enabled=False`、`covering.m_margin=1`、`backtest.lift_signal=1.05`、七维权重之和 = 1.00（`0.02/0.08/0.20/0.25/0.05/0.05/0.35`）、`lambda_vote=0.05`。
+   > 教训（v1.2.0）：`m_margin` 曾实现为 2（契约 1）→ 覆盖表键 `12,5,4,5` 未命中 → 每期回落 ILP 8~13s；`build_tickets` 13.66s→0.006s（约 2000×），100 期回测 176.5s→37.4s。**默认值即性能护栏**。

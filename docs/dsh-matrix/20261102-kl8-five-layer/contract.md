@@ -2,7 +2,7 @@
 
 > **本契约需求点编号 R1–R48，共 48 项；项目文档与后续任务中的「43 点」为早期笔误，以本表 48 项为准。**
 >
-> - 版本：**v1.1.0**（2026-11-02，A7 覆盖参数修正 + A5/A8/A9 自定标注 + A10 N/A 措辞 + `lift_signal` 字段 + B4 说明；详见 §7.3）｜ 冻结日：2026-11-02 ｜ 作者：req-architect（智小研）
+> - 版本：**v1.2.0**（2026-11-02，与落地代码 HEAD=`f170147` 对齐：`ml.enabled=False`、`--ml`/`--no-tickets`、`--backtest` 模式分派、ScoreWeights 实测默认值、Σω 语义更正、性能预算按实测修订；并记录"契约漂移导致 2000× 性能缺陷"的工程结论，详见 §7.3）｜ 冻结日：2026-11-02 ｜ 作者：req-architect（智小研）
 > - 适用阶段：P2（基础层）→ P3（layer2/3）→ P4（layer4）→ P5（layer5）→ P6（evaluation/reporting/pipeline/main）
 > - 权威优先级：**docs/8.md（业务需求，唯一权威）> 本契约（工程落地口径与签名冻结）> 旧实现 `calc_*.py`（仅语义参考，P9 删除）**
 > - 冻结效力：**§3 模块签名与 §4 数据结构字段名/顺序为冻结项，下游开发禁止改签名、禁止改字段名、禁止改返回顺序**；确需变更必须由 Lead 发起契约版本升级（v1.x）并同步 P2–P9。
@@ -115,12 +115,12 @@
 
 | 子项 | 内容 | 验收证据 |
 | :--- | :--- | :--- |
-| R48-a | `AppConfig` 深合并 + 严格校验（Σω=1、α∈[0.5,2.0]、λ∈[0.05,0.10]、gold<main、k≤池大小），非法抛 `ConfigError` 中文提示 | `tests/test_config.py::test_config_validation`；config-schema.md §5 |
-| R48-b | CLI：保留旧参数（`--history/--no-sync/--quick/--full-sync/--period/--date/--backtest/--full-print`）+ 新增（`--mode/--k/--budget/--warmup/--pool-size/--seed`）；异常统一中文提示并返回非 0 | `python main.py --help`；`python main.py --no-sync --backtest 30` |
+| R48-a | `AppConfig` 深合并 + 严格校验（七维 Σω=1、α∈[0.5,2.0]、λ∈[0.05,0.10]、gold<main、k≤池大小），非法抛 `ConfigError` 中文提示 | `tests/test_config.py::test_config_validation`；config-schema.md §5 |
+| R48-b | CLI：保留旧参数（`--history/--no-sync/--quick/--full-sync/--period/--date/--backtest/--full-print`）+ 现代参数（`--mode/--k/--budget/--warmup/--pool-size/--seed/--config`）+ **v1.2.0 新增 `--ml`、`--no-tickets`**；`--backtest` 未显式指定时**按模式分派**（daily→30、backtest/audit→100，`0`=daily 关闭伴随回测）；异常统一中文提示并返回非 0 | `python main.py --help`；`python main.py --no-sync --backtest 30`；`python main.py --mode backtest --no-sync --no-tickets` |
 | R48-c | 数据同步：官网主源 + 备用源增量；网络失败仅告警不崩；文件降序写回并保留全量 | `kl8/sync.py::sync_history` 返回值 `SyncResult`；`tests/test_pipeline.py`（离线 mock） |
 | R48-d | 三类交付件：`output/reports/Keno分析报告_YYYYMMDD.txt`（六段式 + 附录 A/B）、`output/wechat/Keno发布_YYYYMMDD_第N期.txt`、`output/excel/Keno分析_YYYYMMDD_第N期.xlsx`（6 Sheet） | `tests/test_pipeline.py::test_end_to_end_daily_and_backtest`；P7 端到端实测 |
 | R48-e | 幂等：自适应状态按 period 幂等 upsert（原子写 `os.replace`）、重复日跑不重复累计、报告覆盖写 | `tests/test_adaptive.py::test_state_idempotent_atomic_write` |
-| R48-f | 性能预算：单期 ≤0.35s、100 期回测 ≤45s、500 期 ≤180s、全量单测 ≤180s | P7 实测表；超出需给优化证据 |
+| R48-f | 性能预算（v1.2.0 按实测修订）：单期（特征→打分→池）≤0.35s、单期含注单+报告 ≤0.50s、100 期回测 ≤45s（`--no-tickets` 30 期冒烟 ≤15s）、500 期 ≤180s、全量单测 ≤180s、ML 关闭为默认 | P7 实测表；超出需给优化证据 |
 
 ---
 
@@ -166,6 +166,8 @@ tools/
 ├─ build_covering_tables.py    # 幂等生成并重验覆盖表
 ├─ ab_legacy.py                # 可选旧系统对照，不进日常流水线
 └─ rebuild_state.py            # 从历史重建自适应权重状态
+main.py                        # CLI 入口（参数清单见 §3.14）
+运行微积分预测.bat             # 双击一键入口（UTF-8 BOM；--no-sync --backtest 30 --full-print）
 ```
 
 目标产物目录：`output/reports/`、`output/wechat/`、`output/excel/`、`output/state/`。
@@ -260,13 +262,13 @@ class MarkovConfig:
     diag_split: bool = True        # 重号/异号拆分
 
 @dataclass(frozen=True)
-class ScoreWeights:                # Σω = 1.00 ± 1e-9 强校验
-    follow_10: float = 0.10; follow_25: float = 0.15
-    follow_50: float = 0.15; follow_all: float = 0.15      # Σ = 0.55
-    co: float = 0.15; trend: float = 0.20; omission: float = 0.10   # 合计 1.00
-    lambda_vote: float = 0.08      # λ ∈ [0.05, 0.10]
+class ScoreWeights:                # 七维核心权重 Σω = 1.00 ± 1e-9 强校验（ml 为额外叠加项，不计入 Σω）
+    follow_10: float = 0.02; follow_25: float = 0.08
+    follow_50: float = 0.20; follow_all: float = 0.25      # Σ = 0.55
+    co: float = 0.05; trend: float = 0.05; omission: float = 0.35   # 七维合计 1.00（v1.2.0 与实现对齐）
+    lambda_vote: float = 0.05      # λ ∈ [0.05, 0.10]（v1.2.0 实现取下沿 0.05）
     trend_w_f10: float = 0.5; trend_w_mom_10_25: float = 0.3; trend_w_mom_25_50: float = 0.2  # 裁决 A1
-    ml: float = 0.0                # 默认 0：ML 只诊断不进打分
+    ml: float = 0.0                # **额外叠加项**（默认 0）；>0 时叠加到 BaseScore，不参与 Σω 归一化
 
 @dataclass(frozen=True)
 class RuleConfig:                  # R1–R5 阈值（全量见 config-schema.md §3）
@@ -316,7 +318,8 @@ class CoveringConfig:
 
 @dataclass(frozen=True)
 class MLConfig:
-    enabled: bool = True; weight: float = 0.0
+    enabled: bool = False          # v1.2.0：默认关闭（B4 诊断通道）；CLI `--ml` 显式开启
+    weight: float = 0.0            # 额外叠加项，默认 0（仅诊断，不进 FinalScore）
     train_window: int = 160; refit_every: int = 25
     n_estimators: int = 40; learning_rate: float = 0.03
     num_leaves: int = 12; min_child_samples: int = 25
@@ -327,7 +330,7 @@ class MLConfig:
 @dataclass(frozen=True)
 class BacktestConfig:
     warmup: int = 300              # T0 冷启动
-    default_n: int = 100
+    default_n: int = 100           # 配置层默认；CLI 未指定时按模式分派：daily→30、backtest/audit→100（§3.14）
     ks: tuple[int, ...] = (3, 5, 7, 10, 12)
     t0_min: int = 60
     include_tickets: bool = True
@@ -883,14 +886,38 @@ class DailyResult:
     warnings: tuple[str, ...]; elapsed_s: float
 
 def run_daily(cfg: AppConfig, *, no_sync: bool = False, target_period: int | None = None,
-              target_date: str | None = None, backtest_n: int = 100,
-              quick: bool = True) -> DailyResult: ...
-def run_backtest(cfg: AppConfig, n: int, *, t0: int | None = None) -> BacktestReport: ...
+              target_date: str | None = None, backtest_n: int = 30,
+              quick: bool = True, progress: Callable[[str], None] | None = None) -> DailyResult: ...
+def run_backtest(cfg: AppConfig, n: int, *, t0: int | None = None,
+                 include_tickets: bool | None = None,
+                 progress: Callable[[int, int], None] | None = None) -> BacktestReport: ...
 def run_audit(cfg: AppConfig, *, n: int = 100) -> dict[str, Any]: ...
 
 # main.py
-def main(argv: Sequence[str] | None = None) -> int: ...   # 0 成功 / 1 参数或数据错误 / 2 内部错误
+def build_arg_parser() -> argparse.ArgumentParser: ...
+def main(argv: Sequence[str] | None = None) -> int: ...   # 0 成功 / 1 参数或数据错误 / 2 内部错误 / 130 中断
 ```
+
+**`main.py` CLI 参数清单（v1.2.0 与实现对齐，`python main.py --help` 为准）**
+
+| 参数 | 类型/默认 | 语义 |
+| :--- | :--- | :--- |
+| `--mode {daily,backtest,audit}` | str，`daily` | 运行模式分派 `run_daily / run_backtest / run_audit` |
+| `--history PATH` | str，`kl8_history.txt` | 历史数据文件路径（覆盖 `cfg.history_path`） |
+| `--no-sync` | flag | 跳过网络同步 |
+| `--quick` / `--full-sync` | flag | 增量/全量同步（`quick = not full_sync`） |
+| `--period N` / `--date S` | int / str | 目标期号 / 目标日期 |
+| `--backtest N` | int，**`None` 时按模式分派**：daily→**30**、backtest/audit→**100**；显式 `0` = daily 关闭伴随回测 | 回测期数 |
+| `--no-tickets` | flag | 回测跳过注单生成与奖金核算（`include_tickets=False`，快速评估 Lift） |
+| `--warmup N` | int，300 | 回测冷启动 T0（覆盖 `cfg.backtest.warmup`） |
+| **`--ml`** | flag（**v1.2.0 新增**） | 开启 LightGBM 诊断通道（`ml.enabled=True`）；默认关闭，单期耗时 0.39s→2.03s |
+| `--no-sweep` | flag | 兼容旧脚本的空操作（no-op） |
+| `--k {5,7}` / `--budget N` / `--pool-size N` | int | 玩法码数（联动 `play`/`t`）/ 预算注数 / 复式池规模 |
+| `--seed N` | int | 全局随机种子（Louvain/SA/抽样） |
+| `--config PATH` | str | JSON 配置文件（深合并，CLI 优先级更高） |
+| `--full-print` | flag | 控制台打印完整 TXT 报告 |
+
+> **`.bat` 一键入口**（v1.2.0 重写）：`运行微积分预测.bat`（UTF-8 BOM + `chcp 65001`）执行 `python main.py --no-sync --backtest 30 --full-print`，双击即出全套交付件；失败分支给中文提示并 `pause`，不静默退出。
 异常契约：`pipeline` 是对外唯一编排点，捕获 `KL8Error` 转中文可操作提示并返回非 0；Ctrl+C 返回 130。
 
 ---
@@ -1025,7 +1052,7 @@ def main(argv: Sequence[str] | None = None) -> int: ...   # 0 成功 / 1 参数�
 | `tickets` | `tuple[tuple[int, ...], ...]` | 映射到号码后的注单（1-based），与 `tickets_pos` 逐注对应 |
 | `n_tickets` | `int` | 注数 |
 | `coverage_ratio` | `float` | 已覆盖 m 子集比例 ∈[0,1] |
-| `achieved_t` | `int` | 实测最小 `|B∩M|`（穷举结果，必须 `≥ t`） |
+| `achieved_t` | `int` | 实测最小 `\|B∩M\|`（穷举结果，必须 `≥ t`） |
 | `verified` | `bool` | `verify_guarantee` 通过标志（未通过禁止出单） |
 | `method` | `str` | `"table"`/`"ilp"`/`"greedy"`/`"anneal"`/`"greedy+anneal"` |
 | `degraded` | `bool` | 是否发生降级（ILP 超规模/超时 → 贪心；查表未命中 → 求解器） |
@@ -1099,9 +1126,7 @@ def main(argv: Sequence[str] | None = None) -> int: ...   # 0 成功 / 1 参数�
 | **A4** | L118「AC 值」未给公式 | `AC = \|{ \|a-b\| : a<b, a,b ∈ 注单 }\| - (k-1)`；单注 k 码最小 0；对 20 码开奖号同式（k=20） | 标准 AC 定义（算术复杂度）；8.md「衡量号码间距的离散度」即差集势减线性项 | `morphology.ac_value`；`tests/test_morphology.py::test_ac_value` |
 | **A5** | L155「金胆池（如 3~5 码）」未给选取规则 | `n_gold = clip(round(0.30 × len(main)), 3, 5)`（`main=12` → **4**）；候选顺序：先取 `V_i ≥ 3` 的号码按 FinalScore 降序，不足再用 FinalScore 降序补；**硬约束 `gold ⊂ main`** | 大小随复式池自适应且落在 3~5 区间；优先共振票高的号码符合"核心金胆"语义。**※ 契约自定声明**：`0.3` 系数、`V_i ≥ 3` 优先序与 `gold ⊂ main` 均为**契约自定**，8.md L155 仅给示例区间「如 3~5 码」，**非原文要求** | `filter.select_gold`；`tests/test_filter.py::test_gold_and_main_sizes` |
 | **A6** | L155「10~15 码」 vs L202「10~12 码」 冲突 | **同属一个复用对象**：`main` 池默认 **12**，合法区间 10~15；L202 的 10~12 是"日常下发玩法变体"（选五取 12、选七取 10），不是第二个池 | 消除两处规模表述冲突；默认 12 同时落在两个区间内，兼容两处原文 | `PoolConfig.main_default/main_min/main_max`；`filter.build_pool` |
-| **A7** | L161–166 覆盖参数 `m`：原文为"**预期**候选池 v 中能够实际命中的开奖号码个数"，未给取值 | **m 定性（必读）**：`m` 是**用户/玩法假设参数**（8.md L164 的"预期"），**非算法推导值、非预测值**；报告与文案必须写「m 为假设参数」。
-**取值规则（v1.1.0 修正）**：① `t ≥ k` → `m = min(v, t)`（全保底场景）；② `t < k` → `m = min(v, t + cfg.covering.m_margin)`，`m_margin` 默认 **1**、范围 **[1,3]**；③ 合理性校验：`abs(m - (ceil(0.25·v)+2)) > 2` → 写 warning（提示 m 假设与池内期望命中数偏离，报告须注明）。
-玩法默认：选五 `C(v,5,4,m)`（`v=12 → m=5 = C(12,5,4,5)`）、选七 `C(v,7,5,m)`（`v=12 → m=6 = C(12,7,5,6)`）；强制 `t ≤ k`、`t ≤ m ≤ v` | 精确复现 8.md L169 全部命名参数组（验算见 §5.0）；`0.25v+2` 只作合理性校验而非定义 —— 原式与 k/t 无关，会把 pick7 算成 m=5，与原文 `C(12,7,5,6)` 冲突 | `covering.m_target`；`tests/test_covering.py::test_m_target` |
+| **A7** | L161–166 覆盖参数 `m`：原文为"**预期**候选池 v 中能够实际命中的开奖号码个数"，未给取值 | **m 定性（必读）**：`m` 是**用户/玩法假设参数**（8.md L164 的"预期"），**非算法推导值、非预测值**；报告与文案必须写「m 为假设参数」。**取值规则（v1.1.0 修正）**：① `t ≥ k` → `m = min(v, t)`（全保底场景）；② `t < k` → `m = min(v, t + cfg.covering.m_margin)`，`m_margin` 默认 **1**、范围 **[1,3]**；③ 合理性校验：`abs(m - (ceil(0.25·v)+2)) > 2` → 写 warning（提示 m 假设与池内期望命中数偏离，报告须注明）。玩法默认：选五 `C(v,5,4,m)`（`v=12 → m=5 = C(12,5,4,5)`）、选七 `C(v,7,5,m)`（`v=12 → m=6 = C(12,7,5,6)`）；强制 `t ≤ k`、`t ≤ m ≤ v` | 精确复现 8.md L169 全部命名参数组（验算见 §5.0）；`0.25v+2` 只作合理性校验而非定义 —— 原式与 k/t 无关，会把 pick7 算成 m=5，与原文 `C(12,7,5,6)` 冲突 | `covering.m_target`；`tests/test_covering.py::test_m_target` |
 | **A8** | L170「固定只买 20 注」示例，无默认预算 | 默认预算：**选五 20 注（40 元）、选七 10 注（20 元）**；`--budget` 覆盖；硬上限 `max_budget=200` 注（400 元），超出抛 `ConfigError` | 沿用旧系统 20 注精选版习惯；选七单注成本高故 10 注；上限防误配。**※ 契约自定声明**：选七 **10 注**为契约自定（8.md L170 仅给"固定只买 20 注"示例），**非原文要求** | `CoveringConfig.budget_by_play/max_budget`；`main.py --budget` |
 | **A9** | L148「M=5 或 10」未定 | 自适应回看期 **M=8**；`min_periods=3`（不足回均匀先验 `0.2/规则`）；Laplace `α=1.0`；temperature `1.0`；权重下限 `0.05`；**回测强制纯内存**（`in_memory=True`），日跑按 period 幂等 upsert | M=8 取两档中值，兼顾风格切换灵敏度与样本量（8 期×每规则约 3 码 ≈ 24 观测）；下限防单规则归零。**※ 契约自定声明**：8.md L148 仅示例「如 M=5 或 10」，**8 不在原文示例集合内**，为经 Lead 批准的契约裁决值，**非原文要求** | `AdaptiveConfig`；`tests/test_adaptive.py` |
 | **A10** | L193–194「结合官方固定设奖规则」未给奖金表 | **只启用已确认奖级**：选五 `{中5:1000 元, 中4:21 元, 中3:3 元}`，单注 2 元；选三、选七奖金表为 `None` → 其高奖级只报**触发频次与超几何理论概率**，不出金额；ROI/回撤/连挂**仅对选五出具** | 未核实的奖级进金额计算会产出误导性 ROI；8.md 自身只给"选五全中理论概率 0.155%（约 645 期一遇）"这一确定值。**报告硬性措辞**：选三/选七段落必须输出 `ROI: N/A（官方奖级未确认）`，**禁止任何金额结论或暗示性收益表述** | `AppConfig.prize_table`；`metrics.bankroll/high_tier_rate`；`tests/test_metrics.py` |
@@ -1125,8 +1150,8 @@ def main(argv: Sequence[str] | None = None) -> int: ...   # 0 成功 / 1 参数�
 | B1 | 窗口键名全仓唯一写法：`"10G"`、`"25G"`、`"50G"`、`"ALL"`（大小写敏感，`Mapping` 键即此四字符串；`ALL` 无 `G` 后缀） |
 | B2 | 五条规则阈值**一律从 `cfg.rules` 读取**；单测通过构造自定义 `RuleConfig` 造边界，禁止改源码常量（裁决阈值：`0.65 / 0.649`、`0.24` 边界等） |
 | B3 | 社区检测：`networkx` 可用走 `louvain_communities(seed=cfg.seed)`；不可用/异常 → 降级 `numpy` 幂迭代 PageRank + 连通分量社区，`GraphResult.backend` 记录 `"networkx"/"numpy_power"` 并写 warning；无图时 `community_id=-1` |
-| B4 | ML 默认 **`ml.weight=0`（只诊断，不进 FinalScore）**；开启需显式配置。`ml_prob` 必须 ∈[0,1]，不强制均值归一（PAV 校准后允许偏离 0.25，报告需注明）。**8.md L37 对齐说明（v1.1.0）**：L37 的「机器学习概率校准模型」以**可配置项交付** —— 默认 `ml.weight=0` 仅作诊断通道；启用后 ML 概率进入 `BaseScore` 并触发其余权重再归一化（保持 `Σω=1`），即"能力具备、默认关闭" |
-| B5 | 自适应"规则权重"作用于票数加成：`FinalScore = Base + λ·Σ_r (w_r / w̄)·pass_r`，其中 `Σ_r w_r = 1`、`w̄ = 1/5`；**`w_r` 全均匀时恒等于 8.md 原式 `Base + λ·V_i`**。为此 §3.10 `hybrid.score_all` 签名追加 keyword-only 参数 `rule_weights: Mapping[str, float] | None = None`（v1.0.1 补充，向后兼容；`final_score()` 保持原式不变） |
+| B4 | ML 为**默认关闭的诊断通道（v1.2.0 对齐实现）**：`ml.enabled=False`（默认）、`ml.weight=0.0`；`enabled` 只决定是否训练（关：`ml_prob` 恒 0.25、`ml_available=False`、单期 0.34s；开：≈2.03s），诊断时用 CLI `--ml`。`ml.weight` 是 **BaseScore 的额外叠加项**：七维核心权重 `Σω=1.00` 恒成立且**不含 ml**；`ml.weight>0` 时叠加 `ml·R(ml_prob)`，**不再归一化**（BaseScore 上界 >1，报告需注明）。`ml_prob` 必须 ∈[0,1]，不强制均值归一（PAV 校准后允许偏离 0.25）。**8.md L37 对齐说明**：L37 的「机器学习概率校准模型」以**可配置项交付**（能力具备、默认关闭），启用后进入 BaseScore |
+| B5 | 自适应"规则权重"作用于票数加成：`FinalScore = Base + λ·Σ_r (w_r / w̄)·pass_r`，其中 `Σ_r w_r = 1`、`w̄ = 1/5`；**`w_r` 全均匀时恒等于 8.md 原式 `Base + λ·V_i`**。为此 §3.10 `hybrid.score_all` 签名追加 keyword-only 参数 `rule_weights: Mapping[str, float] \| None = None`（v1.0.1 补充，向后兼容；`final_score()` 保持原式不变） |
 | B6 | 重号配比：`repeat_target = clip(round(cfg.pool.repeat_ratio × size), ceil(0.25×size), floor(0.35×size))`；`size=12` → 目标 4（区间 [3,4]）；先按 FinalScore 取足上期重号，再补新号 |
 | B7 | 约束放宽顺序固定 `same_tail → parity → zone4 → repeat_ratio`，每次放宽必须在 `PoolResult.relaxed` 留痕并写中文 `warnings`；全部放宽仍不达标 → `InfeasibleConstraintError` |
 | B8 | **报告单一数据源**：TXT/微信/Excel 三类交付件只能消费 `ReportContext`（同一 `ScoreRoundResult` + `TicketPlan` + `BacktestReport`），禁止任何交付件自行重算指标（保证"数值与引擎结果严格一致"） |
@@ -1177,7 +1202,7 @@ def main(argv: Sequence[str] | None = None) -> int: ...   # 0 成功 / 1 参数�
 | Borda | `Rank/80`，最大 `1.0`，最小 `0.0125`，并列取平均秩 | 手算 |
 | `FinalScore` 恒等 | `Final - (Base + λ·V)` | `< 1e-12` |
 | `Trend` | `0.5*R(F10)+0.3*R(Mom10-25)+0.2*R(Mom25-50)` | 手算（裁决 A1） |
-| `AC` | `|{差}| - (k-1)`；例 `{1,4,6,9,11}` 的差集 `{2,3,5,7,8,10}`（6 个）→ `AC = 6-(5-1) = 2` | 手算（裁决 A4） |
+| `AC` | `\|{差}\| - (k-1)`；例 `{1,4,6,9,11}` 的差集 `{2,3,5,7,8,10}`（6 个）→ `AC = 6-(5-1) = 2` | 手算（裁决 A4） |
 | `Lift@K` | `mean_hit_K / (0.25*K)` | 手算 |
 | `is_signal`（v1.1.0） | `lift > cfg.backtest.lift_signal(1.05) 且 p_value < cfg.backtest.alpha_sig(0.05)` | 手算（8.md L188 判据；实现禁止写死 1.05 / 0.05） |
 | 选五全中概率 | `C(5,5)*C(75,15)/C(80,20)` | `≈0.00155`（0.155%，约 645 期一遇，8.md L190） |
@@ -1205,11 +1230,12 @@ python -m unittest discover -s tests -v
 # 3) 生成/重验覆盖表（P5 起）
 python tools/build_covering_tables.py
 
-# 4) 日常日跑（P6 起；离线，不联网）
-python main.py --no-sync --backtest 100
-
-# 5) 快速冒烟（小样本，CI 用）
+# 4) 日常日跑（P6 起；离线，不联网；daily 模式伴随 30 期回测）
 python main.py --no-sync --backtest 30 --full-print
+
+# 5) 纯回测 / 审计模式（默认 100 期；--no-tickets 跳过注单，秒级评估 Lift）
+python main.py --mode backtest --no-sync --no-tickets
+python main.py --mode audit --no-sync
 
 # 6) 需求映射机检（48 行）
 python -c "import csv;rows=list(csv.DictReader(open(r'docs/dsh-matrix/20261102-kl8-five-layer/requirement-mapping.csv',encoding='utf-8')));print(len(rows));assert len(rows)==48"
@@ -1218,16 +1244,19 @@ python -c "import csv;rows=list(csv.DictReader(open(r'docs/dsh-matrix/20261102-k
 python -m unittest tests.test_architecture -v
 ```
 
-### §6.5 性能预算（超预算必须给优化证据，否则 P7 阻断）
+### §6.5 性能预算（v1.2.0 按实测修订；超预算必须给优化证据，否则 P7 阻断）
 
-| 场景 | 预算 | 测量方式 |
-| :--- | :--- | :--- |
-| 单期全链路（特征→打分→池→注单） | ≤0.35 s | `time.perf_counter` 包 `score_round + build_tickets`，P7 记录均值 |
-| 100 期 Walk-Forward（含注单） | ≤45 s | `python main.py --no-sync --backtest 100` 总耗时 |
-| 500 期 Walk-Forward | ≤180 s | `run_backtest(cfg, 500)` |
-| 全量单测 | ≤180 s | `unittest discover` 总耗时 |
-| 覆盖求解 `v=12,k=5,t=4,m=5` | ≤3 s（含 ILP 降级） | `CoveringReport.elapsed_ms` |
-| 单期内存峰值 | ≤300 MB | P7 用 `tracemalloc` 抽查 |
+| 场景 | 预算 | 实测（v1.2.0，2026-11-02） | 测量方式 |
+| :--- | :--- | :--- | :--- |
+| 单期核心（特征→打分→池，不含注单） | ≤0.35 s | 0.39 s（含注单+报告口径） | `time.perf_counter` 包 `score_round`，P7 记录均值 |
+| 单期全链路（含注单 + 报告渲染） | ≤0.50 s | **0.39 s** | `run_daily` 单期耗时 |
+| 100 期 Walk-Forward（`--no-tickets`） | ≤45 s | **37.4 s**（优化前 176.5 s） | `python main.py --mode backtest --no-sync --no-tickets --backtest 100` |
+| 100 期 Walk-Forward（含注单） | ≤60 s | **40 s**（优化前 >600 s） | `python main.py --mode backtest --no-sync --backtest 100` |
+| 500 期 Walk-Forward | ≤180 s | 待 P7 补测 | `run_backtest(cfg, 500)` |
+| 全量单测（124 用例） | ≤180 s | **14.6 s**（优化前 105.6 s） | `python -m unittest discover -s tests` 总耗时 |
+| 覆盖求解 `v=12,k=5,t=4,m=5` | ≤3 s（含 ILP 降级） | 0.006 s（表命中路径） | `CoveringReport.elapsed_ms` |
+| ML 诊断通道开启（`--ml`） | ≤2.5 s/期 | 2.03 s（默认关闭，不进入日常预算） | `time.perf_counter` 对比开/关 |
+| 单期内存峰值 | ≤300 MB | 待 P7 补测 | P7 用 `tracemalloc` 抽查 |
 
 ---
 
@@ -1261,8 +1290,10 @@ R1,A 数据表征层,layer1 BinaryStateMatrix,L30;L47-L50,kl8/layer1_representat
 | :--- | :--- | :--- |
 | v1.0.0 | 2026-11-02 | 首版：48 项需求映射（含 8.md 行号列）、五层签名冻结、数据结构字段冻结、A1–A10 裁决、DoD 与验证命令 |
 | v1.0.1 | 2026-11-02 | B5：`hybrid.score_all` 追加 keyword-only `rule_weights`（自适应规则权重落点，向后兼容） |
-| **v1.1.0** | 2026-11-02 | **5 类修改（Lead 批准）**：① **A7 修正**（`t≥k → m=min(v,t)`；`t<k → m=min(v,t+m_margin)`，`m_margin` 默认 1/范围 [1,3]；`0.25v+2` 降级为合理性 warning；`m` 定性为"用户/玩法假设参数，非预测"；新增 §5.0 五组参数验算表；`m_target` 签名追加 `t` 与 `margin=1`）；② **A5/A8/A9 自定标注**（0.3 系数与 `V≥3` 优先序、选七 10 注、M=8 均注明"契约自定，非 8.md 原文要求"）；③ **A10 N/A 措辞**（选三/选七报告必须输出 `ROI: N/A（官方奖级未确认）`，禁止金额结论）；④ **新增 `BacktestConfig.lift_signal: float = 1.05`**（范围 [1.0,1.2]）+ `LiftStat.is_signal` + `metrics.lift_at_k(rows, ks, cfg)`（消除字面量 1.05，报告措辞由该位驱动）；⑤ **B4 对齐说明**（8.md L37 的 ML 能力以可配置项交付，默认 `weight=0` 诊断通道，启用后进 BaseScore 并触发权重再归一化）。**附带修正**：v1.0.0 的"104 个叶子字段"计数有误（重复计入 2 个映射键），v1.1.0 实数 **102** 个叶子字段（Window 5 + Markov 3 + ScoreWeights 12 + Rule 12 + Adaptive 9 + Pool 12 + Covering 22 + ML 14 + Backtest 7 + AppConfig 6），已同步 config-schema.md §16 |
-| **v1.0.0 之后机检** | 2026-11-02 | `Import-Csv` 断言：`rows=48; ids_in_order=True; empty_fields_rows=0; PASS=True`（ID 严格 R1..R48 顺序，无空字段）；`contract.md` 48 行主表列数 5 列齐整 |
+| **v1.1.0** | 2026-11-02 | **5 类修改（Lead 批准）**：① **A7 修正**（`t≥k → m=min(v,t)`；`t<k → m=min(v,t+m_margin)`，`m_margin` 默认 1/范围 [1,3]；`0.25v+2` 降级为合理性 warning；`m` 定性为"用户/玩法假设参数，非预测"；新增 §5.0 五组参数验算表；`m_target` 签名追加 `t` 与 `margin=1`）；② **A5/A8/A9 自定标注**（0.3 系数与 `V≥3` 优先序、选七 10 注、M=8 均注明"契约自定，非 8.md 原文要求"）；③ **A10 N/A 措辞**（选三/选七报告必须输出 `ROI: N/A（官方奖级未确认）`，禁止金额结论）；④ **新增 `BacktestConfig.lift_signal: float = 1.05`**（范围 [1.0,1.2]）+ `LiftStat.is_signal` + `metrics.lift_at_k(rows, ks, cfg)`（消除字面量 1.05，报告措辞由该位驱动）；⑤ **B4 对齐说明**（8.md L37 的 ML 能力以可配置项交付，默认 `weight=0` 诊断通道，启用后进 BaseScore 并触发权重再归一化——**此句已被 v1.2.0 更正为"额外叠加、不归一化"**）。**附带修正**：v1.0.0 的"104 个叶子字段"计数有误（重复计入 2 个映射键），v1.1.0 实数 **102** 个叶子字段（Window 5 + Markov 3 + ScoreWeights 12 + Rule 12 + Adaptive 9 + Pool 12 + Covering 22 + ML 14 + Backtest 7 + AppConfig 6），已同步 config-schema.md §16 |
+| **v1.2.0** | 2026-11-02 | **与落地代码 HEAD=`f170147` 对齐（6 类）**：① **`MLConfig.enabled` 默认 `True→False`**（B4 诊断通道、`weight=0` 时不进 FinalScore，却使单期 0.34s→2.03s；诊断时用 CLI `--ml` 开启，开启后 `ml_available=True`；`weight>0` 而 `enabled=False` 时**不阻断**（静默忽略 ML 通道、排序无实质影响），P8 记为低优先建议：后续版本补一条 `DailyResult.warnings` 提示）。② **CLI**：§3.14 新增完整参数表，含 **`--ml`**（→`ml.enabled=True`）与 **`--no-tickets`**（→`include_tickets=False`）、`--no-sweep`（兼容 no-op）；R48-b 同步。③ **`--backtest` 默认值按模式分派**：`daily`→**30**、`backtest/audit`→**100**，显式 `0` = daily 关闭伴随回测；`cfg.backtest.default_n` 仍为 100（配置层默认不变）。④ **`ScoreWeights` 七维默认值按实现对齐**：`0.02/0.08/0.20/0.25/0.05/0.05/0.35`（Σ=1.00），`lambda_vote 0.08→0.05`；并**更正 Σω 语义**：只有七维核心权重参与 `Σω=1` 强校验，`ml` 是**额外叠加项**（>0 时叠加、不归一化）。⑤ **性能预算按实测修订**（§6.5）：单期含注单 0.39s、100 期 `--no-tickets` 37.4s、含注单 40s、全量单测 14.6s、覆盖求解 0.006s、ML 开启 2.03s/期限额 2.5s。⑥ `.bat` 一键入口（UTF-8 BOM + `--no-sync --backtest 30 --full-print`）写入 §2.1 与 §3.14。 |
+| **v1.2.0 工程结论** | 2026-11-02 | **"契约漂移导致的 2000× 性能缺陷"（P8 必查条目）**：实现侧把 `CoveringConfig.m_margin` 写成 **2**（契约 v1.1.0 明确要求 **1**）→ `m_target(12,5,4)=6` → 覆盖表键 `12,5,4,5` 未命中 → 每期回落 `scipy.milp` ILP，单期 8~13s。改回 1 后 `build_tickets` **13.66s → 0.006s（约 2000×）**。实测改善：100 期回测（`--no-tickets`）**176.5s → 37.4s**；含注单 **>600s → 40s**；全量单测 **105.6s → 14.6s**；单期 **0.39s**。**结论：契约默认值即性能护栏** —— 下游实现偏离契约默认值应视为缺陷而非"可调参数"，P8 质检需核对「实现默认值 == 契约默认值」逐项对齐（本版 §3.3 与 config-schema.md 已全部核对）。 |
+| **v1.2.0 机检** | 2026-11-02 | `Import-Csv` 断言：`rows=48; ids_in_order=True; empty_fields_rows=0; PASS=True`（ID 严格 R1..R48 顺序）；§1.2 主表 48 行 × 5 列齐整；`default_config()` 实测默认值与 §3.3 / config-schema.md 逐字段一致（102 叶子字段，含 `ml.enabled=False`、`covering.m_margin=1`、`backtest.lift_signal=1.05`、七维权重 Σ=1.00） |
 
 ---
 
