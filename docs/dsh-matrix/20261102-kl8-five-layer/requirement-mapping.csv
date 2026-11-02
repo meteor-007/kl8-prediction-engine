@@ -1,0 +1,49 @@
+需求ID,分组,需求摘要,8md行号,实现模块,实现符号,测试文件,测试用例名
+R1,A 数据表征层,"二值化状态矩阵 X∈{0,1}^(T×80) 行和恒为 20",L30;L47-L50,kl8/layer1_representation/state.py,BinaryStateMatrix.from_dataset,tests/test_state.py,test_binary_matrix_shape_and_row_sum
+R2,A 数据表征层,"四尺度窗口 W={10G,25G,50G,ALL} 定义与切片",L34-L35;L52-L57,kl8/layer1_representation/windows.py,resolve_windows+state.window_matrix,tests/test_windows.py,test_four_scale_windows
+R3,A 数据表征层,"冷启动窗口回退 w_eff=min(w,T)",L57;L201,kl8/layer1_representation/windows.py,effective_window,tests/test_windows.py,test_cold_start_fallback
+R4,A 数据表征层,原始开奖数据清洗校验标准化(20码/1..80/升序/去重期号/降序文件自检),L30-L31,kl8/history.py,parse_line+load_dataset+save_dataset,tests/test_history.py,test_parse_validate_and_sort
+R5,B 随机性基准层,单球单期理论先验 p0=K/N=0.25,L66;L97,kl8/layer2_baseline/priors.py,p0,tests/test_priors.py,test_p0_value
+R6,B 随机性基准层,两球同期共现理论概率 p_co=20*19/(80*79),L67;L108,kl8/layer2_baseline/priors.py,p_co,tests/test_priors.py,test_p_co_value
+R7,B 随机性基准层,相邻两期理论重号期望 E(Repeat)=5,L68,kl8/layer2_baseline/priors.py,expected_repeat,tests/test_priors.py,test_expected_repeat
+R8,B 随机性基准层,窗口频次标准化偏离度 Z 与 |Z|>1.96 显著性,L70-L73,kl8/layer2_baseline/zscore.py,window_z+significant_mask,tests/test_zscore.py,test_zscore_formula_and_threshold
+R9,B 随机性基准层,Wald-Wolfowitz 游程检验与聚簇/跳跃标签,L75-L76,kl8/layer2_baseline/runs.py,runs_test+runs_test_80,tests/test_runs.py,test_runs_cluster_vs_jump_labels
+R10,B 随机性基准层,卡方拟合优度+NIST-lite 4项+香农熵/互信息冗余(仅诊断),L17;L22;L32,kl8/layer2_baseline/chisq.py;kl8/layer2_baseline/randomness.py;kl8/layer2_baseline/entropy.py,chi_square_gof+nist_lite+shannon_entropy+feature_redundancy,tests/test_chisq.py;tests/test_randomness.py;tests/test_entropy.py,test_gof_uniform_and_biased|test_nist_lite_four_items|test_entropy_and_redundancy
+R11,C 多尺度特征层,四尺度热力频率 Freq_i(w),L85,kl8/layer3_features/heat.py,multi_scale_freq,tests/test_heat.py,test_multi_scale_freq
+R12,C 多尺度特征层,跨周期动量差 Mom10-25/Mom25-50 与金叉加速标签,L86-L89,kl8/layer3_features/heat.py,momentum+golden_cross,tests/test_heat.py,test_momentum_and_golden_cross
+R13,C 多尺度特征层,当前遗漏 O 与历史平均遗漏 μ_gap,L90-L91,kl8/layer3_features/heat.py,gap_series+historical_mean_gap,tests/test_heat.py,test_gap_and_mean_gap_floor
+R14,C 多尺度特征层,高斯核遗漏回补压力 Pressure,L91-L92,kl8/layer3_features/heat.py,omission_pressure,tests/test_heat.py,test_pressure_kernel_peak_at_1_2x
+R15,C 多尺度特征层,一阶拉普拉斯平滑条件转移概率 M1(w),L96-L98,kl8/layer3_features/markov.py,transition_matrix,tests/test_markov.py,test_alpha_smoothing_handcalc
+R16,C 多尺度特征层,四尺度中心化跟随聚合 FollowScore,L99-L101,kl8/layer3_features/markov.py,follow_score+follow_score_all_windows,tests/test_markov.py,test_follow_score_centered_dot
+R17,C 多尺度特征层,重号对角惯性分与异号跟随分拆分,L102,kl8/layer3_features/markov.py,follow_split,tests/test_markov.py,test_follow_diag_offdiag_split
+R18,C 多尺度特征层,二阶滞后矩阵 M2 隔期回补(斜跳),L102,kl8/layer3_features/markov.py,transition_matrix_order2,tests/test_markov.py,test_second_order_transition
+R19,C 多尺度特征层,中心化共现矩阵 A=C/w-p_co 与三元共现团,L19;L107-L108,kl8/layer3_features/cooccurrence.py,centered_cooccurrence+triad_counts,tests/test_cooccurrence.py,test_centered_matrix_and_triads
+R20,C 多尺度特征层,当期伴生拉动分 CoScore,L109-L111,kl8/layer3_features/cooccurrence.py,co_score+co_score_all_windows,tests/test_cooccurrence.py,test_co_score
+R21,C 多尺度特征层,共现图 PageRank/特征向量中心度/Louvain社区/伴生码+降级,L19;L112,kl8/layer3_features/graph.py,build_graph_features,tests/test_graph.py,test_pagerank_eigen_and_communities
+R22,C 多尺度特征层,宏观空间形态特征(四八区/奇偶/质合/大中小/连号/同尾/和值/AC),L114-L118,kl8/layer3_features/morphology.py,morphology_stats+ac_value+sum_deviation_z+is_balanced,tests/test_morphology.py,test_morphology_stats_full_matrix
+R23,C 多尺度特征层,GBDT概率校准+PAV保序回归+FeatureSnapshot装配,L20;L37,kl8/layer3_features/ml.py;kl8/layer3_features/features.py,train_predict+pav_calibrate+build_feature_snapshot,tests/test_ml.py,test_ml_prob_bounded_and_cache|test_build_snapshot_schema
+R24,D 打分过滤层,"Borda 百分位秩归一化 R=Rank/80∈(0,1]",L126-L129,kl8/layer4_scoring/borda.py,percentile_rank+rank_matrix,tests/test_scoring.py,test_percentile_rank_ties_and_range
+R25,D 打分过滤层,规则R1 多尺度强跟随共振(>=3窗口 R>=0.65),L133,kl8/layer4_scoring/rules.py,rule_r1,tests/test_rules.py,test_r1_boundary
+R26,D 打分过滤层,"规则R2 温热多头(F25/F50>=0.24 且 F10∈[0.20,0.50])",L134,kl8/layer4_scoring/rules.py,rule_r2,tests/test_rules.py,test_r2_boundary
+R27,D 打分过滤层,规则R3 动量金叉(F10>=F25>=F50 且 R Follow10>=0.60),L135,kl8/layer4_scoring/rules.py,rule_r3,tests/test_rules.py,test_r3_boundary
+R28,D 打分过滤层,规则R4 强共现伴生(0.5R Co25+0.5R Co50>=0.75),L136,kl8/layer4_scoring/rules.py,rule_r4,tests/test_rules.py,test_r4_boundary
+R29,D 打分过滤层,规则R5 全量回归回补(Pressure>=0.60 且 O<=12 且 R FollowALL>=0.70),L137,kl8/layer4_scoring/rules.py,rule_r5,tests/test_rules.py,test_r5_boundary
+R30,D 打分过滤层,交集共振票数 V_i∈{0..5},L139,kl8/layer4_scoring/rules.py,evaluate_rules+vote,tests/test_rules.py,test_vote_count_range
+R31,D 打分过滤层,BaseScore 五维加权融合(Σω=1),L143,kl8/layer4_scoring/hybrid.py,base_score+trend_score+co_aggregate,tests/test_scoring.py,test_base_score_decomposition
+R32,D 打分过滤层,"FinalScore=BaseScore+λ*V_i(λ∈[0.05,0.10])",L144-L145,kl8/layer4_scoring/hybrid.py,final_score+score_all,tests/test_scoring.py,test_final_score_identity
+R33,D 打分过滤层,在线自适应 Softmax 规则权重更新(M=8),L147-L148,kl8/layer4_scoring/adaptive.py,next_weights+softmax_weights+load_state+save_state,tests/test_adaptive.py,test_softmax_weights_sum_and_prior
+R34,D 打分过滤层,空间形态均衡硬约束(四区45%/奇偶70%/同尾3)与按序放宽,L150-L154,kl8/layer4_scoring/filter.py,enforce_constraints+greedy_pool,tests/test_filter.py,test_hard_constraints
+R35,D 打分过滤层,金胆池3~5 与复式池10~15(默认12),L155,kl8/layer4_scoring/filter.py,select_gold+build_pool,tests/test_filter.py,test_gold_and_main_sizes
+R36,D 打分过滤层,重号新号配比控制 25%~35%,L202,kl8/layer4_scoring/filter.py,apply_repeat_quota,tests/test_filter.py,test_repeat_quota
+R37,E 组合覆盖层,"覆盖设计 C(v,k,t,m) 定义与保底命题穷举验证",L163-L166,kl8/layer5_combinatorial/covering.py,m_target+verify_guarantee,tests/test_covering.py,test_verify_guarantee_exhaustive
+R38,E 组合覆盖层,标准旋转矩阵查表映射(核验入库),L169,kl8/layer5_combinatorial/covering.py,lookup_table+tools/build_covering_tables.py,tests/test_covering_tables.py,test_tables_verified
+R39,E 组合覆盖层,0-1整数规划最小注数求解与规模降级,L21;L168-L170,kl8/layer5_combinatorial/covering.py,solve_ilp+solve,tests/test_covering.py,test_ilp_min_tickets_and_fallback
+R40,E 组合覆盖层,带概率权重贪心集合覆盖+模拟退火预算优化,L170,kl8/layer5_combinatorial/covering.py,greedy_weighted+anneal,tests/test_covering.py,test_greedy_weighted_and_sa_determinism
+R41,E 组合覆盖层,注单后处理与双玩法(选五/选七)预算落地,L161-L170,kl8/layer5_combinatorial/tickets.py,postprocess+build_ticket_plan,tests/test_tickets.py,test_postprocess_and_dual_play
+R42,F 回测与工程,Walk-Forward 滚动回测(T0=300 逐期推进 禁随机K-Fold),L176-L182,kl8/evaluation/walkforward.py,run_walkforward+iter_windows,tests/test_walkforward.py,test_walkforward_flow_no_leak
+R43,F 回测与工程,Top-K 平均命中率与 Lift@K + 单侧t检验,L185-L188,kl8/evaluation/metrics.py,lift_at_k+t_test_one_sided,tests/test_metrics.py,test_lift_at_k_handcalc
+R44,F 回测与工程,高奖级触发率 vs 超几何理论概率,L189-L190,kl8/evaluation/metrics.py,high_tier_rate,tests/test_metrics.py,test_high_tier_vs_hypergeometric
+R45,F 回测与工程,规则正交性与归因分析(R1-R5独立胜率 V>=3 vs 低票),L191-L192,kl8/evaluation/metrics.py,rule_attribution,tests/test_metrics.py,test_rule_attribution
+R46,F 回测与工程,资金曲线 ROI/最大回撤/最长连挂(整数元),L193-L194,kl8/evaluation/metrics.py,bankroll,tests/test_metrics.py,test_bankroll_roi_drawdown
+R47,F 回测与工程,严格防穿越审计(唯一截断入口+max_accessed_t+未来投毒不变性),L28;L200,kl8/evaluation/leakage.py,assert_no_lookahead+poison_future+fingerprint_snapshot,tests/test_leakage.py,test_poison_future_invariance
+R48,F 回测与工程,工程落地(配置校验/CLI/同步/三类交付件/幂等/性能),L30-L39;L198-L202,kl8/pipeline.py;kl8/reporting;kl8/config.py;kl8/sync.py;main.py,run_daily+run_backtest+run_audit,tests/test_pipeline.py;tests/test_config.py,test_end_to_end_daily_and_backtest|test_config_validation
