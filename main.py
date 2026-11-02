@@ -1,26 +1,26 @@
-# -*- coding: utf-8 -*-
-"""微积分八区分区预测系统 —— 日常运行主入口
+"""快乐8 (Keno) 五层正交动力学与组合优化预测系统主入口（契约 R48、§3.14）。
 
-【业务背景与架构定位】:
-日常一键执行流水线 (7 步)：
-1. 同步福彩最新开奖数据 (官网 API + 备用源双通道增量)；
-2. 加载并校验本地开奖数据集；
-3. 深度复盘昨日开奖全景与昨日 16 码实测战绩；
-4. 严格 walk-forward 回测与特征预测力审计 (先算，供报告引用)；
-5. 运行微积分动力学引擎，导出 TXT / 微信分桶 / Excel 三类交付件 (含回测与审计结论)；
-6. 控制台输出当期八区预测全量明细与微信分桶原文；
-7. 控制台输出命中率回测、参数寻优与优化空间裁决。
+【支持模式】
+1. daily (默认): 端到端实盘预测，生成金胆、复式池、保底注单及全渠道三维交付件；
+2. backtest: 严格时序前瞻 Walk-Forward 滚动回测评估；
+3. audit: 全仓防穿越审计与统计模型自洽性机检。
 
-@Author czw
-@Since 2026-10-18
+【CLI 兼容契约】
+全面兼容历史外围批处理脚本参数 (--history/--no-sync/--quick/--full-sync/--period/--date/--backtest/--full-print)
+并支持现代微调参数 (--mode/--k/--budget/--warmup/--pool-size/--seed/--config)。
 """
+
 from __future__ import annotations
 
 import argparse
-import datetime
+import dataclasses
 import sys
+import time
+import traceback
+from pathlib import Path
+from typing import Sequence
 
-# 控制台编码防乱码
+# 强制统一控制台输出编码为 UTF-8
 if hasattr(sys.stdout, "reconfigure"):
     try:
         sys.stdout.reconfigure(encoding="utf-8")
@@ -28,179 +28,312 @@ if hasattr(sys.stdout, "reconfigure"):
     except Exception:
         pass
 
-from calc_backtest import (
-    build_backtest_console_report,
-    find_best_param_sweep,
-    save_backtest_excel,
-    walk_forward_backtest,
-)
-from calc_core import DEFAULT_HISTORY_FILE, TimeSeries, load_dataset
-from calc_engine import run_calculus_engine
-from calc_report import (
-    build_previous_review,
-    generate_and_save_all_reports,
-)
-from calc_signal_audit import build_audit_console_report
-from calc_sync import sync_history
+from kl8.config import AppConfig, load_config, merge_cli_overrides
+from kl8.errors import KL8Error
+from kl8.pipeline import DailyResult, run_audit, run_backtest, run_daily
 
-BAR = "═" * 78
+DEFAULT_HISTORY_PATH = "kl8_history.txt"
+# 日常模式伴随回测期数（够用且不会让双击入口长时间静默）
+DEFAULT_DAILY_BACKTEST_N = 30
+# 纯回测模式默认期数（契约 R48-b）
+DEFAULT_BACKTEST_N = 100
 
 
-def print_banner(title: str) -> None:
-    print()
-    print(BAR)
-    print(f"  {title}")
-    print(BAR)
+def _daily_progress(message: str) -> None:
+    """日常流水线单步进度打印（契约 R48 的 8 步执行序）。"""
+    print(f"   ⏳ {message}", flush=True)
 
 
-def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(description="快乐8纯微积分八区分区预测系统")
-    ap.add_argument("--history", default=DEFAULT_HISTORY_FILE, help="开奖历史数据文件路径")
-    ap.add_argument("--no-sync", action="store_true", help="跳过数据同步，直接使用本地开奖数据")
-    ap.add_argument("--quick", action="store_true", help="快速增量同步模式 (默认)")
-    ap.add_argument("--full-sync", action="store_true", help="全量同步历史数据")
-    ap.add_argument("--period", type=int, default=None, help="指定预测目标期号 (默认最新开奖期+1)")
-    ap.add_argument("--date", type=str, default=None, help="指定预测日期 YYYY-MM-DD (默认当天)")
-    ap.add_argument("--backtest", type=int, default=100,
-                    help="命中率走查回测期数 (默认100期；0 表示跳过回测与审计)")
-    ap.add_argument("--no-sweep", action="store_true", help="跳过参数寻优扫描")
-    ap.add_argument("--full-print", action="store_true", help="控制台打印全量参数表 (默认打印核心精要)")
-    args = ap.parse_args(argv)
+def _backtest_progress(step: int, total: int) -> None:
+    """回测进度打印：约每 5% 或结束时刷新一行，避免控制台长时间静默。"""
+    if total <= 0:
+        return
+    stride = max(1, total // 20)
+    if step % stride != 0 and step != total:
+        return
+    pct = int(step * 100 / total)
+    sys.stdout.write(f"\r   ⏳ 回测进度 {step}/{total} ({pct}%)")
+    sys.stdout.flush()
+    if step == total:
+        sys.stdout.write("\n")
 
-    print_banner("快乐8「纯微积分动力学」八区分区预测流水线")
 
-    # =================================================================
-    # 步骤 1: 数据同步
-    # =================================================================
-    print("\n▶ 步骤 1/7  检查并同步官方最新开奖数据...")
-    if not args.no_sync:
-        sync_history(args.history, quick=not args.full_sync)
-    else:
-        print("    已按 --no-sync 跳过远程同步，直接读取本地开奖历史库")
-
-    # =================================================================
-    # 步骤 2: 数据加载与校验
-    # =================================================================
-    print("\n▶ 步骤 2/7  加载开奖数据集并校验...")
-    ds = load_dataset(args.history)
-    if ds.T < 40:
-        print(f"    [错误] 历史开奖期数不足 (当前 {ds.T} 期)，无法进行微积分滑动窗口计算。")
-        return 1
-    for w in ds.warnings:
-        print(f"    [数据告警] {w}")
-
-    last_draw = ds.draws[-1]
-    target_period = args.period or (last_draw.period + 1)
-    target_date = args.date or datetime.date.today().strftime("%Y-%m-%d")
-    print(f"    · 本地样本总量: {ds.T} 期 ({ds.draws[0].date} → {last_draw.date})，号码合法性校验全部通过")
-    print(f"    · 官方最新已开奖: 第 {last_draw.period} 期 ({last_draw.date})")
-    print(f"    · 本次预测目标期: 第 {target_period} 期 ({target_date})")
-
-    ts = TimeSeries(ds)
-
-    # =================================================================
-    # 步骤 3: 昨日深度复盘
-    # =================================================================
-    print_banner("步骤 3/7  昨日推荐实战深度复盘")
-    review_lines = build_previous_review(ds)
-    print("\n".join(review_lines))
-
-    # =================================================================
-    # 步骤 4: 命中率回测与特征审计 (先于交付件生成，供报告引用)
-    # =================================================================
-    print("\n▶ 步骤 4/7  执行严格走查回测与特征预测力审计...")
-    bt = None
-    bt_text = audit_text = ""
-    sweep = []
-    if args.backtest > 0:
-        bt = walk_forward_backtest(ds, args.backtest)
-        if bt.get("n_sample", 0) > 0:
-            bt_text = build_backtest_console_report(bt)
-            audit_text = build_audit_console_report(ts.hit, bt["rows"])
-            if not args.no_sweep:
-                sweep = find_best_param_sweep(ds, min(args.backtest, 60))
-            print(f"    · 完成 {bt['n_sample']} 期 walk-forward 回测 (逐期重跑引擎，零前瞻泄漏)")
-            print(f"    · 完成 5 项特征预测力统计检验 + {len(sweep)} 组参数寻优扫描")
-        else:
-            print("    历史样本不足以执行回测，已跳过。")
-    else:
-        print("    已按 --backtest 0 跳过回测与审计。")
-
-    # =================================================================
-    # 步骤 5: 动力学计算与多格式交付件导出
-    # =================================================================
-    print("\n▶ 步骤 5/7  运行微积分动力学计算并输出多格式交付件 (TXT / 微信文案 / Excel)...")
-    engine_res = run_calculus_engine(ds, ts)
-    reports_bundle = generate_and_save_all_reports(
-        ds, engine_res, target_period, target_date,
-        backtest_text=bt_text, audit_text=audit_text, backtest_result=bt, sweep=sweep,
+def build_arg_parser() -> argparse.ArgumentParser:
+    """构建标准统一的 CLI 参数解析器（契约 R48-b）。"""
+    parser = argparse.ArgumentParser(
+        prog="kl8",
+        description="快乐8 (Keno) 五层正交动力学与组合优化预测系统",
     )
-    print(f"    · [TXT 详细报告]   {reports_bundle['txt_path']}")
-    print(f"    · [微信分桶文案]   {reports_bundle['wechat_path']}")
-    print(f"    · [Excel 专业报表] {reports_bundle['excel_path']}")
-    if reports_bundle.get("backtest_excel_path"):
-        print(f"    · [Excel 回测明细] {reports_bundle['backtest_excel_path']}")
 
-    # =================================================================
-    # 步骤 6: 预测精要 + 全量动力学附录 + 微信原文
-    # =================================================================
-    print_banner("步骤 6/7  当期微积分八区预测全量明细")
-    rep_text = reports_bundle["txt_report"]
-    if args.full_print:
-        print(rep_text)
-    else:
-        # 步骤 3 已完整打印「上期复盘」板块，此处渲染从 [1] 本期推荐开始，避免控制台重复
-        summary_lines = []
-        in_summary = False
-        for ln in rep_text.splitlines():
-            if ln.startswith("[1]"):
-                in_summary = True
-            if ln.startswith("[附录"):
-                break
-            if in_summary:
-                summary_lines.append(ln)
-        print("\n".join(summary_lines))
-        print("\n    [提示] 完整 TXT 报告 (含上期复盘/80码动力学全表/回测与审计附录): "
-              f"{reports_bundle['txt_path']}")
+    # 运行模式选择
+    parser.add_argument(
+        "--mode",
+        choices=["daily", "backtest", "audit"],
+        default="daily",
+        help="运行模式: daily (日常实盘预测), backtest (滚动时序回测), audit (模型自洽性审计)",
+    )
 
-    print("\n" + BAR)
-    print("  📱【微信分桶推荐文案原文】(一键全选复制，可直接发送微信群/朋友圈):")
-    print(BAR)
-    print(reports_bundle["wechat_text"])
+    # 历史数据与增量同步参数
+    parser.add_argument(
+        "--history",
+        default=None,
+        help=f"历史开奖数据文件路径 (默认: {DEFAULT_HISTORY_PATH})",
+    )
+    parser.add_argument(
+        "--no-sync",
+        action="store_true",
+        help="跳过开奖数据网络同步，直接使用本地历史数据",
+    )
+    parser.add_argument(
+        "--quick",
+        action="store_true",
+        default=True,
+        help="极速同步模式 (仅拉取最新期次，默认开启)",
+    )
+    parser.add_argument(
+        "--full-sync",
+        action="store_true",
+        help="全量同步模式 (扫描校验全部历史开奖记录)",
+    )
 
-    # =================================================================
-    # 步骤 7: 回测结果 + 参数寻优 + 优化空间裁决
-    # =================================================================
-    print()
-    print_banner("步骤 7/7  命中率回测与深度优化空间裁决")
-    if bt and bt.get("n_sample", 0) > 0:
-        print(bt_text)
-        if sweep:
-            print("\n" + BAR)
-            print("  🔍【参数寻优扫描】各结构变体在同一走查窗口下的实测对比:")
-            print(BAR)
-            best = sweep[0]["avg"]
-            for v in sweep:
-                flag = "◀ 实测最高" if abs(v["avg"] - best) < 1e-9 else ""
-                print(f"      {v['name']:<26s} 平均命中 {v['avg']:.3f} 码  "
-                      f"z={v['z']:+.2f}  ≥5码占比 {v['ge5_pct']:.1f}%  {flag}")
-            base_v = next((v for v in sweep if "线上配置" in v["name"]), None)
-            gain = best - (base_v["avg"] if base_v else best)
-            noise = bt["baseline"]["sd"] / (bt["n_sample"] ** 0.5)
-            if base_v and gain > 3 * noise:
-                print(f"      → 最优变体高出线上配置 {gain:+.3f} 码，超过 3 倍噪声幅度 (σ/√n={noise:.3f})，"
-                      "具备进入更长样本复核的资格。")
-            else:
-                print(f"      → 最优变体仅高出线上配置 {gain:+.3f} 码，不足噪声幅度 σ/√n = {noise:.3f} 码的 3 倍，"
-                      "判定为抽样波动而非真实增益 → 不调整线上参数。")
-        print("\n" + audit_text)
-    else:
-        print("    本次运行未执行回测与审计 (--backtest 0)。")
+    # 预测目标指定
+    parser.add_argument(
+        "--period",
+        type=int,
+        default=None,
+        help="指定预测目标期号 (默认: 历史最新期 + 1)",
+    )
+    parser.add_argument(
+        "--date",
+        type=str,
+        default=None,
+        help="指定预测目标开奖日期 YYYY-MM-DD (默认: 历史最新日期 + 1天)",
+    )
 
-    print("\n" + BAR)
-    print("  🎉 全部计算与报告导出执行完毕！可查阅 output 目录下的 TXT / 微信文案 / Excel 报表。")
-    print(BAR)
-    return 0
+    # 回测与性能控制
+    parser.add_argument(
+        "--backtest",
+        type=int,
+        default=None,
+        help=(
+            f"回测期数 (daily 模式默认 {DEFAULT_DAILY_BACKTEST_N}；backtest/audit 模式默认 "
+            f"{DEFAULT_BACKTEST_N}；daily 传 0 表示关闭伴随回测)"
+        ),
+    )
+    parser.add_argument(
+        "--no-tickets",
+        action="store_true",
+        help="回测时跳过注单退火生成与奖金核算，仅秒级评估 Top-K 命中率 Lift（大幅提速）",
+    )
+    parser.add_argument(
+        "--warmup",
+        type=int,
+        default=None,
+        help="回测冷启动窗口 T0 (默认: 300 期)",
+    )
+    parser.add_argument(
+        "--ml",
+        action="store_true",
+        help="启用 LightGBM 诊断通道（默认关闭；契约 B4：weight=0 时仅诊断，开启会显著变慢）",
+    )
+    parser.add_argument(
+        "--no-sweep",
+        action="store_true",
+        help="兼容参数 (无操作)",
+    )
+
+    # 业务玩法与组合覆盖参数
+    parser.add_argument(
+        "--k",
+        type=int,
+        default=None,
+        help="玩法选号数 (如 5 代表选五，3 代表选三，7 代表选七)",
+    )
+    parser.add_argument(
+        "--budget",
+        type=int,
+        default=None,
+        help="注单预算注数 (如 4 代表推荐 4 注)",
+    )
+    parser.add_argument(
+        "--pool-size",
+        type=int,
+        default=None,
+        help="精选复式大底规模 (如 12 或 15 码)",
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=None,
+        help="全局随机种子 (保证算法完全可复现)",
+    )
+
+    # 配置文件与控制台打印
+    parser.add_argument(
+        "--config",
+        type=str,
+        default=None,
+        help="自定义 JSON 配置文件路径",
+    )
+    parser.add_argument(
+        "--full-print",
+        action="store_true",
+        help="是否在控制台打印完整的 TXT 全景决策报告",
+    )
+
+    return parser
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    """应用程序唯一 CLI 入口函数（契约 §3.14）。
+
+    退出码标准：
+    - 0: 执行成功并完成交付；
+    - 1: 参数非法 (ConfigError) 或数据异常 (DataFormatError/InsufficientDataError)；
+    - 2: 系统内部未知未捕获异常；
+    - 130: 用户手动取消中断 (KeyboardInterrupt)。
+
+    @param argv 命令行入参序列
+    @return 状态码整数
+    """
+    parser = build_arg_parser()
+    try:
+        args = parser.parse_args(argv)
+    except SystemExit as se:
+        return se.code if isinstance(se.code, int) else 1
+
+    try:
+        # 步骤 1: 加载并合并 CLI 配置覆盖
+        cfg = load_config(args.config)
+        cfg = merge_cli_overrides(cfg, args)
+
+        # 步骤 1.1: 可选的 LightGBM 诊断通道开启（契约 B4：默认关闭，--ml 显式打开）
+        if getattr(args, "ml", False):
+            cfg = dataclasses.replace(
+                cfg,
+                ml=dataclasses.replace(cfg.ml, enabled=True),
+            )
+
+        # 步骤 1.2: 解析回测期数（daily 与 backtest 默认值不同）
+        if args.backtest is None:
+            bt_n = DEFAULT_DAILY_BACKTEST_N if args.mode == "daily" else DEFAULT_BACKTEST_N
+        else:
+            bt_n = int(args.backtest)
+
+        # 步骤 2: 分流执行对应业务模式
+        if args.mode == "daily":
+            print("=" * 70)
+            print("🚀 [KL8 快乐8] 五层正交动力学与组合优化实盘预测流水线启动")
+            print("=" * 70)
+
+            is_quick = not args.full_sync
+            res: DailyResult = run_daily(
+                cfg,
+                no_sync=args.no_sync,
+                target_period=args.period,
+                target_date=args.date,
+                backtest_n=bt_n,
+                quick=is_quick,
+                progress=_daily_progress,
+            )
+
+            # 打印精炼控制台摘要
+            print(f"✔ 预测目标: 第 {res.target_period} 期 | 开奖日期: {res.target_date}")
+            print(f"🔥 超级金胆 (5码):   {' '.join(f'{n:02d}' for n in res.pool.gold)}")
+            print(f"⭐ 精选大底 ({len(res.pool.main)}码): {' '.join(f'{n:02d}' for n in res.pool.main)}")
+
+            if res.plans:
+                print("🎟️ 推荐保底实战票:")
+                for p_idx, plan in enumerate(res.plans, start=1):
+                    print(f"   [{plan.play.upper()} 计划, 选号k={plan.k}, 预算={plan.budget}注]:")
+                    for t_idx, tk in enumerate(plan.tickets, start=1):
+                        print(f"     第 {t_idx:02d} 注: [ {' '.join(f'{x:02d}' for x in tk)} ]")
+
+            print("\n📁 全渠道交付物已就绪:")
+            print(f"   📄 TXT 精要报告:   {res.report_paths['text']}")
+            print(f"   📱 微信发布文案:   {res.report_paths['wechat']}")
+            print(f"   📊 商业 Excel:     {res.report_paths['excel']}")
+            print(f"   💾 自适应状态文件: {res.report_paths['state']}")
+
+            if res.warnings:
+                print("\n⚠️ 执行提示与警告:")
+                for w in res.warnings:
+                    print(f"   ! {w}")
+
+            print(f"\n⏱️ 全流程端到端执行耗时: {res.elapsed_s:.3f} 秒")
+
+            # 若请求全量输出，打印 TXT 内容
+            if args.full_print and res.report_paths["text"].exists():
+                print("\n" + "=" * 70)
+                print("📋 控制台全景决策精要报告正文:")
+                print("=" * 70)
+                with open(res.report_paths["text"], "r", encoding="utf-8") as f:
+                    print(f.read())
+
+            return 0
+
+        elif args.mode == "backtest":
+            print("=" * 70)
+            print(f"🔬 [KL8 回测] Walk-Forward 滚动时序前瞻回测 ({bt_n} 期)")
+            print("=" * 70)
+
+            include_tk = not args.no_tickets
+            bt = run_backtest(
+                cfg,
+                n=bt_n,
+                t0=args.warmup,
+                include_tickets=include_tk,
+                progress=_backtest_progress,
+            )
+
+            print(f"✔ 实际评估样本量: {bt.n_sample} 期 (冷启动 T0={bt.t0})")
+            print(f"✔ 覆盖期号范围:   第 {bt.start_period} 期 ~ 第 {bt.end_period} 期")
+            print("\n📈 Top-K 提升度 (Lift@K) 显著性检验:")
+            print("   Top-K  实测均中  理论期望  提升度(Lift)  t统计量   p值       显著判定")
+            for k_val, lstat in sorted(bt.lift.items(), key=lambda x: x[0]):
+                sig_str = "★显著" if lstat.is_signal else "平稳"
+                print(
+                    f"   Top-{k_val:02d}   {lstat.mean_hit:5.2f}     {lstat.expected:5.2f}      {lstat.lift:6.3f}     {lstat.t_stat:6.3f}  {lstat.p_value:.4f}     {sig_str}"
+                )
+
+            if bt.bankroll is not None:
+                b = bt.bankroll
+                print("\n💰 资金收益与风险指标:")
+                print(f"   总投入: {b.total_cost_yuan} 元 | 总奖金: {b.total_prize_yuan} 元 | 净利润: {b.net_yuan} 元")
+                print(f"   投资回报率 (ROI): {b.roi * 100:.2f}% | 最大回撤: {b.max_drawdown_yuan} 元 | 最长连挂: {b.max_losing_streak} 期")
+
+            print(f"\n⏱️ 回测总耗时: {bt.elapsed_s:.3f} 秒")
+            return 0
+
+        elif args.mode == "audit":
+            print("=" * 70)
+            print("🛡️ [KL8 审计] 系统级防穿越与模型自洽性审计")
+            print("=" * 70)
+
+            audit_res = run_audit(cfg, n=bt_n)
+            code_ok = audit_res["code_audit_clean"]
+            print(f"✔ 代码级防穿越审计 (禁止非法打乱): {'通过 (100% 洁净)' if code_ok else '未通过'}")
+            if not code_ok:
+                for v in audit_res["code_violations"]:
+                    print(f"   ! 发现违规代码: {v}")
+
+            print(f"✔ 回测自洽性机检项: {audit_res['backtest_self_check']}")
+            print(f"✔ 评估期数: {audit_res['backtest_samples']} 期")
+            print(f"✔ 指纹血缘: {audit_res['config_hash']}")
+            return 0 if code_ok else 1
+
+        return 0
+
+    except KL8Error as e:
+        sys.stderr.write(f"\n[错误 - 业务约束阻断] {e}\n")
+        return 1
+    except KeyboardInterrupt:
+        sys.stderr.write("\n\n[中断] 用户已手动取消操作。\n")
+        return 130
+    except Exception as e:
+        sys.stderr.write(f"\n[致命内部异常] {e}\n")
+        traceback.print_exc(file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":
