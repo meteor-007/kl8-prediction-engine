@@ -1,7 +1,7 @@
 # 快乐8 五层重构 · 配置契约（config-schema.md）
 
 > 配套文档：[contract.md](./contract.md)（§3.3 为 `AppConfig` 签名冻结源）
-> 版本：**v1.2.0**（2026-11-02，与落地代码 HEAD=`f170147` 对齐：`ml.enabled=False`、新增 `--ml`/`--no-tickets` / `--backtest` 模式分派、ScoreWeights 七维实测默认值、Σω 语义更正〔`ml` 为额外叠加项〕、删除未实现的 `--no-table`、性能预算与实测同步）｜ 作者：req-architect（智小研）
+> 版本：**v1.3.0**（2026-11-02，同步 contract.md v1.3.0：新增 `backtest.min_n_signal` / `backtest.bonferroni` 两条显著性硬规则配置、新增 §17 复盘状态文件 `output/state/prev_prediction.json` 契约、叶子字段计数更新为 104/109、新增 §16 报告禁止项与状态契约机检项；另承接 §7.4 errata：选五全中概率按 0.0645% 披露）｜ 作者：req-architect（智小研）
 > 定位：本项目**不含数据库/ACL**，G2 的「ACL + DB 脚本伴随物」以**本配置契约**替代 —— 即"所有可调参数有 schema、有默认值、有合法范围、有校验规则、有 CLI 覆盖路径、有可审计的报错文案"。审大关可用本文件逐条核对"零魔法数字"红线。
 
 ---
@@ -212,7 +212,9 @@ AppConfig
 | `t0_min` | `int` | `60` | `[20, 300]` | `T - warmup < t0_min` → `InsufficientDataError` | R42 |
 | `include_tickets` | `bool` | `True` | `{True, False}` | 回测是否生成注单（关掉可提速） | R42、R46 |
 | `alpha_sig` | `float` | `0.05` | `(0, 0.2]` | 单侧 t 检验显著性水平 | R43 |
-| `lift_signal` | `float` | `1.05` | `[1.0, 1.2]` | **v1.1.0 新增**：8.md L188「Lift@K > 1.05」判据阈值；`LiftStat.is_signal = lift > 本值 且 p_value < alpha_sig`；实现内**禁止写死 1.05** | R43 |
+| `lift_signal` | `float` | `1.05` | `[1.0, 1.2]` | **v1.1.0 新增**：8.md L188「Lift@K > 1.05」判据阈值；`LiftStat.is_signal` 的三条件之一（另两条见下两行）；实现内**禁止写死 1.05** | R43 |
+| `min_n_signal` | `int` | `500` | `[100, 2000]` | **v1.3.0 新增**：显著性最小样本量门槛（8.md L188「500 期以上」）；`n < min_n_signal` → `is_signal` 恒 **False**，报告必须标注「样本量不足（n<500），结论仅供参考」；实现内禁止写死 500 | R43、R44 |
+| `bonferroni` | `bool` | `True` | `{True, False}` | **v1.3.0 新增**：多重比较校正开关；`True` 时 `alpha_adj = alpha_sig / len(ks) = 0.05/5 = 0.01`（K∈{3,5,7,10,12} 共 5 次检验），`False` 时 `alpha_adj = alpha_sig`；`LiftStat.alpha_adj` 输出该值 | R43、R44 |
 
 ---
 
@@ -275,7 +277,7 @@ AppConfig
   "pool": { "main_default": 12, "repeat_ratio": 0.30 },
   "covering": { "play": "pick5", "k": 5, "t": 4, "m_margin": 1, "budget": 20 },
   "ml": { "enabled": false, "weight": 0.0 },
-  "backtest": { "warmup": 300, "default_n": 100, "lift_signal": 1.05 }
+  "backtest": { "warmup": 300, "default_n": 100, "lift_signal": 1.05, "min_n_signal": 500, "bonferroni": true }
 }
 ```
 
@@ -312,6 +314,8 @@ AppConfig
 | `covering.budget/k/t/m_*` | 注单数、成本、保底等级、ROI | `test_covering.py`、`test_tickets.py` | 高（保底与预算直接互斥） |
 | `ml.enabled` / `ml.weight` | `ml.enabled` 只控制是否训练（诊断通道）；`ml.weight>0` 才会进 FinalScore（叠加项，七维 Σω 不变） | `test_ml.py`、`test_scoring.py` | 高（`weight>0` 需 Lead 批准）；`enabled` 仅影响耗时（0.34s ↔ 2.03s） |
 | `backtest.warmup/default_n/lift_signal` | 回测样本、Lift 显著性、`is_signal` 判定、资金曲线 | `test_walkforward.py`、`test_metrics.py` | 低 |
+| `backtest.min_n_signal` / `backtest.bonferroni`（v1.3.0） | `LiftStat.is_signal`（是否披露"显著"）、报告显著性措辞、`alpha_adj` | `test_metrics.py`（双点边界：n=499/501、p=0.009/0.011） | 中（改动会改变"是否宣称显著"的对外结论） |
+| `output_dir`（派生 `state/prev_prediction.json`） | 复盘段落数据源、幂等 upsert 落点 | `test_pipeline.py`（roundtrip 幂等 + 缺失基线文案） | 低 |
 | `seed` | Louvain 社区、SA 注单、ML | `test_adaptive.py`、`test_covering.py` | 低（仅重跑） |
 
 ---
@@ -319,12 +323,35 @@ AppConfig
 ## §16 机检清单（P7/P8 可直接照此核验）
 
 1. **零魔法数字**：`grep -rnE "(0\.(65|24|75|45|70|60|08|25|35)|\[\[?10|25|50)" --include=*.py kl8/` 命中处必须来自 `config.py`/`constants.py` 的字段读取，而非字面量直用。
-2. **schema 完整性（v1.2.0 两个口径都要对）**：
-   - **dataclass 字段数 = 102**（映射字段按 1 键计）：`python -c "import dataclasses as d, typing as t; from kl8.config import AppConfig; n=lambda c: sum(n(t.get_type_hints(c)[f.name]) if d.is_dataclass(t.get_type_hints(c)[f.name]) else 1 for f in d.fields(c)); print(n(AppConfig))"` → `102`。分模块：Window 5 + Markov 3 + ScoreWeights 12 + Rule 12 + Adaptive 9 + Pool 12 + Covering 22 + ML 14 + Backtest 7（含 `lift_signal`）+ AppConfig 6。
-   - **`to_dict()` 递归叶子数 = 107**：`python -c "from kl8.config import default_config, to_dict; n=lambda o: sum(n(v) if isinstance(v, dict) else 1 for v in o.values()); print(n(to_dict(default_config())))"` → `107`（比 102 多出 `budget_by_play` +1、`prize_table` +4）。
-   - 两个口径都硬对齐，任何不一致即判"契约漂移"（v1.0.0 曾误写 104，v1.1.0 修正为 102，v1.2.0 补第二口径）
-3. **校验可触发**：对每个 `V*` 约束构造非法配置，必须抛 `ConfigError` 且消息符合 §14 模板（`tests/test_config.py` 逐条覆盖）。
+2. **schema 完整性（v1.3.0 两个口径都要对）**：
+   - **dataclass 字段数 = 104**（映射字段按 1 键计）：`python -c "import dataclasses as d, typing as t; from kl8.config import AppConfig; n=lambda c: sum(n(t.get_type_hints(c)[f.name]) if d.is_dataclass(t.get_type_hints(c)[f.name]) else 1 for f in d.fields(c)); print(n(AppConfig))"` → `104`。分模块：Window 5 + Markov 3 + ScoreWeights 12 + Rule 12 + Adaptive 9 + Pool 12 + Covering 22 + ML 14 + **Backtest 9**（`lift_signal` + **`min_n_signal` + `bonferroni`**）+ AppConfig 6。
+   - **`to_dict()` 递归叶子数 = 109**：`python -c "from kl8.config import default_config, to_dict; n=lambda o: sum(n(v) if isinstance(v, dict) else 1 for v in o.values()); print(n(to_dict(default_config())))"` → `109`（比 104 多出 `budget_by_play` +1、`prize_table` +4）。
+   - 两个口径都硬对齐，任何不一致即判"契约漂移"（v1.0.0 曾误写 104，v1.1.0 修正为 102，v1.2.0 补第二口径 107，**v1.3.0 因新增 2 字段升至 104/109**——P8 修复轮代码落地前，实测会是 102/107，属"待落地"而非"漂移"，须在修复轮后复核）。
+3. **校验可触发**：对每个 `V*` 约束构造非法配置，必须抛 `ConfigError` 且消息符合 §14 模板（`tests/test_config.py` 逐条覆盖）；v1.3.0 新增 `backtest.min_n_signal ∉ [100,2000]`、`backtest.bonferroni ∉ {True,False}` 两条。
 4. **CLI 覆盖可审计**：`python main.py --no-sync --k 7 --budget 5 --pool-size 12 --seed 7 --backtest 5 --full-print` 输出的配置摘要（不止阈值）必须与本文件 §12 一致；并核对 `--ml`（→`ml.enabled=True`）、`--no-tickets`（→`include_tickets=False`）、`--backtest` 省略时的模式分派（daily→30 / backtest·audit→100）。
 5. **默认值可复现**：`config_hash(default_config())` 在所有机器上一致（不含时间戳/路径）。
-6. **默认值与实现一致（v1.2.0 新增，P8 必查）**：逐项比对 `default_config()` 与本文件 §2–§11 的默认值列，任何不一致即判"契约漂移"；重点字段：`ml.enabled=False`、`covering.m_margin=1`、`backtest.lift_signal=1.05`、七维权重之和 = 1.00（`0.02/0.08/0.20/0.25/0.05/0.05/0.35`）、`lambda_vote=0.05`。
+6. **默认值与实现一致（v1.2.0 新增，P8 必查）**：逐项比对 `default_config()` 与本文件 §2–§11 的默认值列，任何不一致即判"契约漂移"；重点字段：`ml.enabled=False`、`covering.m_margin=1`、`backtest.lift_signal=1.05`、`backtest.min_n_signal=500`、`backtest.bonferroni=True`、七维权重之和 = 1.00（`0.02/0.08/0.20/0.25/0.05/0.05/0.35`）、`lambda_vote=0.05`。
    > 教训（v1.2.0）：`m_margin` 曾实现为 2（契约 1）→ 覆盖表键 `12,5,4,5` 未命中 → 每期回落 ILP 8~13s；`build_tickets` 13.66s→0.006s（约 2000×），100 期回测 176.5s→37.4s。**默认值即性能护栏**。
+7. **显著性硬规则（v1.3.0，P8 必查）**：① 构造 `n=499` 的回测 → 全部 `LiftStat.is_signal=False` 且报告含「样本量不足（n<500），结论仅供参考」；② `n=600` 且 `p=0.008`、`lift=1.10` → `is_signal=True`（p<0.01）；`p=0.02` → `False`（Bonferroni 校正生效）；③ `alpha_adj == 0.01`（`len(ks)=5`）；④ 报告中 `is_signal=False` 时 `grep '★显著'` 必须 0 命中。
+8. **复盘状态契约（v1.3.0，P8 必查）**：见 §17；验收：连续两次同 `period` 日跑 → `prev_prediction.json` 的 `predictions` 键数不变（幂等 upsert）、文件内容已更新（原子写）、复盘段落引用的是 `period < target_period` 的历史记录；删除该文件后重跑 → 复盘段落只出现「首期无复盘基线」且**不出现任何命中数**。
+9. **报告禁止项（v1.3.0，P8 必查）**：见 contract.md §6.6；对 `output/reports/*.txt`、`output/wechat/*.txt` 执行 3 条 grep（占位符 / 硬编码常量 / 未标注 ROI 金额），命中数必须全部为 0；含 pick3/pick7 的报告必须出现 `ROI: N/A（官方奖级未确认）`。
+
+---
+
+## §17 复盘状态文件契约 `output/state/prev_prediction.json`（v1.3.0 新增）
+
+> 完整字段与验收口径见 **contract.md §3.14.1**；本节只列与配置/运维相关的约束。**不新增任何配置字段**（路径由 `output_dir` 派生），避免配置面继续膨胀。
+
+| 项 | 口径 |
+| :--- | :--- |
+| 路径 | `{cfg.output_dir}/state/prev_prediction.json`（默认 `output/state/prev_prediction.json`）；目录不存在则创建 |
+| 顶层结构 | `{"schema_version": 1, "updated_at": ISO8601, "predictions": {"<period>": {period, target_date, gold, main, plans, created_at}}}` |
+| 幂等 | 键 = `str(period)`；同日重跑覆盖该条，`predictions` 键数不增长 |
+| 原子写 | 临时文件 + `os.replace`；异常保留旧文件；禁止直写 |
+| 读取 | 只取 `period < 当前 target_period` 的最大 period；缺失/损坏/版本不符 → 输出「首期无复盘基线」，禁止输出命中数 |
+| 禁止 | 禁止当期预测冒充上期；禁止以"当期金胆 ∩ 最新开奖"充当复盘命中 |
+| 告警 | 读写失败 → `DailyResult.warnings`，不中断交付；报告仍需给出可操作提示 |
+| 权限/并发 | 单进程写入（日跑串行）；并发日跑不在支持范围（如需并发需加锁，P8 修复轮不要求） |
+| 机检 | `python -c "import json;d=json.load(open(r'output/state/prev_prediction.json',encoding='utf-8'));assert d['schema_version']==1;assert all('period' in r and 'gold' in r and 'main' in r and 'plans' in r and 'created_at' in r for r in d['predictions'].values());print('OK', len(d['predictions']))"` |
+
+**与 R48-e 幂等的关系**：`adaptive_weights.json` 与 `prev_prediction.json` 都按 period 幂等 upsert、都用 `os.replace` 原子写；但**语义不同**——前者是"学习状态"（可重算），后者是"对外承诺过的预测快照"（**写入后不得被同 period 的后续预测逻辑改写为非对外版本**；同日重跑以最后一次对外交付为准）。

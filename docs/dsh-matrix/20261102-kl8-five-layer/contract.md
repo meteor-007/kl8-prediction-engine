@@ -2,7 +2,7 @@
 
 > **本契约需求点编号 R1–R48，共 48 项；项目文档与后续任务中的「43 点」为早期笔误，以本表 48 项为准。**
 >
-> - 版本：**v1.2.0**（2026-11-02，与落地代码 HEAD=`f170147` 对齐：`ml.enabled=False`、`--ml`/`--no-tickets`、`--backtest` 模式分派、ScoreWeights 实测默认值、Σω 语义更正、性能预算按实测修订；并记录"契约漂移导致 2000× 性能缺陷"的工程结论，详见 §7.3）｜ 冻结日：2026-11-02 ｜ 作者：req-architect（智小研）
+> - 版本：**v1.3.0**（2026-11-02，吸收 P8 体检卡暴露的**契约级缺口**：§7.4「8.md L190 概率勘误」、A2 口径冻结、新增 §3.14.1 复盘状态契约 `prev_prediction.json`、R43/R44 显著性硬规则（n≥500 + Bonferroni）、新增 §6.6「报告禁止项（可 grep）」；详见 §7.3）｜ 冻结日：2026-11-02 ｜ 作者：req-architect（智小研）
 > - 适用阶段：P2（基础层）→ P3（layer2/3）→ P4（layer4）→ P5（layer5）→ P6（evaluation/reporting/pipeline/main）
 > - 权威优先级：**docs/8.md（业务需求，唯一权威）> 本契约（工程落地口径与签名冻结）> 旧实现 `calc_*.py`（仅语义参考，P9 删除）**
 > - 冻结效力：**§3 模块签名与 §4 数据结构字段名/顺序为冻结项，下游开发禁止改签名、禁止改字段名、禁止改返回顺序**；确需变更必须由 Lead 发起契约版本升级（v1.x）并同步 P2–P9。
@@ -104,8 +104,8 @@
 | R40 | 带概率权重贪心集合覆盖 + 模拟退火固定预算优化（seed 固定） | L170 | `covering.py::greedy_weighted`、`anneal` | `tests/test_covering.py::test_greedy_weighted_and_sa_determinism` |
 | R41 | 注单后处理与双玩法落地（极端和值/全奇全偶/3 连剔除、去重、预算截断、正交重叠上限、选五/选七） | L161–170 | `kl8/layer5_combinatorial/tickets.py::postprocess`、`build_ticket_plan` | `tests/test_tickets.py::test_postprocess_and_dual_play` |
 | R42 | Walk-Forward 滚动回测：T0=300 冷启动、逐期推进 `[1..t]→t+1`、**严禁随机 K-Fold** | L176–182 | `kl8/evaluation/walkforward.py::run_walkforward`、`iter_windows` | `tests/test_walkforward.py::test_walkforward_flow_no_leak` |
-| R43 | Top-K 平均命中率与 `Lift@K=mean_hit/(0.25K)` + 单侧 t 检验显著性 + 95% CI | L185–188 | `kl8/evaluation/metrics.py::lift_at_k`、`t_test_one_sided` | `tests/test_metrics.py::test_lift_at_k_handcalc` |
-| R44 | 高奖级触发率：实测频率 vs 精确超几何理论概率（选三中三 / 选五中四·五 / 选七中六·七） | L189–190 | `metrics.py::high_tier_rate`、`hypergeometric_baseline` | `tests/test_metrics.py::test_high_tier_vs_hypergeometric` |
+| R43 | Top-K 平均命中率与 `Lift@K=mean_hit/(0.25K)` + 单侧 t 检验显著性 + 95% CI。**显著性硬规则（v1.3.0）**：① **样本量门槛**：`n < cfg.backtest.min_n_signal(500)` → `is_signal` 一律 **False**，报告必须标注「样本量不足（n<500），结论仅供参考」；② **多重比较校正**：对 `K∈cfg.backtest.ks`（5 次检验）做 Bonferroni，`alpha_adj = cfg.backtest.alpha_sig / len(ks) = 0.01`；③ `is_signal = (n ≥ min_n_signal) and (lift > lift_signal) and (p_value < alpha_adj)` | L185–188 | `kl8/evaluation/metrics.py::lift_at_k`、`t_test_one_sided` | `tests/test_metrics.py::test_lift_at_k_handcalc`、`test_lift_signal_requires_n500_and_bonferroni` |
+| R44 | 高奖级触发率：实测频率 vs 精确超几何理论概率（选三中三 / 选五中四·五 / 选七中六·七）。**v1.3.0**：若同时输出显著性，同样受 R43 两条硬规则约束（`n≥500` + Bonferroni 校正 `α=0.01`）；否则只报点估计与理论值，**不得标「显著」** | L189–190 | `metrics.py::high_tier_rate`、`hypergeometric_baseline` | `tests/test_metrics.py::test_high_tier_vs_hypergeometric` |
 | R45 | 规则正交性与归因：R1–R5 独立胜率 + `V≥3` vs 低票组超额命中与 z | L191–192 | `metrics.py::rule_attribution` | `tests/test_metrics.py::test_rule_attribution` |
 | R46 | 资金曲线：ROI、最大回撤、最长连挂（整数元，注单成本×2 元） | L193–194 | `metrics.py::bankroll` | `tests/test_metrics.py::test_bankroll_roi_drawdown` |
 | R47 | 严格防穿越审计：唯一截断入口 + `max_accessed_t≤t` 断言 + 未来投毒逐位不变性 + 无 shuffle 型交叉验证 | L28、L200 | `kl8/evaluation/leakage.py::assert_no_lookahead`、`poison_future`、`fingerprint_snapshot`；`history.truncated` | `tests/test_leakage.py::test_poison_future_invariance` |
@@ -336,6 +336,8 @@ class BacktestConfig:
     include_tickets: bool = True
     alpha_sig: float = 0.05
     lift_signal: float = 1.05      # 8.md L188「Lift@K > 1.05」判据阈值 ∈[1.0, 1.2]（v1.1.0 新增，禁止字面量）
+    min_n_signal: int = 500        # v1.3.0：显著性最小样本量门槛；n < 本值 → is_signal 恒 False（8.md L188「500 期以上」）
+    bonferroni: bool = True        # v1.3.0：K 组多重比较 Bonferroni 校正；True 时 alpha_adj = alpha_sig / len(ks)
 
 @dataclass(frozen=True)
 class AppConfig:
@@ -802,7 +804,9 @@ def run_walkforward(ds: Dataset, cfg: AppConfig, *, n_test: int | None = None,
 class LiftStat:
     k: int; mean_hit: float; expected: float; lift: float
     sd: float; t_stat: float; p_value: float; ci95: tuple[float, float]
-    is_signal: bool   # v1.1.0：lift > cfg.backtest.lift_signal 且 p_value < cfg.backtest.alpha_sig
+    n: int            # v1.3.0：参与检验的样本期数（is_signal 的样本量门槛依据）
+    alpha_adj: float  # v1.3.0：校正后显著性水平（bonferroni=True 时 = alpha_sig/len(ks)，否则 = alpha_sig）
+    is_signal: bool   # v1.3.0：n >= min_n_signal 且 lift > lift_signal 且 p_value < alpha_adj（三条同时成立）
 @dataclass(frozen=True)
 class TierStat:
     play: str; tier: str; n_rounds: int
@@ -822,7 +826,8 @@ class BankrollStat:
     max_drawdown_yuan: int; max_losing_streak: int; best_round_yuan: int
 def lift_at_k(rows: Sequence[BacktestRow], ks: Sequence[int],
               cfg: BacktestConfig) -> dict[int, LiftStat]: ...
-    # v1.1.0：新增 cfg 入参（读 lift_signal/alpha_sig 生成 is_signal），禁止在实现内写死 1.05
+    # v1.1.0 新增 cfg 入参；v1.3.0：读 lift_signal/alpha_sig/min_n_signal/bonferroni 生成 is_signal
+    # 禁止在实现内写死 1.05 / 0.05 / 500 / 5（K 组数取 len(ks)）
 def high_tier_rate(rows: Sequence[BacktestRow], play: str,
                    prize_table: Mapping[str, Mapping[int, int] | None]) -> dict[str, TierStat]: ...
 def rule_attribution(rows: Sequence[BacktestRow]) -> AttributionReport: ...
@@ -919,6 +924,45 @@ def main(argv: Sequence[str] | None = None) -> int: ...   # 0 成功 / 1 参数�
 
 > **`.bat` 一键入口**（v1.2.0 重写）：`运行微积分预测.bat`（UTF-8 BOM + `chcp 65001`）执行 `python main.py --no-sync --backtest 30 --full-print`，双击即出全套交付件；失败分支给中文提示并 `pause`，不静默退出。
 异常契约：`pipeline` 是对外唯一编排点，捕获 `KL8Error` 转中文可操作提示并返回非 0；Ctrl+C 返回 130。
+
+#### §3.14.1 复盘状态文件契约 `output/state/prev_prediction.json`（v1.3.0 新增，修 P8-H5）
+
+> 背景：现行交付件「前期预测复盘」用**当期金胆池 ∩ 最新一期开奖号** 冒充"上期预测命中数"（`pipeline.py`/`text_report.py`），向用户输出错误事实。修复必须引入**跨期预测持久化**，禁止任何"当期冒充上期"的替代实现。
+
+**文件路径**：`{cfg.output_dir}/state/prev_prediction.json`（默认 `output/state/prev_prediction.json`；不新增配置项，由 `output_dir` 派生）。
+
+**JSON 结构（`schema_version=1`，字段冻结）**
+
+```json
+{
+  "schema_version": 1,
+  "updated_at": "2026-11-02T18:00:00+08:00",
+  "predictions": {
+    "2026292": {
+      "period": 2026292,
+      "target_date": "2026-11-02",
+      "gold": [3, 17, 28, 44, 61],
+      "main": [3, 9, 17, 22, 28, 31, 40, 44, 52, 61, 68, 75],
+      "plans": [{"play": "pick5", "k": 5, "budget": 20, "tickets": [[3, 9, 17, 22, 28]]}],
+      "created_at": "2026-11-02T18:00:00+08:00"
+    }
+  }
+}
+```
+
+| 要求 | 口径（可验收） |
+| :--- | :--- |
+| 必填字段 | 每条记录至少 `{period:int, target_date:"YYYY-MM-DD", gold:list[int], main:list[int], plans:list[dict], created_at:ISO8601}`；顶层 `{schema_version:int, updated_at:ISO8601, predictions:Mapping[str,record]}` |
+| 写入时机 | `run_daily` 在**报告渲染前**把当期预测 upsert 入库；同一 `period` 重复日跑（幂等）覆盖为最新值，`n_records` 不增长 |
+| 幂等 upsert | 键 = `str(period)`；已存在则整体替换该条，绝不追加重复期号 |
+| 原子写 | 先写同目录临时文件（`prev_prediction.json.tmp`）→ `os.replace` 覆盖；**异常时保留旧文件**，禁止 `open(..., "w")` 直写 |
+| 读取规则 | 复盘只允许读取 **`period < 当期 target_period` 的最大 period 记录**；比较对象为该 period 的**真实开奖号**（来自 `Dataset`），命中 = `len(set(record.gold) & set(numbers))` / `len(set(record.main) & set(numbers))` |
+| 缺失/损坏 | 文件不存在 / JSON 非法 / `schema_version` 不匹配 / 无 `period < target_period` 记录 → 复盘段落**必须**输出固定文案「**首期无复盘基线**（无可用的上期预测记录）」，**不得**输出任何命中数、命中率或"上期预测"字样 |
+| 禁止项 | **禁止用当期预测冒充上期预测**；禁止用"当期金胆 ∩ 最新开奖"充当复盘命中；禁止把 `gold ⊂ main` 重叠数当命中数 |
+| 降级与告警 | 写失败 → 写入 `DailyResult.warnings`（「复盘状态写入失败：…」，不中断交付）；读失败 → 同上 + 走「首期无复盘基线」分支 |
+| 报告消费 | 三类交付件（TXT/微信/Excel）的复盘段落只读 `prev_prediction` 结果，**不得各自重算**（B8 单一数据源） |
+
+> 落地归属：`kl8/pipeline.py`（写）+ `kl8/reporting/text_report.py`/`wechat.py`/`excel.py`（读）；P8 修复轮需同步补单测 `tests/test_pipeline.py::test_prev_prediction_roundtrip_is_idempotent` 与 `test_prev_prediction_missing_shows_baseline_message`。
 
 ---
 
@@ -1111,6 +1155,7 @@ def main(argv: Sequence[str] | None = None) -> int: ...   # 0 成功 / 1 参数�
 | `ScoreRoundResult` | `snapshot/ranks/verdicts/votes/scores/pool` |
 | `SyncResult` | `ok/added/total/latest_period/warnings` |
 | `DailyResult` | `target_period/target_date/pool/plans/report_paths/backtest/warnings/elapsed_s` |
+| `PrevPredictionState`（v1.3.0） | 非内存结构（JSON 状态文件，见 §3.14.1）：`schema_version: int`、`updated_at: str`、`predictions: Mapping[str, PrevPredictionRecord]`；`PrevPredictionRecord` = `period/target_date/gold/main/plans/created_at` |
 
 ---
 
@@ -1121,7 +1166,7 @@ def main(argv: Sequence[str] | None = None) -> int: ...   # 0 成功 / 1 参数�
 | 编号 | 8.md 原文缺口 | 裁决（可执行口径） | 理由 / 兼容性 | 落点 |
 | :--- | :--- | :--- | :--- | :--- |
 | **A1** | L143 `R(Trend_i)` 未定义 Trend | `Trend_i = 0.5·R(Freq_10G) + 0.3·R(Mom_10-25) + 0.2·R(Mom_25-50)`，**秩空间**加权（先各自取百分位秩再加权） | 与 8.md「跨尺度量纲统一」+「动量金叉」一致；权重可配（`weights.trend_w_*`），三者同为 (0,1] 量纲，避免频率/差分混量纲 | `hybrid.trend_score`；`tests/test_scoring.py::test_trend_score_weights` |
-| **A2** | L143 `R(C̄o_i)` 的 C̄o 聚合方式未定义 | `C̄o_i = mean(R(Co_25G), R(Co_50G), R(Co_ALL))`，**先秩后均**，**不含 10G** | 10G 共现样本仅 10 期，`CoScore` 方差最大，纳入会主导排序；25/50/ALL 覆盖中短中长期，与 R4 的窗口选择一致 | `hybrid.co_aggregate`；`FeatureSnapshot.co_centered_mean` 只作报告展示原始值，**禁止**替代 `R(C̄o)` |
+| **A2** | L143 `R(C̄o_i)` 的 C̄o 聚合方式未定义 | `C̄o_i = mean(R(Co_25G), R(Co_50G), R(Co_ALL))`，**先秩后均**，**不含 10G** | 10G 共现样本仅 10 期，`CoScore` 方差最大，纳入会主导排序；25/50/ALL 覆盖中短中长期，与 R4 的窗口选择一致。**※ 口径冻结（v1.3.0）**：`C̄o` 必须是**等权先秩后均**（÷3），**实现与测试均不得改为加权式**（历史事故：曾改为 `0.20/0.20/0.60` 并在 `tests/test_qa_numerics.py` 把它标成"裁决 A2"断言）；**本口径自 v1.0.0 起未变更，任何加权版本均为偏离** | `hybrid.co_aggregate`；`FeatureSnapshot.co_centered_mean` 只作报告展示原始值，**禁止**替代 `R(C̄o)` |
 | **A3** | L117「大中小比」未给分界 | 小 `01-27`、中 `28-54`、大 `55-80`（27/27/26）；「大小比」保留老口径 `01-40 / 41-80` 作为报告附加字段，**不参与均衡硬约束** | 8.md 未定义，等分最稳；老系统 1–40/41–80 用于兼容报告阅读习惯，但不作为过滤条件 | `constants.SIZE_BOUNDS`、`size_class_of`；`tests/test_morphology.py` |
 | **A4** | L118「AC 值」未给公式 | `AC = \|{ \|a-b\| : a<b, a,b ∈ 注单 }\| - (k-1)`；单注 k 码最小 0；对 20 码开奖号同式（k=20） | 标准 AC 定义（算术复杂度）；8.md「衡量号码间距的离散度」即差集势减线性项 | `morphology.ac_value`；`tests/test_morphology.py::test_ac_value` |
 | **A5** | L155「金胆池（如 3~5 码）」未给选取规则 | `n_gold = clip(round(0.30 × len(main)), 3, 5)`（`main=12` → **4**）；候选顺序：先取 `V_i ≥ 3` 的号码按 FinalScore 降序，不足再用 FinalScore 降序补；**硬约束 `gold ⊂ main`** | 大小随复式池自适应且落在 3~5 区间；优先共振票高的号码符合"核心金胆"语义。**※ 契约自定声明**：`0.3` 系数、`V_i ≥ 3` 优先序与 `gold ⊂ main` 均为**契约自定**，8.md L155 仅给示例区间「如 3~5 码」，**非原文要求** | `filter.select_gold`；`tests/test_filter.py::test_gold_and_main_sizes` |
@@ -1129,7 +1174,7 @@ def main(argv: Sequence[str] | None = None) -> int: ...   # 0 成功 / 1 参数�
 | **A7** | L161–166 覆盖参数 `m`：原文为"**预期**候选池 v 中能够实际命中的开奖号码个数"，未给取值 | **m 定性（必读）**：`m` 是**用户/玩法假设参数**（8.md L164 的"预期"），**非算法推导值、非预测值**；报告与文案必须写「m 为假设参数」。**取值规则（v1.1.0 修正）**：① `t ≥ k` → `m = min(v, t)`（全保底场景）；② `t < k` → `m = min(v, t + cfg.covering.m_margin)`，`m_margin` 默认 **1**、范围 **[1,3]**；③ 合理性校验：`abs(m - (ceil(0.25·v)+2)) > 2` → 写 warning（提示 m 假设与池内期望命中数偏离，报告须注明）。玩法默认：选五 `C(v,5,4,m)`（`v=12 → m=5 = C(12,5,4,5)`）、选七 `C(v,7,5,m)`（`v=12 → m=6 = C(12,7,5,6)`）；强制 `t ≤ k`、`t ≤ m ≤ v` | 精确复现 8.md L169 全部命名参数组（验算见 §5.0）；`0.25v+2` 只作合理性校验而非定义 —— 原式与 k/t 无关，会把 pick7 算成 m=5，与原文 `C(12,7,5,6)` 冲突 | `covering.m_target`；`tests/test_covering.py::test_m_target` |
 | **A8** | L170「固定只买 20 注」示例，无默认预算 | 默认预算：**选五 20 注（40 元）、选七 10 注（20 元）**；`--budget` 覆盖；硬上限 `max_budget=200` 注（400 元），超出抛 `ConfigError` | 沿用旧系统 20 注精选版习惯；选七单注成本高故 10 注；上限防误配。**※ 契约自定声明**：选七 **10 注**为契约自定（8.md L170 仅给"固定只买 20 注"示例），**非原文要求** | `CoveringConfig.budget_by_play/max_budget`；`main.py --budget` |
 | **A9** | L148「M=5 或 10」未定 | 自适应回看期 **M=8**；`min_periods=3`（不足回均匀先验 `0.2/规则`）；Laplace `α=1.0`；temperature `1.0`；权重下限 `0.05`；**回测强制纯内存**（`in_memory=True`），日跑按 period 幂等 upsert | M=8 取两档中值，兼顾风格切换灵敏度与样本量（8 期×每规则约 3 码 ≈ 24 观测）；下限防单规则归零。**※ 契约自定声明**：8.md L148 仅示例「如 M=5 或 10」，**8 不在原文示例集合内**，为经 Lead 批准的契约裁决值，**非原文要求** | `AdaptiveConfig`；`tests/test_adaptive.py` |
-| **A10** | L193–194「结合官方固定设奖规则」未给奖金表 | **只启用已确认奖级**：选五 `{中5:1000 元, 中4:21 元, 中3:3 元}`，单注 2 元；选三、选七奖金表为 `None` → 其高奖级只报**触发频次与超几何理论概率**，不出金额；ROI/回撤/连挂**仅对选五出具** | 未核实的奖级进金额计算会产出误导性 ROI；8.md 自身只给"选五全中理论概率 0.155%（约 645 期一遇）"这一确定值。**报告硬性措辞**：选三/选七段落必须输出 `ROI: N/A（官方奖级未确认）`，**禁止任何金额结论或暗示性收益表述** | `AppConfig.prize_table`；`metrics.bankroll/high_tier_rate`；`tests/test_metrics.py` |
+| **A10** | L193–194「结合官方固定设奖规则」未给奖金表 | **只启用已确认奖级**：选五 `{中5:1000 元, 中4:21 元, 中3:3 元}`，单注 2 元；选三、选七奖金表为 `None` → 其高奖级只报**触发频次与超几何理论概率**，不出金额；ROI/回撤/连挂**仅对选五出具** | 未核实的奖级进金额计算会产出误导性 ROI；8.md 自身只给"选五全中理论概率 0.155%（约 645 期一遇）"这一确定值（**该数值为 8.md L190 笔误，精确值 0.0645% ≈ 1/1550 期，以 §7.4 errata 为准**）。**报告硬性措辞**：选三/选七段落必须输出 `ROI: N/A（官方奖级未确认）`，**禁止任何金额结论或暗示性收益表述** | `AppConfig.prize_table`；`metrics.bankroll/high_tier_rate`；`tests/test_metrics.py` |
 
 ### §5.0 A7 参数组验算（v1.1.0 修正后，必须逐条复现）
 
@@ -1181,7 +1226,7 @@ def main(argv: Sequence[str] | None = None) -> int: ...   # 0 成功 / 1 参数�
 1. **编译**：`python -m compileall kl8 main.py tools` exit 0，无 warning 级语法问题。
 2. **单测**：`python -m unittest discover -s tests -v` 全绿，用例数 ≥90（P7 口径）。
 3. **需求映射**：§1 主表 48 行、每行都有实现点与测试名；P7 必须逐行找到对应用例（缺失即不通过）。
-4. **数据保真**：`load_dataset("kl8_history.txt").T == 2112`，`draws[-1].period == 2020001`、`draws[0].period == 2026291`，warnings 中**不得出现**"期号断档"之外的解析错误。
+4. **数据保真**：`load_dataset("kl8_history.txt").T == 2112`；**升序排序后** `draws[0].period == 2020001`（最早）、`draws[-1].period == 2026291`（最新）；且**降序文件的首行期号 == `draws[-1].period`**；warnings 中**不得出现**"期号断档"之外的解析错误（period 断档仅 warning，见 §0.1）。**（v1.3.0 勘误：v1.2.0 之前此处把 `draws[0]`/`draws[-1]` 写反，与 `tests/test_history.py` 断言冲突，已按实现改正）**
 5. **防穿越**：`tests/test_leakage.py` 未来投毒后当期推荐逐位不变（§6.3）。
 6. **无残留**：`grep -rn "calc_core\|calc_engine\|..." --include=*.py`（P9 执行）无引用。
 7. **中文文档**：所有公开符号有中文 docstring（审大关红线 12）。
@@ -1204,8 +1249,8 @@ def main(argv: Sequence[str] | None = None) -> int: ...   # 0 成功 / 1 参数�
 | `Trend` | `0.5*R(F10)+0.3*R(Mom10-25)+0.2*R(Mom25-50)` | 手算（裁决 A1） |
 | `AC` | `\|{差}\| - (k-1)`；例 `{1,4,6,9,11}` 的差集 `{2,3,5,7,8,10}`（6 个）→ `AC = 6-(5-1) = 2` | 手算（裁决 A4） |
 | `Lift@K` | `mean_hit_K / (0.25*K)` | 手算 |
-| `is_signal`（v1.1.0） | `lift > cfg.backtest.lift_signal(1.05) 且 p_value < cfg.backtest.alpha_sig(0.05)` | 手算（8.md L188 判据；实现禁止写死 1.05 / 0.05） |
-| 选五全中概率 | `C(5,5)*C(75,15)/C(80,20)` | `≈0.00155`（0.155%，约 645 期一遇，8.md L190） |
+| `is_signal`（v1.3.0） | `n >= cfg.backtest.min_n_signal(500)` 且 `lift > cfg.backtest.lift_signal(1.05)` 且 `p_value < alpha_adj`；`alpha_adj = alpha_sig/len(ks) = 0.01`（`bonferroni=True`） | 手算（8.md L188「500 期以上」；实现禁止写死 1.05/0.05/500/5） |
+| 选五全中概率（**v1.3.0 勘误**） | `C(20,5)/C(80,5) = C(75,15)/C(80,20)` | `15504/24040016 = 0.000644902...`（`≈0.000645`）→ **0.0645%，约 1/1550 期**；8.md L190 的「0.155%、约 645 期」为笔误，见 **§7.4 errata E1** |
 | ROI | `(奖金 - 成本) / 成本`，金额整数元 | 手算 |
 | 覆盖保底 | `v=6..10` 时穷举全部 `C(v,m)` 子集 | `achieved_t ≥ t` 且 `n_tickets ≤ budget` |
 
@@ -1258,6 +1303,42 @@ python -m unittest tests.test_architecture -v
 | ML 诊断通道开启（`--ml`） | ≤2.5 s/期 | 2.03 s（默认关闭，不进入日常预算） | `time.perf_counter` 对比开/关 |
 | 单期内存峰值 | ≤300 MB | 待 P7 补测 | P7 用 `tracemalloc` 抽查 |
 
+### §6.6 报告交付禁止项（v1.3.0 新增，修 P8-H6/M5；**可 grep 验收**）
+
+> 适用于三类交付件（TXT / 微信 / Excel）。P8 体检卡按下列 3 条逐项 grep，**命中即判 High**。验收命令按「**排除零命中**」执行（`-NoMatch` 或 `!` 断言）。
+
+| # | 禁止项 | 违规示例（P8 实测命中） | 判定方式 |
+| :--- | :--- | :--- | :--- |
+| 1 | **占位符**：未替换的模板符号 | `C(v,k,t)`、`{t}`、`<period>`、`TODO`、`N/A 待填` | 命令 B1，命中数必须 = 0 |
+| 2 | **硬编码常量**：渲染层写死的口径值（必须取 `constants.py` / 实际数据） | `25.00%`、`6.01%`、`E(Repeat)` 写死 `5.00`、和值区间写死 `150~250`、金胆写死 `(5码)`、`20/80` | 命令 B2，命中数必须 = 0 |
+| 3 | **未标注 ROI 的金额结论**：选三/选七出现金额、收益、"回本"等 | 选七段落出现 `ROI: 12.5%`、`净收益 30 元`、"盈利" | 命令 B3（必须存在 N/A）+ 命令 B4（禁止收益字样） |
+
+**验收命令（在仓库根目录执行；每条命中数必须 = 0，否则 P8 判 High）**
+
+```powershell
+# B1 占位符
+Select-String -Path output/reports/*.txt,output/wechat/*.txt -Pattern 'C\(v,\s*k,\s*t\)|\{t\}|\{period\}|TODO|待填'
+
+# B2 渲染层硬编码常量
+Select-String -Path output/reports/*.txt,output/wechat/*.txt -Pattern '25\.00%|6\.01%|150~250|（5码）|\(5码\)|20/80'
+
+# B3 选三/选七必须标注 ROI N/A（命中数必须 ≥1）
+Select-String -Path output/reports/*.txt,output/wechat/*.txt -Pattern 'ROI: N/A（官方奖级未确认）'
+
+# B4 禁止收益/回本类暗示（命中数必须 = 0）
+Select-String -Path output/reports/*.txt,output/wechat/*.txt -Pattern '净收益|盈利|回本|投资回报率'
+
+# B5 Excel 单元格内同样受限（打开工作簿后遍历单元格，断言同上 4 条全 0）
+python -c "import openpyxl,re,glob;[print(p) for p in glob.glob('output/excel/*.xlsx')]"
+```
+
+**补充硬性要求**
+1. **数值必须来自引擎**：报告中的 `p0`、`p_co`、`E(Repeat)`、金胆规模、和值区间等一律读 `constants.py` / 结果对象（B8 单一数据源），禁止渲染层自带副本；
+2. **显著性披露**：`is_signal=False` 时禁止出现「★显著 / 显著超额」字样；`n<500` 必须输出「样本量不足（n<500），结论仅供参考」（R43）；
+3. **复盘披露**：无上期记录时必须输出「首期无复盘基线」，禁止任何"上期预测命中 X 码"（§3.14.1）；
+4. **m 假设披露**：覆盖段落必须写「m 为用户/玩法假设参数，非算法预测」（A7）；
+5. **验收示例（P8 修复轮）**：`python main.py --no-sync --backtest 30 --full-print` 后，对 `output/reports/*.txt` 执行上表 3 条 grep，全部 0 命中；且 `grep -c 'ROI: N/A（官方奖级未确认）'` 在含 pick3/pick7 的报告中 ≥1。
+
 ---
 
 ## §7 附录
@@ -1294,6 +1375,22 @@ R1,A 数据表征层,layer1 BinaryStateMatrix,L30;L47-L50,kl8/layer1_representat
 | **v1.2.0** | 2026-11-02 | **与落地代码 HEAD=`f170147` 对齐（6 类）**：① **`MLConfig.enabled` 默认 `True→False`**（B4 诊断通道、`weight=0` 时不进 FinalScore，却使单期 0.34s→2.03s；诊断时用 CLI `--ml` 开启，开启后 `ml_available=True`；`weight>0` 而 `enabled=False` 时**不阻断**（静默忽略 ML 通道、排序无实质影响），P8 记为低优先建议：后续版本补一条 `DailyResult.warnings` 提示）。② **CLI**：§3.14 新增完整参数表，含 **`--ml`**（→`ml.enabled=True`）与 **`--no-tickets`**（→`include_tickets=False`）、`--no-sweep`（兼容 no-op）；R48-b 同步。③ **`--backtest` 默认值按模式分派**：`daily`→**30**、`backtest/audit`→**100**，显式 `0` = daily 关闭伴随回测；`cfg.backtest.default_n` 仍为 100（配置层默认不变）。④ **`ScoreWeights` 七维默认值按实现对齐**：`0.02/0.08/0.20/0.25/0.05/0.05/0.35`（Σ=1.00），`lambda_vote 0.08→0.05`；并**更正 Σω 语义**：只有七维核心权重参与 `Σω=1` 强校验，`ml` 是**额外叠加项**（>0 时叠加、不归一化）。⑤ **性能预算按实测修订**（§6.5）：单期含注单 0.39s、100 期 `--no-tickets` 37.4s、含注单 40s、全量单测 14.6s、覆盖求解 0.006s、ML 开启 2.03s/期限额 2.5s。⑥ `.bat` 一键入口（UTF-8 BOM + `--no-sync --backtest 30 --full-print`）写入 §2.1 与 §3.14。 |
 | **v1.2.0 工程结论** | 2026-11-02 | **"契约漂移导致的 2000× 性能缺陷"（P8 必查条目）**：实现侧把 `CoveringConfig.m_margin` 写成 **2**（契约 v1.1.0 明确要求 **1**）→ `m_target(12,5,4)=6` → 覆盖表键 `12,5,4,5` 未命中 → 每期回落 `scipy.milp` ILP，单期 8~13s。改回 1 后 `build_tickets` **13.66s → 0.006s（约 2000×）**。实测改善：100 期回测（`--no-tickets`）**176.5s → 37.4s**；含注单 **>600s → 40s**；全量单测 **105.6s → 14.6s**；单期 **0.39s**。**结论：契约默认值即性能护栏** —— 下游实现偏离契约默认值应视为缺陷而非"可调参数"，P8 质检需核对「实现默认值 == 契约默认值」逐项对齐（本版 §3.3 与 config-schema.md 已全部核对）。 |
 | **v1.2.0 机检** | 2026-11-02 | `Import-Csv` 断言：`rows=48; ids_in_order=True; empty_fields_rows=0; PASS=True`（ID 严格 R1..R48 顺序）；§1.2 主表 48 行 × 5 列齐整；`default_config()` 实测默认值与 §3.3 / config-schema.md 逐字段一致（102 叶子字段，含 `ml.enabled=False`、`covering.m_margin=1`、`backtest.lift_signal=1.05`、七维权重 Σ=1.00） |
+| **v1.3.0** | 2026-11-02 | **吸收 P8 体检卡（6 High / 15 Medium）暴露的 5 条契约级缺口**：① **§7.4 新增 Errata**：8.md L190「选五全中概率 0.155%、约 645 期」为笔误，精确值 `C(20,5)/C(80,5)=15504/24040016=**0.0645%（≈1/1550 期）**」→ 契约与报告一律按精确值披露，8.md 原文保留不改；全文 3 处引用（§6.2 手算行、§5 A10、旧版 §6.2 行）已同步。② **§5 A2 口径冻结**：`C̄o=mean(R(Co25),R(Co50),R(CoALL))` 等权先秩后均、不含 10G，**实现与测试均不得改为加权式**（历史事故 0.20/0.20/0.60 被写进测试当"裁决 A2"），本口径自 v1.0.0 未变更。③ **新增 §3.14.1 复盘状态契约** `output/state/prev_prediction.json`（修 P8-H5）：`schema_version`、按 period 幂等 upsert、原子写 `os.replace`、字段 `{period,target_date,gold,main,plans,created_at}`、缺失输出「首期无复盘基线」、**禁止当期预测冒充上期**。④ **R43/R44 显著性硬规则**（修 P8-M4）：`n<500` → `is_signal` 恒 False 且报告标注「样本量不足（n<500），结论仅供参考」；`K∈ks` 5 次检验 Bonferroni → `alpha_adj=0.01`；新增配置 `backtest.min_n_signal=500`、`backtest.bonferroni=True`，`LiftStat` 增 `n`/`alpha_adj`。⑤ **新增 §6.6 报告禁止项（可 grep 验收）**（修 P8-H6/M5）：禁占位符、禁渲染层硬编码常量（25.00%/6.01%/150~250/5 码/20/80）、禁未标注 ROI 的金额结论。**附带勘误**：§6.1-4 数据保真条目 `draws[0]/draws[-1]` 期号写反，已按实现改正（`draws[0]=2020001`、`draws[-1]=2026291`）。 |
+| **v1.3.0 机检** | 2026-11-02 | `Import-Csv`：`rows=48; ids_in_order=True; empty_fields_rows=0; PASS=True`；两文件全部 Markdown 表格块 `bad_rows=0`；全文无残留 `0.155%`（除 A10/§7.4 的"笔误留痕"引用外）；config-schema.md 同步 `min_n_signal/bonferroni` 与 §17 状态契约 |
+
+### §7.4 Errata（8.md 原文勘误留痕，**原文不改**）
+
+> 原则：8.md 是原始需求留痕，**不修改原文**；凡原文数值/顺序有误，在此登记「原文 → 精确值 → 影响范围 → 以谁为准」，并由本契约与报告按精确值执行。
+
+| # | 8.md 位置 | 原文表述 | 精确值 / 正确口径 | 影响范围 | 以谁为准 |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| E1 | **L190** | 「选五全中理论概率 **0.155%**，即约 **645 期一遇**」 | **P = C(20,5)/C(80,5) = C(75,15)/C(80,20) = 15504/24040016 = 0.000644902…** → **0.0645%，约 1/1550 期**（原文放大约 2.4 倍；"645 期"应为"约 1550 期"） | `R44` 高奖级理论概率、`metrics.hypergeometric_baseline`、报告高奖级对照段、P7 数值用例（`tests/test_qa_numerics.py`） | **精确超几何公式**；报告与验收一律披露 `0.0645% / ≈1/1550 期`，不得沿用 0.155% |
+| E2 | **L155 与 L202** | L155「复式池 10~15 码」；L202「生成最终 10~12 码复式池」 | 同一对象；默认 `main=12`，区间 10~15，L202 的 10~12 为玩法变体（选五 12 / 选七 10） | `A6`、`PoolConfig`、报告池规模描述 | **裁决 A6**（默认 12 同时满足两处） |
+| E3 | **L164–166** | `m` 表述为"预期…实际命中个数" | `m` 是**用户/玩法假设参数**，非算法推导；取值规则见 A7（`m = min(v, t + m_margin)`，`t<k`） | `A7`、`CoveringConfig.m_margin`、报告覆盖段必须写「m 为假设参数」 | **裁决 A7** |
+| E4 | **L148** | 「M=5 或 10」示例 | 契约取 **M=8**（自定值，Lead 批准，见 A9） | `AdaptiveConfig.lookback_m` | **裁决 A9** |
+| E5 | （契约自身）§6.1-4 v1.2.0 及更早 | `draws[-1].period == 2020001`、`draws[0].period == 2026291` | **升序排序后** `draws[0].period == 2020001`（最早）、`draws[-1].period == 2026291`（最新） | 契约 §6.1-4，与 `tests/test_history.py` 断言对齐 | **本契约 v1.3.0**（已改） |
+
+> 使用规则：任何文档/报告/用例发现与 8.md 数值冲突时，**先查本表**；本表未登记的冲突必须 send_message 给 Lead 裁决，禁止"就地改判"（如把 A2 改成加权式并写进测试）。
 
 ---
 
