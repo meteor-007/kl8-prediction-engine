@@ -145,7 +145,9 @@ def greedy_pool(
     @param active 启用中的约束键集合；None 表示全部启用
     @param repeat_target 重号目标个数；None 表示不约束重号比
     @param last_draw 上期开奖号码集合（1-based）
-    @return (选出的号码列表 1-based 升序, 中文告警元组)
+    @return (选出的号码列表 1-based 升序, 中文告警元组)；**凑不满时如实返回不足码数**，
+        由上层 ``build_pool`` 按 B7 逐项放宽后重跑，禁止在贪心内部无约束补齐（P10b-M16：
+        补齐会塞入"因违约被跳过"的号码，使放宽分支不可达且最终复核直接抛错）。
     """
     active_keys = frozenset(cfg.relax_order) if active is None else frozenset(active)
     repeats = frozenset(last_draw or ())
@@ -193,22 +195,8 @@ def greedy_pool(
         odd_count += 1 if num % 2 == 1 else 0
         repeat_count += 1 if is_repeat else 0
 
-    # 形态约束过紧导致凑不满：按得分顺序放宽补齐，但必须留痕（禁止静默少码）
-    if len(selected) < target_size:
-        shortfall = target_size - len(selected)
-        chosen = set(selected)
-        for num in _score_order(scores):
-            if len(selected) >= target_size:
-                break
-            if num in chosen:
-                continue
-            selected.append(num)
-            chosen.add(num)
-        warnings.append(
-            f"形态硬约束过紧，已放宽补齐 {shortfall} 码至目标 {target_size} 码"
-            f"（实际约束缺失，报告中必须披露）"
-        )
-
+    # 凑不满时**如实返回不足码数**（P10b-M16）：不在此处无约束补齐，交由 build_pool
+    # 按 B7 的 relax_order 逐项放宽并留痕；补齐会引入违约号码、使放宽分支不可达。
     return (sorted(selected), tuple(warnings))
 
 
@@ -444,12 +432,15 @@ def build_pool(
     selected: list[int] = []
 
     order_steps: list[str | None] = [None] + list(pool_cfg.relax_order)
+    step_warnings: tuple[str, ...] = ()
+    # 逐项放宽必须**累积**（P10b-M16）：每轮再放开一项后重跑 greedy；若每轮重置为
+    # "全部约束 - 当前项"，则前面放开过的项会被重新启用，"全部放宽"分支永不可达。
+    active = set(pool_cfg.relax_order)
     for relax_key in order_steps:
-        active = set(pool_cfg.relax_order)
         if relax_key is not None:
             active.discard(relax_key)
             relaxed.append(relax_key)
-        selected, _warns = greedy_pool(
+        selected, step_warnings = greedy_pool(
             final,
             snapshot,
             pool_cfg,
@@ -462,12 +453,22 @@ def build_pool(
             break
 
     if len(selected) < size:
+        raised = "、".join(relaxed) if relaxed else "（无）"
         raise InfeasibleConstraintError(
-            f"在全部 {len(order_steps) - 1} 项形态约束放宽后仍只能选出 {len(selected)}/{size} 码；"
-            "请调低 pool.main_default 或放宽 pool.max_zone4_ratio 等阈值后重跑"
+            f"在放宽 {len(order_steps) - 1} 项形态约束（{raised}）后仍只能选出 "
+            f"{len(selected)}/{size} 码；请调低 pool.main_default 或放宽 "
+            "pool.max_zone4_ratio 等阈值后重跑"
         )
 
-    # B7：只记录真实放宽项，并写明放宽到多少（可读、可审计）
+    # 被接受步骤自身的告警（如重号目标缺失）必须带出，禁止静默丢弃
+    warnings.extend(step_warnings)
+
+    # B7：只记录**真实用到**的放宽项（relax_order 的顺序前缀），并写明放宽到多少
+    if relaxed:
+        warnings.append(
+            "本次选池按 B7 有序放宽 " + str(len(relaxed)) + " 项（顺序："
+            + " → ".join(relaxed) + "），下列为逐项放开值"
+        )
     for relax_key in relaxed:
         warnings.append(_relax_detail(relax_key, selected, size, pool_cfg, last_draw))
 

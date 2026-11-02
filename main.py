@@ -32,7 +32,7 @@ if hasattr(sys.stdout, "reconfigure"):
 from kl8.config import AppConfig, load_config, merge_cli_overrides
 from kl8.constants import PLAY_LABELS, ROI_NA_TEXT
 from kl8.errors import KL8Error
-from kl8.evaluation.metrics import format_roi_bp
+from kl8.evaluation.metrics import roi_text
 from kl8.pipeline import DailyResult, run_audit, run_backtest, run_daily
 from kl8.reporting.text_report import sample_note
 
@@ -361,7 +361,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 b = bt.bankroll
                 print("\n💰 资金收益与风险指标:")
                 print(f"   总投入: {b.total_cost_yuan} 元 | 总奖金: {b.total_prize_yuan} 元 | 净利润: {b.net_yuan} 元")
-                roi_str = format_roi_bp(b.roi_bp) if b.roi_available else ROI_NA_TEXT
+                roi_str = roi_text(b)
                 print(
                     f"   投资回报率 (ROI): {roi_str} | 最大回撤: {b.max_drawdown_yuan} 元 | "
                     f"最长连挂: {b.max_losing_streak} 期"

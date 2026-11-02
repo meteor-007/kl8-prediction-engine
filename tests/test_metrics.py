@@ -361,5 +361,58 @@ class TestP10StaticGuards(unittest.TestCase):
         self.assertNotIn("if False", source)
 
 
+class TestRoiText(unittest.TestCase):
+    """P10b-L15：ROI 不可算时必须**分原因**披露，不得两者共用同一文案。"""
+
+    def test_roi_text_three_branches(self) -> None:
+        """可算 → 万分比；无注单 → 「本次未生成注单」；奖级未确认 → 「官方奖级未确认」。"""
+        from kl8.constants import ROI_NA_NO_TICKET_TEXT, ROI_NA_TEXT
+        from kl8.evaluation.metrics import BankrollStat, roi_text
+
+        computed = BankrollStat(
+            n_rounds=100,
+            total_cost_yuan=3464,
+            total_prize_yuan=1035,
+            net_yuan=-2429,
+            roi=-0.7012,
+            max_drawdown_yuan=2429,
+            max_losing_streak=27,
+            best_round_yuan=100,
+            roi_bp=-7012,
+            roi_available=True,
+        )
+        self.assertEqual(roi_text(computed), "-70.12%")
+
+        no_ticket = BankrollStat(
+            n_rounds=30,
+            total_cost_yuan=0,
+            total_prize_yuan=0,
+            net_yuan=0,
+            roi=0.0,
+            max_drawdown_yuan=0,
+            max_losing_streak=30,
+            best_round_yuan=0,
+            roi_bp=0,
+            roi_available=False,
+        )
+        self.assertEqual(roi_text(no_ticket), ROI_NA_NO_TICKET_TEXT)
+        self.assertIn("未生成注单", ROI_NA_NO_TICKET_TEXT)
+
+        unknown_prize = BankrollStat(
+            n_rounds=30,
+            total_cost_yuan=340,
+            total_prize_yuan=0,
+            net_yuan=-340,
+            roi=-1.0,
+            max_drawdown_yuan=340,
+            max_losing_streak=30,
+            best_round_yuan=0,
+            roi_bp=-10000,
+            roi_available=False,
+        )
+        self.assertEqual(roi_text(unknown_prize), ROI_NA_TEXT)
+        self.assertNotEqual(ROI_NA_NO_TICKET_TEXT, ROI_NA_TEXT)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1,7 +1,7 @@
 # P8 代码定稿体检卡（review-card）
 
 > 审查人：审大关（review-audit）｜ 审查时间：2026-11-02 17:56–18:2x ｜ 模式：**只读审查**（未改任何业务代码）
-> 卡版本：**v1.1**（2026-11-02：并入 Lead 三项裁决回执 + 返工/复审安排，见 §10；v1 为首轮审查结论，§1–§9 问题状态不变）
+> 卡版本：**v2（复审，2026-11-02 19:2x，基线 HEAD=`70ab253`）**；v1.1 含首轮+裁决回执；v1 首轮结论保留于 §0–§9 可追溯；**复审结论见顶部块与 §11**。
 > 审查基线：`git diff d9bc139..HEAD`，HEAD=`3281992`（工作区），预重构快照 `d9bc139`
 > 变更规模：**166 files changed, 15580 insertions(+), 9318 deletions(-)**
 > 契约基线：`contract.md` **v1.2.0**（提交 `e15d50c`，与 HEAD 对齐）+ `config-schema.md` v1.2.0；需求原文 `docs/8.md`（202 行，**最高效力**）
@@ -9,7 +9,43 @@
 
 ---
 
-## 0. 结论：**阻断（BLOCK）**
+## 复审结论 v2（2026-11-02，HEAD=`70ab253`）
+
+**结论：仍阻断（BLOCK），但阻断面已从「6 High / 15 Medium」收敛为「1 项 Medium（B7 放宽路径不可达，新增 M16）」。**
+- 6 个 High：**5 个已修复**（H1/H3/H4/H5/H6），**H2 主体修复**（四约束已在贪心扫描中真实生效）但契约 B7「逐项放宽+留痕」路径**不可达** → 记 M16。
+- 15 个 Medium：**11 个已修复**（M1/M2/M4/M5/M8/M9/M10/M11/M12/M13/M14），**3 个部分修复**（M3/M6/M7 残留降为 Low），**M15 已按裁决关闭**为契约 §7.4 errata。
+- 12 红线：**11 通过 / 1 违规**（红线 11 零死代码·半成品，即 M16）。
+- 我方复跑与 Lead 终态证据**一致**（269 用例 OK、audit 指纹 `9095ab31c5c7bb5e`、100 期 Lift/p/α、ROI N/A、占位符 grep=0）；唯一新增发现即 M16，且已被未提交的 `tests/test_qa_rework.py:161-177` 独立记载（"B7 放宽路径不可达…已报 Lead"）。
+
+| ID | v1 级别 | v2 判定 | 关键证据（详见 §11） |
+| :-- | :-- | :--- | :--- |
+| H1 | High | **已修复** | `adaptive.py:143-223` 真读 `rule_stats` 算命中率；`hybrid.py:214-234` 按 B5 除 `w̄`；报告 80 行 `Final−Base==0.05·V`（worst 1.1e-16，V 覆盖 0–5）；非均匀权重下恒等式仍 exact |
+| H2 | High | **部分修复** | 贪心扫描真执行四约束（极端构造：单区 5=上限、真换号、`relaxed=()`）；**但 B7 放宽分支不可达 → M16** |
+| H3 | High | **已修复** | `metrics.py:343-406` 由 `rule_stats/vote_group_stats` 真算（100 期 R1 23.84%/z−1.14…；手算对拍 0.25/lift4.0） |
+| H4 | High | **已修复** | `self_check` 独立重算 lift/bankroll；`no_lookahead=(checked==n)&无越界`；正常 2/2→True、注入→False（我自跑） |
+| H5 | High | **已修复** | `prev_prediction.json` 按 period 幂等 upsert；交付件「首期无复盘基线」；同 period 重复写逐字节相同 |
+| H6 | High | **已修复** | `design=C(12,5,4,5) 17注` 真实串；`C(v,k,t)/TODO/待填`=0；`if False` 死分支与 PAV 死代码已删；`refit_every/max_pair_overlap/t0_min` 均生效 |
+| M1 | Medium | **已修复** | `co_aggregate=mean(R25,R50,RALL)`；测试注释同步改回契约口径 |
+| M2 | Medium | **已修复** | 交付件「核心超级金胆 (4 码)」；`select_gold` V≥3 优先（我构造验证） |
+| M3 | Medium | **部分修复**→Low | ROI/成本整数+`roi_available` 门控 ✓（选七实测 `ROI: N/A`）；回撤/连挂未门控（L16） |
+| M4 | Medium | **已修复** | `min_n_signal=500`+Bonferroni `α=0.01`+「样本量不足」披露；30 期由 4/5 显著→全平稳 |
+| M5 | Medium | **已修复** | 金胆码数/和值区间/规则名与阈值全部来自 config/常数（交付件段落 3/4） |
+| M6 | Medium | **部分修复**→Low | NIST 已按 p0=25% 偏置重构+免责；Runs/APE 仍显示「预警」用词（L17） |
+| M7 | Medium | **部分修复**→Low | 裸 `except Exception: pass`=**0 处**（分类异常+中文提示）；nx 异常降级仍不记 backend/warning（L18，常规数据不可达） |
+| M8 | Medium | **已修复** | `tickets.py:259` `seed=int(cfg.seed)` 全链路 |
+| M9 | Medium | **已修复** | `_resolve_target_date` 解析失败回溯/抛 `DataFormatError`，无写死日期 |
+| M10 | Medium | **已修复** | `roi_bp` 整数万分比为唯一展示源（`format_roi_bp` 纯整数）；`.roi` 浮点字段 0 展示引用 |
+| M11 | Medium | **已修复** | `max_pair_overlap` 真过滤；三连号必剔除；k/t 取 `PLAY_KT` |
+| M12 | Medium | **已修复** | ML 缓存块复用 + `refit_every` 生效 + 真 PAV；`--ml` 默认关 |
+| M13 | Medium | **已修复** | `atomic_write_text`/`atomic_copy`(.bak)；Excel 失败不再假装成功 |
+| M14 | Medium | **已修复** | 弱断言全部替换为真断言；新增 `test_qa_rework.py` 反向用例（H1–H6） |
+| M15 | Medium·文档勘误 | **已关闭** | 契约 v1.3.0 `§7.4 Errata E1` 记录 0.155%→0.0645%（1/1550），8.md 原文未改 |
+| — | — | **新增 M16** | **B7 逐项放宽不可达 + `relaxed` 恒空 + 约束不可满足即抛错**（唯一阻断项，见 §11.4） |
+| 红线 | — | **11 通过 / 1 违规** | 违规=红线 11（死分支/半成品，M16） |
+
+---
+
+## 0. 结论（v1 首轮，保留可追溯）：**阻断（BLOCK）**
 
 | 级别 | 数量 | 是否阻断 |
 | :--- | ---: | :--- |
@@ -224,4 +260,115 @@
 
 ---
 
-*本卡仅写入 `docs/dsh-matrix/20261102-kl8-five-layer/review-card.md`；未改任何业务代码、未提交、未删除文件。本卡 v1.1 仅并入 Lead 裁决回执与复审清单，首轮问题状态不变，结论维持**阻断**。*
+## 11. 复审详情 v2（2026-11-02，基线 HEAD=`70ab253`）
+
+### 11.1 复审基线与证据来源
+
+- 审查范围：`git diff d9bc139..70ab253`（**183 files, +22285/−9318**）；修复提交 `3281992..70ab253`（51 files, +8077/−1372）。
+- **工作区含未提交变更（已声明，影响举证口径）**：`?? tests/test_qa_rework.py`（qa-test 复审期间新增的独立验证文件，**未入库**；269 用例包含它）、`M acceptance.md`、`M output/*`、`M output/state/adaptive_weights.json`。H1/H2/H4 的关键断言我均**自建脚本**复验，不依赖该未提交文件。
+- 我方实跑（本机，全部 exit 0）：
+  - `python -m compileall -q kl8 main.py tools` → exit 0
+  - `python -m unittest discover -s tests -b` → **Ran 269 tests / OK / exit 0**（我 26.2s；Lead 21.9s，环境差异）
+  - `python main.py --no-sync --mode audit --backtest 30` → 四项机检 True、防穿越 30 期/越界 0、指纹 `9095ab31c5c7bb5e`、无达显著 Top-K
+  - `python main.py --no-sync --mode backtest --backtest 100 --no-tickets` → 56.9s；Top-05 Lift 0.968(p=.6793)、Top-12 0.967、α_adj=0.0100、n=100、全部平稳；R45 归因真实（R1 23.84%/z−1.14、R4 23.31%/z−1.69；高票组 lift .966 vs 低票组 1.025，z−1.18）
+  - `python main.py --no-sync --mode backtest --backtest 20 --k 7` → 10.1s；总投入 0/奖金 0/**ROI: N/A**；但连带打印「最大回撤 0 元 / 最长连挂 20 期」（L16）
+- Lead 提供、我方**未复跑**（保持"Lead 实测"标记）：daily 17.9s；100 期含注单 50.1s；**500 期 no-tickets 244.9s**；500 期 Lift 1.016/1.016/1.035/1.014/0.996 全平稳，R4 z=−2.77、R1 z=−2.03（报告如实披露负 lift，属诚实披露）。
+- 交付件实物（HEAD 已提交版 `output/reports/…第2026292期.txt`，我逐段通读）：段落 0「首期无复盘基线」；段落 3 规则名/阈值取自 config；段落 4「核心超级金胆 (4 码)」「重号 4/新号 8」；段落 5 `C(12,5,4,5) 17注` + 选七 `ROI: N/A`；附录 A 80 行 `Final−Base=0.05·V`；附录 B `样本量不足（n<500）`+真实归因；NIST 附「偏置口径、不作非随机判定依据」说明。
+
+### 11.2 §10.3 三条判据 + Lead 4 个高风险点（均为我方自跑）
+
+| 判据 | 结果 | 证据 |
+| :--- | :--- | :--- |
+| ① H1 得票展示==引擎增量 | **PASS** | ①报告附录 A 80 行解析：`max|Final−Base−0.05·V| = 1.11e-16`，V 覆盖 0–5；②引擎 `score_round` 均匀权重下 `final==base+λ·weighted_votes` 且 `weighted_votes==votes`（array_equal）；③非均匀 `{0.4,0.1,0.2,0.2,0.1}` 恒等式仍 exact 且 **37/80 行**等效票≠整数票 → `w/w̄` 真参与 |
+| ② H2 四约束真在贪心扫描 | **PASS（约束侧）** | 61–80 全 1.0、其余 0.1、上期=1–20 → 池 `(1,2,3,4,21,22,23,61..65)`，单区 5=上限、`relaxed=()`、`feasible=True`、≠Top-12 原样（真换号）。**放宽分支另计 → M16** |
+| ③ H4 正常路径是否误判 False | **PASS（无误判）** | 计数逻辑：`checked` 仅在 `assert_no_lookahead` 通过后 +1，唯一另一分支必 append 越界期号 → 不存在"checked<n 且无 violation"。实测正常 n_test=2：`checked==n_sample==2`、True；mock 注入：`checked=0`、`violations=2`、False |
+| ④ `roi_bp` 是否唯一展示源 | **PASS** | `_ratio_bp` 整数万分比 + `format_roi_bp` 纯整数；`main.py:364`、`text_report.py:454`、`excel.py:370` 均用 `roi_bp`；全仓 `\.roi\b` 展示引用 **0 处**（浮点 `roi` 仅兼容保留） |
+| a) `next_weights` 真用 rule_stats | **PASS** | 构造两期差异极大 rule_stats（各 20 期）：`a`={R1 20/20, R5 0/20} vs `b`={R1 0/20, R5 20/20} → 权重 `R1 0.2726 vs 0.1653`、`R5 0.1653 vs 0.2726`，Σ=1，`hit_rates` 真值（1.0/0.0）；小样本（<3 期）回退 0.2 + 中文告警 |
+| b) `filter` 四约束 | **PASS（见②）** | `greedy_pool` 在扫描中逐码判 zone4/parity/same_tail/repeat_ratio，选满即停 |
+| c) `no_lookahead` 计数一致 | **PASS（见③）** | 同③ |
+| d) ROI 双口径 | **PASS（见④）** | 同④ |
+
+### 11.3 逐项复核结论（顶部表为摘要，此处给代码落点）
+
+- **H1**：`adaptive.rule_hit_rates`(143-175) 由 `BacktestRow.rule_stats` 真算；`softmax_weights`(71-108) 平滑→温度→保底→归一；`hybrid.rule_weight_equivalence`(214-234) 除 `w̄`、`final_score`(170-…) 恒等；`default_rule_weights` 走同一 Softmax 管线（均匀命中率 → 恒 0.2），无字面量兜底。`output/state/adaptive_weights.json` 保存真实非均匀权重（R1 .1997/R4 .1917/R5 .2074; `hit_rates` .235/.239/.249/.153/.310; Σ=1）→ 端到端自证。
+- **H2**：`filter.greedy_pool`(129-212) 真执行；`select_gold`(260-295) A5；`build_pool`(420-528) 最终 `enforce_constraints` 复核 + `feasible` 语义修正。
+- **H3**：`metrics.rule_attribution`(343-406) 真聚合；`_group_summary`/`_proportion_z` 真检验；`walkforward._rule_stats/_vote_group_stats`(75-111) 由 `verdict.mask` ∩ 开奖回填。
+- **H4**：`metrics.self_check`(506-577) 四项独立重算；`no_lookahead` 为真实计数判定；`walkforward`(202-228) 逐期真调用并记录越界期号。
+- **H5**：`pipeline.prev_prediction`(106-270) schema_version=1、原子 `os.replace`、按 period 幂等 upsert、`_build_review`(280-…) 只读上期记录、首期 `NO_BASELINE_TEXT`；`text_report` 段落 0 不再用当期池冒充。
+- **H6**：`tickets.build_ticket_plan`(217-303) `design=C(v,k,t,m) N注` 真实串；`ml.py` `if False` 死分支与 `cal_prob` 已删、PAV 真用（297/421）；`refit_every`(`_block_start` 307-320)/`max_pair_overlap`(`_limit_pair_overlap` 47-87)/`t0_min`(walkforward 151-157) 全部生效。
+- **M1**：`hybrid.co_aggregate` = `column_stack(...).mean(axis=1)`；docstring 记录"0.20/0.20/0.60 历史事故已纠正"。
+- **M2**：`select_gold`；`GOLD_RATIO=0.30`、`GOLD_VOTE_PRIORITY=3` 均取常数。
+- **M4**：`lift_at_k`(202-233) 三条件（n≥500、Lift>1.05、p<α/len(ks)）；`sample_note` 由 config 生成。
+- **M5**：`text_report._rule_desc`(107-137) 由 `cfg.rules` 实时生成；金胆码数 `len(gold)`；和值区间由常数函数算。
+- **M8**：`tickets.py:259` `seed=int(cfg.seed)` → `covering.solve(..., seed=...)`；`anneal/greedy_weighted` 均透传。
+- **M9**：`pipeline._resolve_target_date`(353-…) 回溯最近合法日期并告警，全失败抛 `DataFormatError`。
+- **M10**：`metrics._ratio_bp`(409-422)/`format_roi_bp`(425-433)；整数元累加。
+- **M11**：`tickets.max_run > cfg.max_consecutive_in_ticket`（默认 2 → 三连剔除）、`_limit_pair_overlap`、`PLAY_KT`（覆盖配置校验 `config.py:780`）。
+- **M12**：`MLCache.get_model/put_model` + 块起点复用 + 真 PAV；`ml.py:419` 注明死分支已删除。
+- **M13**：新增 `kl8/atomic_io.py`（104 行）→ `atomic_write_text`（TXT/微信）、`atomic_copy`（Excel，含 `.bak`）；Excel 失败路径 `except OSError` 后清理临时文件并向上报错，不再 print 后当成功。
+- **M14**：`tests/test_filter.py`(33-64,149-190)、`test_metrics.py`(344)、`test_covering.py`(3,…)、`test_walkforward.py`(112-133) 全部改为真断言/反向断言。
+- **M15**：契约 `§7.4 Errata E1`（contract.md:1388）+ `§6.1` 期号顺序已订正；`docs/8.md` 未改。
+
+### 11.4 v2 新增/残留问题
+
+| # | 级别 | 位置 | 问题与证据 | 修复建议 | Owner |
+| :-- | :-- | :--- | :--- | :--- | :--- |
+| **M16** | **Medium（唯一阻断项）** | `kl8/layer4_scoring/filter.py:196-211`、`:446-462`、`:470-500` | **契约 B7「逐项放宽+留痕」路径不可达。** ① `greedy_pool` 凑不满时进入**无约束补齐**分支（196-211）并按分数顺序直接补到 `size`，只写一条泛化 warning；② 因 greedy 恒返回恰好 `size` 码，`build_pool` 的 `order_steps` 循环首轮即 `len(selected)>=size` → **`relaxed` 恒为空**，`_relax_detail`(298-…) 与 `remaining_relaxed` 分支为**死代码**；③ 补齐进来的码必然违反至少一项启用约束（它们正因违约被 greedy 跳过），于是最终复核命中 `reasons and not remaining_relaxed` → **直接抛 `InfeasibleConstraintError`**。实测：`max_same_tail=1` 构造 → `候选池违反硬约束且未记录任何放宽项：单区 7>5；尾数 6×2>1`；上期空集（重号配额不可行）同样抛错。契约 v1.3.0 **B7**（`contract.md:1201`）明确："按 `same_tail→parity→zone4→repeat_ratio` 逐项放宽并写 warnings；全部放宽仍不达标 → `InfeasibleConstraintError`"。独立佐证：未提交的 `tests/test_qa_rework.py:161-177` 自述"该补齐吞掉了有序放宽分支，`relaxed` 恒为空……留痕缺口已报 Lead"，但仅锁定"必须失败"底线。 | greedy 凑不满时**返回不足码数**（删/限 196-211 补齐），由 `build_pool` 按 `relax_order` 逐项放宽并**每步重跑 greedy**；仅当全部放宽仍不足才抛错。补正向断言：极端打分 + 收紧阈值 → `relaxed == 真实放宽项` 且 `warnings` 含放宽后统计值（替换"必须抛错"断言）。 | 码小全 + 测小严 |
+| L15 | Low | `kl8/reporting/text_report.py:459-461` | 附录 B 无注单回测时 ROI N/A 原因文案错："（官方奖级未确认）"——真实原因是**回测未生成注单**（`--no-tickets`）。信息量正确（不出收益率）但归因错。 | 按 `roi_available` 真假分别给原因："未生成注单/未结算" vs "官方奖级未确认"。 | 码小全 |
+| L16 | Low | `main.py:366-367`；`kl8/reporting/text_report.py:454-455` | M3 残留：`roi_available=False` 时仍打印「最大回撤 / 最长连挂」（实测选七 20 期：`ROI: N/A` + 回撤 0 元 + 连挂 20 期），A10「ROI/回撤/连挂仅对选五出具」未完全落地。 | 回撤/连挂随 `roi_available` 门控，或注明"未结算口径（仅期数）"。 | 码小全 |
+| L17 | Low | `kl8/reporting/text_report.py:293-302`；交付件 L19–L23 | M6 残留：NIST 已正确按 p0=25% 重构并加免责，但 Runs/ApproximateEntropy 仍以「预警」呈现（数值上确实偏离 iid 假设，属结构必然）。 | 措辞改为「偏离 iid 假设（20/80 结构使然）」并保留免责。 | 码小全 |
+| L18 | Low | `kl8/layer3_features/graph.py:111,149,198,251` | M7 残留：networkx 抛 `_NX_ERRORS` 时静默降级 NumPy，**不更新 `backend`、不写 warning**（B3 要求"降级 + backend 记录 + warning"）；常规数据不可达。 | `pagerank/eigenvector/louvain` 返回 `(values, backend)` 或在外层 try 里置 `backend="numpy_power"` + warning。 | 码小全 |
+| L1′ | Low | 24 处（AST 排除 `__init__` 再导出）：`config.py:38 COST_PER_TICKET_YUAN`、`leakage.py:13 os`、`metrics.py:21 Any`、`walkforward.py:19 Mapping/26 DataFormatError`、`features.py:11/29/33`、`morphology.py:19 get_prime_label` 等 | 首轮 L1（60+）已降至 **24**，仍属残留。 | `ruff --select F401` 清理 + CI 静态检查。 | 码小全 |
+| L3′ | Low | `morphology.py:151`（40.5）；`entropy.py:217`/`features.py:171`（`min(200, n_hist)`）；`metrics.py:212`/`priors.py:111-112`（1.96 字面量） | 首轮 L3 残留：40.5 应 `(N_NUM+1)/2`；200 应进 config；1.96 应取 `constants.Z_SIG`。 | 收敛到 constants/config。 | 码小全 |
+| P1 | 过程 | 工作区 | 复审基线含**未提交** `tests/test_qa_rework.py`（+acceptance.md/output 改动）；若该文件继续变动，`Ran N tests` 会漂移。 | 复审/发布前先 commit 或明确以工作区为准并冻结。 | Lead/qa-test |
+
+### 11.5 12 红线 v2 判定（task-8 口径）
+
+| # | 红线 | v1 | v2 | 依据 |
+| :-- | :--- | :--- | :--- | :--- |
+| 1 | 零魔法数字 | ❌ | **⚠️ 部分** | 主要阈值已入 config/constants；残留 40.5 / min(200) / 1.96 字面量（L3′） |
+| 2 | 零裸 except / 零 silent pass | ❌ | **✅ 通过** | 全仓 `except Exception:`=0；均分类异常 + 中文提示 |
+| 3 | 零浮点金额 | ❌ | **✅ 通过** | 金额 int；`roi_bp` 整数万分比唯一展示源（判据④） |
+| 4 | 循环与组合规模封顶 | ✅ | **✅ 通过** | `max_m_subsets/max_pool_v/max_budget/ilp_*_cap` 保持 |
+| 5 | 除零与空安全 | ⚠️ | **✅ 通过** | 分母守卫齐全；不可行显式抛 `InfeasibleConstraintError`/`DataFormatError`，无静默降级 |
+| 6 | 时间标准化 | ❌ | **✅ 通过** | `_resolve_target_date` 回溯/抛错；无写死日期 |
+| 7 | 零循环内重计算 | ❌ | **✅ 通过** | ML 缓存+`refit_every` 真生效；`build_pool` 复用 `score_round` 已算 ranks/base/verdicts |
+| 8 | 幂等防重 | ⚠️ | **✅ 通过** | prev_prediction 按 period 幂等 + 原子写；交付件覆盖写 + `.bak`；同输入重跑逐字节一致 |
+| 9 | 确定性（seed） | ❌ | **✅ 通过** | `seed=cfg.seed` 全链路（covering/tickets/SA/Louvain/ML） |
+| 10 | 资源释放 | ⚠️ | **✅ 通过** | `atomic_write_text`/`atomic_copy`、`with`、网络超时、失败清理临时文件 |
+| 11 | 零死代码 / 零半成品 | ❌ | **❌ 仍违规** | M16：补齐分支绕过有序放宽 → `relaxed` 恒空、`_relax_detail`/`remaining_relaxed` 死码、B7 未实现 |
+| 12 | 中文文档与命名 | ⚠️ | **✅ 通过** | AST 扫描：公开符号仅 `filter.py:285` 嵌套局部 `sort_key` 缺 docstring（可接受）；命名抽样未见红 |
+
+→ **11 通过 / 1 违规（红线 11）**。
+
+### 11.6 G4 结论与放行条件
+
+**G4：仍阻断（BLOCK）。** 阻断项唯一：**M16 / 红线 11**（B7 逐项放宽与留痕不可达）。其余全部收敛。
+
+放行二选一（请 Lead 裁决）：
+- **方案 A（推荐，代码修）**：按 11.4 修复 M16（greedy 不足时交回有序放宽；约 20–40 行 + 1 个正向用例），我按"极端构造 → `relaxed` 恰为真实项 + warnings 含统计值 + 池满 12 码"复审该项即可宣布 G4 放行。
+- **方案 B（契约改）**：Lead 裁定"硬失败优先于带病出单"，以契约 v1.3.1 修订 B7（改为"约束不可满足 → 抛 `InfeasibleConstraintError`；放宽仅用于可满足但优先序冲突"），并把 `test_qa_rework.py:161-177` 注释同步为裁定口径；此时 M16 降为文档勘误 → **G4 可放行**（其余全绿）。
+
+无需再变更：H1/H3/H4/H5/H6、M1/M2/M4/M5/M8–M14、L2/L4/L5/L12/L13/L14（抽样复核已修复）。
+提交前建议一并处理（不阻断）：L15/L16/L17/L18/L1′/L3′、P1 冻结未提交文件。
+
+### 11.7 「自报 vs 我实跑」对照
+
+| 项 | 码小全自报 / Lead 实测 | 我实跑 | 结论 |
+| :--- | :--- | :--- | :--- |
+| "H1–H6 全清零 / M1–M14 全修" | 全清零 | 5/6 High、11/15 Medium 已修复；H2 部分、M15 关闭 | **不完全成立**：措辞应为"H2 主体验证通过、B7 放宽分支未实现" |
+| 单测 | Lead：269 / 21.916s / OK | 269 / 26.165s / OK | 一致（用例数一致；时长环境差异） |
+| audit | no_lookahead True、30/0、指纹 9095ab31c5c7bb5e | 同 | 一致 |
+| 100 期回测 | Top-05 0.968(p.6793)、α=0.0100、全平稳 | 同（56.9s vs Lead 50.1s 含注单） | 一致 |
+| 交付件 grep | 占位符=0、★显著=0、ROI N/A=3、首期基线=2 | 逐段通读一致；NIST 段还剩 2 条「预警」（有免责） | 一致（L17 为措辞残留） |
+| 500 期 | 244.9s，R4 z=−2.77 / R1 z=−2.03 | **未复跑**（标注"Lead 实测"） | 不做独立背书 |
+
+### 11.8 未验证项（保持标记）
+
+- 500 期性能 244.9s 与 500 期归因 z 值：**Lead 实测，我方未复跑**（超出本轮时间窗），不代背书。
+- `--ml` 开启后端到端耗时：仍未实测（默认关闭，不影响 G4 结论）。
+- Live 网络同步（`--sync`）：未在本次复审范围（沿用 v1 结论：超时/分类异常/上下文管理齐备）。
+
+---
+
+*本卡仅写入 `docs/dsh-matrix/20261102-kl8-five-layer/review-card.md`；未改任何业务代码、未提交、未删除文件。v2 结论：**仍阻断**，唯一阻断项 M16（B7 放宽路径不可达），其余 H1–H6/M1–M15 均已复核并给状态。*

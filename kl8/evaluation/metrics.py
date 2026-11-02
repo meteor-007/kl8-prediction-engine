@@ -23,7 +23,7 @@ from typing import Any, Mapping, Sequence
 import numpy as np
 
 from kl8.config import BacktestConfig
-from kl8.constants import P0, RULE_IDS, hypergeometric_pmf
+from kl8.constants import P0, ROI_NA_NO_TICKET_TEXT, ROI_NA_TEXT, RULE_IDS, hypergeometric_pmf
 from kl8.datatypes import BacktestReport, BacktestRow
 
 try:
@@ -431,6 +431,23 @@ def format_roi_bp(roi_bp: int) -> str:
     sign = "-" if roi_bp < 0 else ""
     value = abs(int(roi_bp))
     return f"{sign}{value // 100}.{value % 100:02d}%"
+
+
+def roi_text(stat: "BankrollStat") -> str:
+    """ROI 展示口径的唯一出口：能算则给万分比，不能算则**分原因**披露（P10b-L15）。
+
+    - ``roi_available=True`` → 万分比整数格式化（如 ``-70.12%``）；
+    - 本期未生成注单（``total_cost_yuan == 0``）→ ``ROI: N/A（本次未生成注单）``；
+    - 有注单但奖级未确认 → ``ROI: N/A（官方奖级未确认）``。
+
+    @param stat 资金曲线统计
+    @return 展示字符串
+    """
+    if stat.roi_available:
+        return format_roi_bp(stat.roi_bp)
+    if int(stat.total_cost_yuan) <= 0:
+        return ROI_NA_NO_TICKET_TEXT
+    return ROI_NA_TEXT
 
 
 def bankroll(

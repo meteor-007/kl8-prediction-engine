@@ -30,7 +30,7 @@ from openpyxl.utils import get_column_letter
 from kl8.atomic_io import atomic_copy
 from kl8.constants import E_REPEAT, NO_BASELINE_TEXT, P0, P_CO, PLAY_LABELS, ROI_NA_TEXT, RULE_IDS, RULE_NAMES
 from kl8.errors import KL8Error
-from kl8.evaluation.metrics import format_roi_bp
+from kl8.evaluation.metrics import roi_text
 from kl8.reporting.text_report import ReportContext, sample_note
 
 #: Excel 被占用时的重试次数与间隔（秒）。
@@ -367,7 +367,7 @@ def _backtest_sheet(wb: Any, ctx: ReportContext, style: ExcelStyle) -> None:
                 ("资金净收益 (元)", broll.net_yuan),
                 (
                     "投资回报率 ROI",
-                    format_roi_bp(broll.roi_bp) if broll.roi_available else ROI_NA_TEXT,
+                    roi_text(broll),
                 ),
                 ("最大回撤 (元)", broll.max_drawdown_yuan),
                 ("最长连挂 (期)", broll.max_losing_streak),

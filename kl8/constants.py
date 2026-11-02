@@ -374,6 +374,9 @@ NO_BASELINE_TEXT: Final[str] = "首期无复盘基线（无可用的上期预测
 ROI_NA_TEXT: Final[str] = "ROI: N/A（官方奖级未确认）"
 """奖级未确认时的 ROI 披露文案（契约裁决 A10 / §6.6，三类报告共用）。"""
 
+ROI_NA_NO_TICKET_TEXT: Final[str] = "ROI: N/A（本次未生成注单）"
+"""未生成注单时的 ROI 披露文案（P10b-L15：与"奖级未确认"区分，不得混用同一原因）。"""
+
 
 def sum_band(n_pick: int, sigmas: float = 2.0) -> tuple[int, int]:
     """计算 n_pick 个号码和值的理论合理区间 ``E ± sigmas·σ``（无放回超几何抽样）。

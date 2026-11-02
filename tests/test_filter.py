@@ -5,17 +5,26 @@
   逐号**精确成立**（残差恰为 0.0，而非"近似"）；
 - H2（约束不可静默绕过）：构造「Top-12 全部落在同一四分区」的极端打分，
   断言最终池要么按 B7 放宽并留痕、要么换号绕开该分区，禁止"只打 warning 就出单"。
+
+【P10b 自证项（M16）】B7 逐项放宽路径必须**可达**且留痕真实：贪心不足时如实返回不足码数，
+``build_pool`` 按 ``same_tail → parity → zone4 → repeat_ratio`` 逐项放宽、每步重跑，
+``PoolResult.relaxed`` 只记录真实用到的前缀，warnings 含放宽统计与逐项放开值；
+全部放宽仍不足才抛 ``InfeasibleConstraintError``。
 """
 from __future__ import annotations
 
 import unittest
+from unittest import mock
+
 import numpy as np
 
 from kl8.config import AppConfig, PoolConfig
 from kl8.constants import N_NUM
+from kl8.errors import InfeasibleConstraintError
 from kl8.history import load_dataset
 from kl8.layer1_representation.state import BinaryStateMatrix
 from kl8.layer3_features.features import build_feature_snapshot
+from kl8.layer4_scoring import filter as filter_module
 from kl8.layer4_scoring import score_round
 from kl8.layer4_scoring.filter import apply_repeat_quota, build_pool, select_gold, zone4_of
 
@@ -190,6 +199,84 @@ class TestZone4Extreme(unittest.TestCase):
         else:
             # 未放宽约束说明是"换号"路线：池必须真实满足形态体检口径
             self.assertIsInstance(pool.feasible, bool)
+
+
+class TestRelaxTrace(unittest.TestCase):
+    """P10b-M16：B7 逐项放宽路径可达且留痕真实（4 条正向断言）。"""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.ds = load_dataset("kl8_history.txt")
+        cls.state = BinaryStateMatrix.from_dataset(cls.ds)
+        cls.cfg = AppConfig()
+        cls.snap = build_feature_snapshot(cls.state, end=100, cfg=cls.cfg, include_ml=False)
+        cls.scores = np.linspace(0.8, 0.1, 80)
+        cls.votes = np.full(80, 2, dtype=np.int8)
+        cls.last_draw = cls.state.latest_set(100)
+
+    def test_relaxed_entry_is_real_prefix(self) -> None:
+        """①存在解时 ``relaxed`` 恰为真实放宽项（前缀），不是四项全列。"""
+        strict_cfg = AppConfig(pool=PoolConfig(max_same_tail=1))
+        pool = build_pool(
+            self.snap, self.scores, self.votes, self.last_draw, pool_size=12, cfg=strict_cfg
+        )
+        self.assertEqual(pool.relaxed, ("same_tail",), f"放宽项不真实：{pool.relaxed}")
+        self.assertEqual(
+            pool.relaxed,
+            tuple(strict_cfg.pool.relax_order[: len(pool.relaxed)]),
+            "放宽必须按 relax_order 顺序取前缀",
+        )
+        self.assertLess(len(pool.relaxed), len(strict_cfg.pool.relax_order), "不得四项全列")
+
+        # 默认配置下约束可满足 → 不允许虚报放宽
+        normal = build_pool(
+            self.snap, self.scores, self.votes, self.last_draw, pool_size=12, cfg=self.cfg
+        )
+        self.assertEqual(normal.relaxed, ())
+
+    def test_relax_warnings_contain_statistics(self) -> None:
+        """②warnings 含放宽统计（有序列举 + 逐项"放宽到多少"）。"""
+        strict_cfg = AppConfig(pool=PoolConfig(max_same_tail=1))
+        pool = build_pool(
+            self.snap, self.scores, self.votes, self.last_draw, pool_size=12, cfg=strict_cfg
+        )
+        joined = "\n".join(pool.warnings)
+        self.assertIn("有序放宽", joined, f"缺少放宽统计：{pool.warnings}")
+        self.assertIn("same_tail", joined, f"缺少放宽项名：{pool.warnings}")
+        self.assertIn("原上限", joined, f"缺少放开值说明：{pool.warnings}")
+
+    def test_relaxed_pool_is_full_size(self) -> None:
+        """③放宽后池必须满 12 码，且金胆仍是 A5 的 4 码（可出单）。"""
+        strict_cfg = AppConfig(pool=PoolConfig(max_same_tail=1))
+        pool = build_pool(
+            self.snap, self.scores, self.votes, self.last_draw, pool_size=12, cfg=strict_cfg
+        )
+        self.assertEqual(len(pool.main), 12)
+        self.assertEqual(pool.size, 12)
+        self.assertEqual(len(pool.gold), 4)
+        self.assertTrue(set(pool.gold).issubset(set(pool.main)))
+
+    def test_raises_only_after_all_relaxations(self) -> None:
+        """④只有全部 4 项放宽后仍不足才抛错，且错误信息列出已放宽项。"""
+        calls: list[frozenset[str]] = []
+
+        def always_short(*_args, **kwargs):
+            calls.append(kwargs.get("active", frozenset()))
+            return ([1, 2, 3], ("模拟：约束过紧只能选出 3 码",))
+
+        with mock.patch.object(filter_module, "greedy_pool", always_short):
+            with self.assertRaises(InfeasibleConstraintError) as ctx:
+                build_pool(
+                    self.snap, self.scores, self.votes, self.last_draw, pool_size=12, cfg=self.cfg
+                )
+
+        message = str(ctx.exception)
+        self.assertIn("仍只能选出 3/12", message, message)
+        # 5 次尝试 = 不放宽 + 逐项放宽 4 次；最后一次 active 应为空集（全部放宽）
+        self.assertEqual(len(calls), 1 + len(self.cfg.pool.relax_order))
+        self.assertEqual(calls[-1], frozenset())
+        for key in self.cfg.pool.relax_order:
+            self.assertIn(key, message, f"异常信息未列出放宽项 {key}：{message}")
 
 
 if __name__ == "__main__":

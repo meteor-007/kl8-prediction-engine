@@ -45,7 +45,7 @@ from kl8.constants import (
     sum_band,
 )
 from kl8.datatypes import BacktestReport, Dataset, FeatureSnapshot, TicketPlan
-from kl8.evaluation.metrics import format_roi_bp
+from kl8.evaluation.metrics import format_roi_bp, roi_text
 from kl8.layer4_scoring import ScoreRoundResult
 
 if TYPE_CHECKING:
@@ -454,9 +454,11 @@ def render_text_report(ctx: ReportContext) -> str:
                     f"ROI={format_roi_bp(broll.roi_bp)}, 最大回撤={broll.max_drawdown_yuan}元, "
                     f"最长连挂={broll.max_losing_streak}期"
                 )
+            elif broll.total_cost_yuan <= 0:
+                lines.append(f"  * 资金收益表现: {roi_text(broll)}；回测期无注单，无资金流水可披露")
             else:
                 lines.append(
-                    f"  * 资金收益表现: {ROI_NA_TEXT}；"
+                    f"  * 资金收益表现: {roi_text(broll)}；"
                     f"（投入 {broll.total_cost_yuan} 元 / 奖金 {broll.total_prize_yuan} 元，"
                     "仅记录整数元流水，不披露收益率）"
                 )

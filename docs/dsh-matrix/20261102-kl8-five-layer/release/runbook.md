@@ -1,10 +1,10 @@
 # 快乐8（Keno）五层动力学系统 · 上线运维手册（runbook）
 
-> **文档状态**：v0.9-draft（P9 提前启动稿，2026-11-02 18:11 快照）
+> **文档状态**：**v1.0（P9 终态版，2026-11-02 19:2x）**
 > **适用对象**：本机操作者（双击 `.bat` 的日常使用者）+ 维护者（回测/审计/排障）
 > **仓库**：`C:\D-pan\Dpanqianyi\微积分分区`（Windows 11 + PowerShell，Python 3.11.6）
-> **代码基线**：`d9bc139`（重构前快照）→ 当前 `HEAD=3281992`；**工作区仍有 P8 返工未提交**
-> **重要前提**：P8 体检卡当前判定**阻断**（6 High / 15 Medium），本手册中所有「实测耗时/性能」均为 **v1.2.0 历史实测参考值**，P9 终态数值由 Lead 在返工后统一复测确认；性能段落在终态复核前**不得当作 SLA 承诺**。
+> **代码基线**：`d9bc139`（重构前快照）→ **当前 `HEAD=70ab253`（P8 返工已提交，代码工作区 clean）**
+> **重要前提**：P8 体检卡 **6 High + 14 Medium 已修复提交**（M15 为文档勘误，走契约 §7.4 errata 关闭），**审大关复审中**；本手册性能数字为 **P9 终态实测**（未标来源者为 Lead 实跑，release-ops 复跑值单独标注）。
 
 ---
 
@@ -60,7 +60,7 @@ python main.py --no-sync --backtest 0
 
 **首次跑通判据**：控制台打印 `✔ 预测目标: 第 N 期`、`🔥 超级金胆`、`⭐ 精选大底`、`📁 全渠道交付物已就绪`，且 `output/reports|wechat|excel` 三处各新增 1 个当日文件；退出码 0。
 
-> 需要完整验证时再执行：`python -m unittest discover -s tests -v`（**用例数唯一口径 = 输出行的 `Ran N tests`**；P7 复审时为 175 例，当前 P8 返工中，终态以 Lead 实跑为准）。
+> 需要完整验证时再执行：`python -m unittest discover -s tests -v`（**用例数唯一口径 = 输出行的 `Ran N tests`**；P9 终态实测 **`Ran 269 tests in 21.916s` / `OK`**，演进 124→253→269）。
 
 ---
 
@@ -105,6 +105,8 @@ python main.py --no-sync --mode audit --backtest 30
 
 输出：代码级防穿越审计是否洁净、回测自洽性机检项、评估期数、配置指纹（`config_hash`）。**任何审计项不通过 → 退出码 1**（0 成功 / 1 参数或数据错误 / 2 内部异常 / 130 手动中断）。
 
+**P9 实测**：30 期越界 **0 期**，报告自洽四项全 `True`（`sample_count_matches / lift_recalculated / bankroll_recalculated / no_lookahead`），指纹 `9095ab31c5c7bb5e`，耗时 **17.2 s**（Lead）/ **21.5 s**（复跑）。
+
 ### 3.4 高级参数（按需，勿日常滥用）
 
 ```powershell
@@ -116,7 +118,9 @@ python main.py --no-sync --period 2026293 --date 2026-11-03   # 指定目标期/
 python main.py --no-sync --config my_config.json    # 自定义配置（见 §5）
 ```
 
-**参考耗时（v1.2.0 实测，返工后需重测）**：单期全链路 0.39 s；100 期 `--no-tickets` 37.4 s；100 期含注单 40 s；全量单测 14.6 s；`--ml` 开启 2.03 s/期。**超预算须给优化证据，不作为 SLA。**
+**参考耗时（P9 终态实测，HEAD=`70ab253`）**：单期核心 **0.481 s**（连续 3 期 0.488/0.484/0.473，均值；特征+打分 0.482/0.478/0.467，**注单生成 0.006 s（`table` 查表命中）**；真实 2112 期、ML 关、自适应内存态）；daily `--backtest 30` 端到端 **17.9 s**（≈0.60 s/期，含 30 期伴随回测与全渠道渲染）；100 期含注单 **50.1 s**（修复前 40 s，**+10.1 s 为新增真实计算成本**：硬约束真执行 + 归因真统计 + 双口径高奖级 + 防穿越计数）；`audit --backtest 30` **17.2 s**（复跑 21.5 s）；全量单测（269 例）**21.916 s**；**500 期 `--no-tickets` 244.9 s**；`--ml` 开启 2.03 s/期（v1.2.0 值，P9 未重测）。
+
+**性能预算（P9，含修订建议）**：单期核心 原 ≤0.45 s → **建议 ≤0.55 s**（实测 0.481 s，超原 6.9%；修复轮把"只告警的硬约束"改为**真执行**并逐期累计归因，属正确性要求；修复前同口径 0.386 s，差额 0.095 s 全部来自新增真计算）/ 单期全链路 ≤1.10 s / 100 期 原 ≤45 s → **建议 ≤60 s**（实测 50.1 s）/ 500 期 原 ≤180 s → **建议 ≤300 s**（实测 244.9 s）/ 单测 ≤180 s。**修订待 Lead 批准；超预算须给优化证据，不作为 SLA。**
 
 ---
 
@@ -130,16 +134,17 @@ python main.py --no-sync --config my_config.json    # 自定义配置（见 §5�
 | 自适应权重状态 | `output/state/adaptive_weights.json` | 规则权重 R1–R5、命中率、`n_updates`、`updated_at`；按 period 幂等 upsert、原子写 | 引擎自读 |
 | 上期预测复盘状态 | `output/state/prev_prediction.json` | **P8-H5 修复轮新增**：跨期预测持久化（`schema_version` + 按 period 幂等 upsert），供"上期预测命中"如实复盘 | 引擎自读 |
 
-**当前实测产物（2026-11-02 18:xx 快照，P8 修复轮前）**：
+**当前实测产物（2026-11-02 19:2x 快照，P8 修复轮后，HEAD=`70ab253`）**：
 
 ```
-output/reports/Keno预测精要_20261102_第2026292期.txt
-output/wechat/Keno微信发布_20261102_第2026292期.txt
-output/excel/Keno动力学决策_20261102_第2026292期.xlsx
+output/reports/Keno预测精要_20261102_第2026292期.txt        (+ .txt.bak)
+output/wechat/Keno微信发布_20261102_第2026292期.txt         (+ .txt.bak)
+output/excel/Keno动力学决策_20261102_第2026292期.xlsx       (+ .xlsx.bak)
 output/state/adaptive_weights.json
+output/state/prev_prediction.json      # 已落地：schema_version=1，predictions keys=[2026292]
 ```
 
-**注意**：`prev_prediction.json` 截至本稿**尚未生成**（`Test-Path` 实测 `False`），需 P8-H5 修复落地后才会出现；**旧命名交付件**（`微积分八区预测报告_*.txt`、`微信分桶推荐_*.txt`、`快乐8微积分*.xlsx`，共 48 个）已随 `f170147` 删除，**不再生成**。
+**注意**：`prev_prediction.json` **已随 P8-H5 修复落地**（原子写 + 按 period 幂等 upsert；首次运行或上期无记录时复盘固定输出「首期无复盘基线」，属正常）；`.bak` 为原子写前的上一版备份（可留 1 份回看，勿手工改名）。**旧命名交付件**（共 48 个）已随 `f170147` 删除，**不再生成**。
 
 ---
 
@@ -205,7 +210,7 @@ output/state/adaptive_weights.json
 ### 6.2 Excel 被 Excel/WPS 进程占用
 
 - **现象**：`PermissionError`；交付件 Excel 未更新（TXT/微信通常已写成功）。
-- **机制**：渲染层对文件占用**重试 3 次**；达上限后记 warning 并返回路径（P8-M13 已立项改为"明确失败/原子写"，终态行为以返工后为准）。
+- **机制**：渲染层对文件占用**重试 3 次**；达上限后记 warning 并返回路径。交付件改为**原子写**（先写临时文件再 `os.replace`，旧版留 `.bak`），P8-M13 已修复并实测生效。
 - **处置**：
   1. 关闭所有 Excel/WPS 窗口后重跑（最有效）；
   2. 任务管理器确认无残留 `EXCEL.EXE`；
@@ -266,7 +271,7 @@ output/state/adaptive_weights.json
 cd "C:\D-pan\Dpanqianyi\微积分分区"
 git rev-parse --short HEAD                                   # 确认目标提交
 python -m compileall kl8 main.py tools; echo "COMPILE_EXIT=$LASTEXITCODE"      # 期望 0
-python -m unittest discover -s tests -v; echo "UNITTEST_EXIT=$LASTEXITCODE"    # 期望 0/全绿
+python -m unittest discover -s tests -v; echo "UNITTEST_EXIT=$LASTEXITCODE"    # 期望 0/全绿（P9 基线：Ran 269）
 python main.py --no-sync --mode audit --backtest 30; echo "AUDIT_EXIT=$LASTEXITCODE"  # 期望 0
 python main.py --no-sync --backtest 30 --full-print          # 日常冒烟，期望 0
 Get-ChildItem output/reports,output/wechat,output/excel,output/state -File | Select-Object Name,Length
@@ -299,4 +304,5 @@ git grep -n -E "calc_core|calc_engine|calc_backtest|calc_ensemble|calc_shrinkage
 
 | 版本 | 日期 | 变更 |
 | :--- | :--- | :--- |
-| v0.9-draft | 2026-11-02 | P9 提前启动稿：环境/安装/三种用法/产出清单/配置/6 类故障/回滚/自检；性能数字标注为 v1.2.0 参考值，待 P8 返工后由 Lead 终态复测更新；`prev_prediction.json` 标注为待落地 |
+| v0.9-draft | 2026-11-02 | P9 提前启动稿：环境/安装/三种用法/产出清单/配置/6 类故障/回滚/自检；性能为 v1.2.0 参考值 |
+| **v1.0** | 2026-11-02 | **P9 终态版**（HEAD=`70ab253`）：用例 269；compileall/audit/.bat 实测；性能换 P9 终态数字（含 100 期 50.1 s、500 期 244.9 s 超预算披露）；`prev_prediction.json` 已落地；交付件原子写 + `.bak`；回滚与自检口径复核 |
