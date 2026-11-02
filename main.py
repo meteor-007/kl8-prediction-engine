@@ -147,7 +147,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--k",
         type=int,
         default=None,
-        help="玩法选号数 (如 5 代表选五，3 代表选三，7 代表选七)",
+        help="玩法选号数 (5 = 选五，7 = 选七；其它取值会被配置校验拒绝)",
     )
     parser.add_argument(
         "--budget",
