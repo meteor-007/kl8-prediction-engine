@@ -1,10 +1,10 @@
 # 快乐8（Keno）五层动力学系统 · 上线运维手册（runbook）
 
-> **文档状态**：**v1.0（P9 终态版，2026-11-02 19:2x）**
+> **文档状态**：**v1.1（P9 定稿版，2026-11-02；HEAD=`467b4e4`）**
 > **适用对象**：本机操作者（双击 `.bat` 的日常使用者）+ 维护者（回测/审计/排障）
 > **仓库**：`C:\D-pan\Dpanqianyi\微积分分区`（Windows 11 + PowerShell，Python 3.11.6）
-> **代码基线**：`d9bc139`（重构前快照）→ **当前 `HEAD=70ab253`（P8 返工已提交，代码工作区 clean）**
-> **重要前提**：P8 体检卡 **6 High + 14 Medium 已修复提交**（M15 为文档勘误，走契约 §7.4 errata 关闭），**审大关复审中**；本手册性能数字为 **P9 终态实测**（未标来源者为 Lead 实跑，release-ops 复跑值单独标注）。
+> **代码基线**：`d9bc139`（重构前快照）→ **当前 `HEAD=467b4e4`（P9 终态，工作区 clean）**
+> **重要前提**：G4 **已放行**（High=0 / Medium=0，M16 已关闭）；红线 11/12 严格通过 + 红线 1 余 5 处 Low 级字面量（不阻断）。本手册性能数字为 **P9 终态实测**（Lead / 测小严 / 码小全 三来源并列，标注明来源）。
 
 ---
 
@@ -60,7 +60,7 @@ python main.py --no-sync --backtest 0
 
 **首次跑通判据**：控制台打印 `✔ 预测目标: 第 N 期`、`🔥 超级金胆`、`⭐ 精选大底`、`📁 全渠道交付物已就绪`，且 `output/reports|wechat|excel` 三处各新增 1 个当日文件；退出码 0。
 
-> 需要完整验证时再执行：`python -m unittest discover -s tests -v`（**用例数唯一口径 = 输出行的 `Ran N tests`**；P9 终态实测 **`Ran 269 tests in 21.916s` / `OK`**，演进 124→253→269）。
+> 需要完整验证时再执行：`python -m unittest discover -s tests -v`（**用例数唯一口径 = 输出行的 `Ran N tests`**；P9 终态实测 **`Ran 294 tests in 34.861s` / `OK`**（测小严 36.285 s、码小全 35.992 s），演进 124→253→269→**294**）。
 
 ---
 
@@ -118,9 +118,23 @@ python main.py --no-sync --period 2026293 --date 2026-11-03   # 指定目标期/
 python main.py --no-sync --config my_config.json    # 自定义配置（见 §5）
 ```
 
-**参考耗时（P9 终态实测，HEAD=`70ab253`）**：单期核心 **0.481 s**（连续 3 期 0.488/0.484/0.473，均值；特征+打分 0.482/0.478/0.467，**注单生成 0.006 s（`table` 查表命中）**；真实 2112 期、ML 关、自适应内存态）；daily `--backtest 30` 端到端 **17.9 s**（≈0.60 s/期，含 30 期伴随回测与全渠道渲染）；100 期含注单 **50.1 s**（修复前 40 s，**+10.1 s 为新增真实计算成本**：硬约束真执行 + 归因真统计 + 双口径高奖级 + 防穿越计数）；`audit --backtest 30` **17.2 s**（复跑 21.5 s）；全量单测（269 例）**21.916 s**；**500 期 `--no-tickets` 244.9 s**；`--ml` 开启 2.03 s/期（v1.2.0 值，P9 未重测）。
+**参考耗时（P9 终态实测，HEAD=`467b4e4`；三来源并列）**：
 
-**性能预算（P9，含修订建议）**：单期核心 原 ≤0.45 s → **建议 ≤0.55 s**（实测 0.481 s，超原 6.9%；修复轮把"只告警的硬约束"改为**真执行**并逐期累计归因，属正确性要求；修复前同口径 0.386 s，差额 0.095 s 全部来自新增真计算）/ 单期全链路 ≤1.10 s / 100 期 原 ≤45 s → **建议 ≤60 s**（实测 50.1 s）/ 500 期 原 ≤180 s → **建议 ≤300 s**（实测 244.9 s）/ 单测 ≤180 s。**修订待 Lead 批准；超预算须给优化证据，不作为 SLA。**
+| 项 | 实测（来源） |
+| :--- | :--- |
+| 单期核心 | **0.48–0.51 s**：Lead **0.481 s**（0.488/0.484/0.473）/ 测小严 **0.510 s**（0.506/0.510/0.514） |
+| 单期全链路（含渲染） | **1.243 s**（测小严：1.204/1.217/1.309） |
+| 100 期 `--no-tickets` | **55.10 s**（测小严；同机旧代码对照 **36.9 s**） |
+| 100 期含注单 | **50.1 s**（Lead） |
+| 500 期 `--no-tickets` | **244.9 s**（Lead） |
+| 全量单测（294 例） | **≈35–36 s**：Lead 34.861 s / 测小严 36.285 s / 码小全 35.992 s |
+| 注单生成（覆盖设计） | **0.006–0.008 s**（`table` 查表命中） |
+| `audit --backtest 30` | **17.2 s**（Lead）/ **21.5 s**（release-ops 复跑） |
+| `--ml` 开启 | 2.03 s/期（v1.2.0 值，P9 未重测） |
+
+**性能预算（P9，含修订）**：单期核心 **≤0.55 s**（原 0.45）/ 单期全链路 **≤1.35 s**（原 1.10）/ 100 期 no-tickets **≤60 s**（原 45）/ 100 期含注单 ≤60 s / 500 期 **≤300 s**（原 180）/ 单测 ≤180 s / 注单生成 <0.1 s。**修订由 Lead 批准。**
+
+**性能因果（重要，勿当退化报障）**：P8 真实计算落地后，单期比 v1.2.0 基线（核心 0.386 s / 全链路 0.915 s）慢约 **32% / 36%**。原因：① 硬约束由「只告警」改**真执行**；② 规则归因**逐期真算**；③ **每期防穿越校验**；④ 双口径高奖级统计。属**正确性提升而非性能退化**。**优化列入下一迭代**，热点：特征快照 0.34 s、随机性报告 0.31 s、Excel 渲染 0.12 s。
 
 ---
 
@@ -271,7 +285,7 @@ output/state/prev_prediction.json      # 已落地：schema_version=1，predicti
 cd "C:\D-pan\Dpanqianyi\微积分分区"
 git rev-parse --short HEAD                                   # 确认目标提交
 python -m compileall kl8 main.py tools; echo "COMPILE_EXIT=$LASTEXITCODE"      # 期望 0
-python -m unittest discover -s tests -v; echo "UNITTEST_EXIT=$LASTEXITCODE"    # 期望 0/全绿（P9 基线：Ran 269）
+python -m unittest discover -s tests -v; echo "UNITTEST_EXIT=$LASTEXITCODE"    # 期望 0/全绿（P9 基线：Ran 294）
 python main.py --no-sync --mode audit --backtest 30; echo "AUDIT_EXIT=$LASTEXITCODE"  # 期望 0
 python main.py --no-sync --backtest 30 --full-print          # 日常冒烟，期望 0
 Get-ChildItem output/reports,output/wechat,output/excel,output/state -File | Select-Object Name,Length
@@ -305,4 +319,5 @@ git grep -n -E "calc_core|calc_engine|calc_backtest|calc_ensemble|calc_shrinkage
 | 版本 | 日期 | 变更 |
 | :--- | :--- | :--- |
 | v0.9-draft | 2026-11-02 | P9 提前启动稿：环境/安装/三种用法/产出清单/配置/6 类故障/回滚/自检；性能为 v1.2.0 参考值 |
-| **v1.0** | 2026-11-02 | **P9 终态版**（HEAD=`70ab253`）：用例 269；compileall/audit/.bat 实测；性能换 P9 终态数字（含 100 期 50.1 s、500 期 244.9 s 超预算披露）；`prev_prediction.json` 已落地；交付件原子写 + `.bak`；回滚与自检口径复核 |
+| v1.0 | 2026-11-02 | P9 终态版（HEAD=`70ab253`）：用例 269；compileall/audit/.bat 实测；性能换 P9 数字；`prev_prediction.json` 已落地；原子写 + `.bak`；回滚与自检复核 |
+| **v1.1** | 2026-11-02 | **P9 定稿**（HEAD=`467b4e4`）：用例 **294**（`Ran 294/34.861s`）；G4 **放行**（High/Medium=0、红线 11/12 严格 + 5 处 Low）；性能按 **三来源并列区间**（核心 0.48–0.51 s、全链路 1.243 s、100 期 55.10/50.1 s、500 期 244.9 s、单测 35–36 s）+ 预算修订（≤0.55/≤1.35/≤60/≤300）+ **32%/36% 慢的因果说明与下一迭代优化热点** |
