@@ -20,7 +20,7 @@ from kl8.layer5_combinatorial.covering import (
     solve,
     verify_guarantee,
 )
-from kl8.layer5_combinatorial.tickets import build_ticket_plan, plan_cost, postprocess
+from kl8.layer5_combinatorial.tickets import build_ticket_plan, postprocess
 
 
 def build_tickets(
@@ -59,7 +59,6 @@ __all__ = [
     "coverage_ratio",
     "lookup_table",
     "m_target",
-    "plan_cost",
     "postprocess",
     "solve",
     "verify_guarantee",

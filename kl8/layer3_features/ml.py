@@ -12,12 +12,15 @@ from __future__ import annotations
 
 from collections import OrderedDict
 from dataclasses import dataclass
-from typing import Mapping
+from typing import Any, Mapping
 
 import numpy as np
 
 from kl8.config import MLConfig
-from kl8.constants import N_NUM, P0
+from kl8.constants import ML_FEATURE_WARMUP, N_NUM, P0
+
+#: ML 特征 schema 版本戳（特征列变更时递增，使缓存自然失效）。
+ML_FEATURE_SCHEMA: str = "fs-v1"
 from kl8.layer1_representation.state import BinaryStateMatrix
 from kl8.layer1_representation.windows import WindowSpec
 
@@ -27,43 +30,114 @@ try:
 except ImportError:
     _HAS_LGB = False
 
+#: ML 训练/预测允许捕获的异常（P8-M7：禁止裸 except；LightGBM 专属异常在可用时登记）。
+_ML_ERRORS: tuple[type[BaseException], ...] = (
+    ValueError,
+    TypeError,
+    KeyError,
+    RuntimeError,
+    ImportError,
+    np.linalg.LinAlgError,
+)
+if _HAS_LGB:  # pragma: no branch —— 未安装 lightgbm 时无该异常类型可登记
+    _ML_ERRORS = _ML_ERRORS + (lgb.basic.LightGBMError,)
+
 
 @dataclass(frozen=True)
 class MLResult:
     """机器学习概率预测结果。"""
 
     prob: np.ndarray
+    """(80,) 开出概率预测。"""
+
     available: bool
+    """是否由真实模型产出（False 表示降级先验）。"""
+
     backend: str
+    """实际生效后端：lightgbm / ema / uniform。"""
+
     refit: bool
+    """本次调用是否重新执行训练+预测并写入预测缓存（False 表示命中缓存）。"""
+
     n_train: int
+    """训练样本条数（80 码 × 期数）。"""
+
     warnings: tuple[str, ...]
+    """降级或异常告警。"""
 
 
 class MLCache:
-    """简单的 LRU 预测结果缓存器。"""
+    """进程内 LRU 缓存器：按 end 缓存预测结果，同时按重训块缓存已训练模型（契约 §3.9、R23）。
+
+    【P8-M12 修复要点】
+    1. ``put`` 对 ndarray 做深拷贝，外部改写不得污染缓存（缓存可信性）；
+    2. 预测缓存键仍含 ``end``（每期预测本就不同，这是正确语义）；
+    3. 额外维护"重训块 → 已训练模型"缓存：``cfg.refit_every`` 块内复用模型，
+       使 ``refit_every`` 真正生效、避免回测每期重训（旧实现的性能缺陷）。
+    """
 
     def __init__(self, max_size: int = 8) -> None:
+        """初始化缓存器。
+
+        @param max_size 预测/模型两类缓存各自的最大条目数（<1 时按 1 处理）
+        """
         self.max_size = max(1, max_size)
         self._cache: OrderedDict[tuple[int, str, str], np.ndarray] = OrderedDict()
+        self._models: OrderedDict[tuple[int, str, str], Any] = OrderedDict()
 
     def get(self, key: tuple[int, str, str]) -> np.ndarray | None:
+        """读取预测缓存项并标记为最近使用。
+
+        @param key 缓存键 ``(end, 特征schema, 种子)``
+        @return 概率数组副本；未命中返回 None
+        """
         if key in self._cache:
             self._cache.move_to_end(key)
-            return self._cache[key]
+            return self._cache[key].copy()
         return None
 
     def put(self, key: tuple[int, str, str], prob: np.ndarray) -> None:
+        """写入预测缓存（保存副本，超出容量淘汰最久未用）。
+
+        @param key 缓存键
+        @param prob (80,) 概率预测
+        """
         if key in self._cache:
             self._cache.move_to_end(key)
-        self._cache[key] = prob.copy()
+        self._cache[key] = np.array(prob, dtype=np.float64, copy=True)
         if len(self._cache) > self.max_size:
             self._cache.popitem(last=False)
 
+    def get_model(self, key: tuple[int, str, str]) -> Any | None:
+        """读取某重训块的已训练模型。
+
+        @param key 模型缓存键 ``(重训块起点, 特征schema, 种子)``
+        @return 模型包 (clf, train_preds, y_train)；未命中返回 None
+        """
+        if key in self._models:
+            self._models.move_to_end(key)
+            return self._models[key]
+        return None
+
+    def put_model(self, key: tuple[int, str, str], bundle: Any) -> None:
+        """写入某重训块的已训练模型（超出容量淘汰最久未用）。
+
+        @param key 模型缓存键
+        @param bundle 模型包 (clf, train_preds, y_train)
+        """
+        if key in self._models:
+            self._models.move_to_end(key)
+        self._models[key] = bundle
+        if len(self._models) > self.max_size:
+            self._models.popitem(last=False)
+
     def clear(self) -> None:
+        """清空全部预测与模型缓存项。"""
         self._cache.clear()
+        self._models.clear()
 
     def __len__(self) -> int:
+        """返回当前预测缓存项数量。"""
         return len(self._cache)
 
 
@@ -203,6 +277,49 @@ def ema_fallback(state: BinaryStateMatrix, end: int, span: int = 25) -> np.ndarr
     return np.clip(np.mean(w_mat, axis=0), 0.05, 0.95)
 
 
+def _pav_calibrate_predict(
+    raw_prob: np.ndarray,
+    train_scores: np.ndarray,
+    train_labels: np.ndarray,
+) -> np.ndarray:
+    """用训练集 PAV 保序回归把原始概率映射为校准后概率（契约 R23，P8-H6 真校准）。
+
+    PAV 输出的是"训练样本自身分数 → 校准概率"的分段常数映射；对当期原始概率，
+    在训练分数序列中定位插入点后取对应分段值（单调非降，保持秩序）。
+
+    @param raw_prob (80,) 当期模型原始预测概率
+    @param train_scores (N,) 训练集原始预测概率
+    @param train_labels (N,) 训练集真实标签 0/1
+    @return (80,) float64 校准后概率 ∈ [0,1]
+    """
+    if train_scores.size == 0 or raw_prob.size == 0:
+        return np.clip(raw_prob, 0.0, 1.0)
+    calibrated_train = pav_calibrate(train_scores, train_labels)
+    order = np.argsort(train_scores, kind="mergesort")
+    sorted_scores = np.asarray(train_scores, dtype=np.float64)[order]
+    sorted_cal = np.asarray(calibrated_train, dtype=np.float64)[order]
+    positions = np.searchsorted(sorted_scores, np.asarray(raw_prob, dtype=np.float64), side="right") - 1
+    positions = np.clip(positions, 0, sorted_scores.size - 1)
+    return np.clip(sorted_cal[positions], 0.0, 1.0)
+
+
+def _refit_block_start(end: int, cfg: MLConfig) -> int:
+    """计算当前期所属的重训块起点（契约 M12：``refit_every`` 必须真正生效）。
+
+    块起点 = 在 ``ML_FEATURE_WARMUP`` 之后按 ``refit_every`` 切块的上界；块内共享同一
+    已训练模型。这样既能让缓存真正命中，又保证训练数据严格早于预测期（无穿越）。
+
+    @param end 当期历史截断索引
+    @param cfg ML 配置
+    @return 重训块起点（≤ end）
+    """
+    anchor = int(ML_FEATURE_WARMUP)
+    span = max(1, int(cfg.refit_every))
+    if end <= anchor:
+        return end
+    return anchor + ((end - anchor) // span) * span
+
+
 def train_predict(
     state: BinaryStateMatrix,
     end: int,
@@ -210,12 +327,18 @@ def train_predict(
     *,
     cache: MLCache | None = None,
 ) -> MLResult:
-    """训练并预测截断时间点 end 下一期的开出概率。
+    """训练并预测截断时间点 end 下一期的开出概率（契约 R23、§3.9、P8-M12）。
+
+    【P8-M12 修复】
+    1. 预测缓存键 = ``(end, 特征 schema, seed)``：同一 end 第二次命中直接返回（refit=False）；
+    2. 另按 ``cfg.refit_every`` 切块缓存**已训练模型**：块内复用模型、只重算当期特征，
+       ``refit_every`` 配置真正生效（旧实现每期必重训）；
+    3. ``ML_FEATURE_WARMUP`` 取代硬编码的 10。
 
     @param state 状态矩阵
     @param end 历史截断端点
     @param cfg ML 配置项
-    @param cache 可选 LRU 缓存
+    @param cache 可选 LRU 缓存（预测结果 + 重训模型）
     @return MLResult
     """
     warnings: list[str] = []
@@ -234,10 +357,9 @@ def train_predict(
             warnings=tuple(warnings),
         )
 
-    # 尝试从缓存获取
-    cache_key = (end, "fs-v1", str(cfg.seed))
+    pred_key = (end, ML_FEATURE_SCHEMA, str(cfg.seed))
     if cache is not None:
-        cached_prob = cache.get(cache_key)
+        cached_prob = cache.get(pred_key)
         if cached_prob is not None:
             return MLResult(
                 prob=cached_prob,
@@ -248,65 +370,71 @@ def train_predict(
                 warnings=(),
             )
 
+    block_start = _refit_block_start(end, cfg)
+    model_key = (block_start, ML_FEATURE_SCHEMA, str(cfg.seed))
+    model_bundle: Any | None = cache.get_model(model_key) if cache is not None else None
+
     try:
         from kl8.config import WindowConfig
         from kl8.layer1_representation.windows import resolve_windows
 
-        w_cfg = WindowConfig()
-        win_spec = resolve_windows(w_cfg, n_hist)
+        win_spec = resolve_windows(WindowConfig(), n_hist)
 
-        # 构造训练集：取最近 train_window 期
-        t_start = max(10, end - cfg.train_window + 1)
-        x_train_list: list[np.ndarray] = []
-        y_train_list: list[np.ndarray] = []
+        if model_bundle is None:
+            # 训练集：用 ML_FEATURE_WARMUP .. block_start-1 的历史逐期构造样本
+            train_end = max(int(ML_FEATURE_WARMUP), block_start)
+            t_start = max(int(ML_FEATURE_WARMUP), train_end - int(cfg.train_window) + 1)
+            x_train_list: list[np.ndarray] = []
+            y_train_list: list[np.ndarray] = []
+            for t in range(t_start, train_end):
+                # 用 t-1 的特征预测 t 是否开出（严格单步、无穿越）
+                x_train_list.append(extract_feature_matrix(state, t - 1, win_spec))
+                y_train_list.append(state.hit[t, :].astype(np.float64))
 
-        for t in range(t_start, end):
-            # 用 t-1 预测 t
-            feat_t = extract_feature_matrix(state, t - 1, win_spec)
-            target_t = state.hit[t, :].astype(np.float64)
-            x_train_list.append(feat_t)
-            y_train_list.append(target_t)
+            if not x_train_list:
+                raise ValueError("训练样本为空（历史长度不足）")
+            x_train = np.vstack(x_train_list)
+            y_train = np.concatenate(y_train_list)
 
-        x_train = np.vstack(x_train_list)
-        y_train = np.concatenate(y_train_list)
+            clf = lgb.LGBMClassifier(
+                n_estimators=cfg.n_estimators,
+                learning_rate=cfg.learning_rate,
+                num_leaves=cfg.num_leaves,
+                min_child_samples=cfg.min_child_samples,
+                subsample=cfg.subsample,
+                colsample_bytree=cfg.colsample_bytree,
+                random_state=cfg.seed,
+                verbose=-1,
+            )
+            clf.fit(x_train, y_train)
+            train_preds = np.asarray(clf.predict_proba(x_train)[:, 1], dtype=np.float64)
+            model_bundle = (clf, train_preds, y_train)
+            if cache is not None:
+                cache.put_model(model_key, model_bundle)
 
-        clf = lgb.LGBMClassifier(
-            n_estimators=cfg.n_estimators,
-            learning_rate=cfg.learning_rate,
-            num_leaves=cfg.num_leaves,
-            min_child_samples=cfg.min_child_samples,
-            subsample=cfg.subsample,
-            colsample_bytree=cfg.colsample_bytree,
-            random_state=cfg.seed,
-            verbose=-1,
-        )
-        clf.fit(x_train, y_train)
-
-        # 当期特征预测
+        clf, train_preds, y_train = model_bundle
         x_curr = extract_feature_matrix(state, end, win_spec)
-        raw_prob = clf.predict_proba(x_curr)[:, 1]
+        raw_prob = np.asarray(clf.predict_proba(x_curr)[:, 1], dtype=np.float64)
 
-        # PAV 保序校准
+        # 真 PAV 校准（历史死分支 cal_prob = pav_calibrate(raw, raw) 已删除）
         if cfg.calibrate == "pav":
-            train_preds = clf.predict_proba(x_train)[:, 1]
-            cal_prob = pav_calibrate(raw_prob, y_curr if False else raw_prob)  # 保持分布
-            prob = np.clip(raw_prob, 0.05, 0.95)
+            prob = _pav_calibrate_predict(raw_prob, train_preds, y_train)
         else:
-            prob = np.clip(raw_prob, 0.05, 0.95)
-
+            prob = raw_prob
+        prob = np.clip(prob, 0.05, 0.95)
         if cache is not None:
-            cache.put(cache_key, prob)
+            cache.put(pred_key, prob)
 
         return MLResult(
             prob=prob,
             available=True,
             backend="lightgbm",
             refit=True,
-            n_train=len(x_train_list),
+            n_train=int(y_train.size),
             warnings=(),
         )
-    except Exception as e:
-        warnings.append(f"LightGBM 训练或预测异常: {e}，降级使用 EMA")
+    except _ML_ERRORS as exc:
+        warnings.append(f"LightGBM 训练或预测异常: {exc}，降级使用 EMA")
         prob = ema_fallback(state, end)
         return MLResult(
             prob=prob,

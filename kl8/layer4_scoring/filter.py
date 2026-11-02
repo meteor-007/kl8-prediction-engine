@@ -1,25 +1,77 @@
+# -*- coding: utf-8 -*-
 """空间形态均衡过滤、重号配比与金胆/复式候选池构建（契约 R34–R36、§3.10、§4.3）。
 
-实现逻辑：
-- 重号/新号配比控制：上期重号在复式池中占比 25%~35%（默认 30%）(R36)
-- 空间形态均衡过滤硬约束：单一四分区 <= 45%、奇偶单边 <= 70%、同尾号 <= 3 (R34)
-- 冲突放宽机制：按 relax_order 逐项有序放宽并完整记录告警 (R34)
-- 候选池构建：选拔 3~5 码核心金胆池与 10~15 码优选复式池 (R35)
-- 组装 80 码逐号明细映射 details (NumberDetail)
-"""
+【P8-H2 修复要点：硬约束必须"真执行"】
+旧实现 `build_pool` 只在事后调用 `is_balanced` 写一条告警，既不换码也不重选，
+还把 4 项约束无差别塞进 `relaxed` —— 上线交付件里出现"第 3 区占比 50% > 45%"的池子。
+现在的实现：
 
+1. **贪心扫描中即时执行**：按 FinalScore 降序逐码尝试，只有加入后仍满足全部
+   **启用中**约束才入选 —— 约束由构造过程保证，不靠事后告警；
+2. **B6 重号配比**：先算 `repeat_target = clip(round(repeat_ratio×size),
+   ceil(repeat_ratio_min×size), floor(repeat_ratio_max×size))`，贪心中硬约束
+   "重号数 ≤ target 且 新号数 ≤ size-target"；
+3. **B7 有序放宽**：选不满 size 时按 `same_tail → parity → zone4 → repeat_ratio`
+   逐项放宽，`PoolResult.relaxed` 只记录**真实放宽**的项，`warnings` 写放宽后的真实
+   统计值；全部放宽仍不满 → `InfeasibleConstraintError`（禁止带病出单）；
+4. **A5 金胆池**：`n_gold = clip(round(0.30×len(main)), gold_min, gold_max)`
+   （`main=12 → 4`），先取 `V≥3` 按 FinalScore 降序，不足再补。
+
+@author czw
+@since 2026-11-02
+"""
 from __future__ import annotations
 
 import math
-from typing import Mapping, Sequence
+from typing import Any, Final, Mapping, Sequence
 
 import numpy as np
 
 from kl8.config import AppConfig, PoolConfig
-from kl8.constants import N_NUM
-from kl8.datatypes import FeatureSnapshot, NumberDetail, PoolResult
+from kl8.constants import GOLD_RATIO, GOLD_VOTE_PRIORITY, N_NUM, P0, tail_of, zone4_of
+from kl8.datatypes import FeatureSnapshot, NumberDetail, PoolResult, RuleVerdict
 from kl8.errors import InfeasibleConstraintError
-from kl8.layer3_features.morphology import is_balanced, zone_distribution
+from kl8.layer3_features.morphology import is_balanced
+
+#: 约束键（与 `cfg.pool.relax_order` 元素一一对应，B7 固定顺序）。
+CONSTRAINT_KEYS: Final[tuple[str, ...]] = ("same_tail", "parity", "zone4", "repeat_ratio")
+
+
+def _score_order(scores: np.ndarray) -> list[int]:
+    """按打分降序、并列按号码升序生成 1-based 号码序列。
+
+    @param scores (80,) FinalScore
+    @return 1-based 号码列表（长度 80）
+    """
+    numbers = np.arange(1, N_NUM + 1, dtype=np.int32)
+    order_idx = np.lexsort((numbers, -np.asarray(scores, dtype=np.float64)))
+    return [int(numbers[i]) for i in order_idx]
+
+
+def _caps(cfg: PoolConfig, size: int) -> tuple[int, int, int]:
+    """把比例约束换算成整数个数上限（避免每步浮点比较）。
+
+    @param cfg 号码池配置
+    @param size 目标池大小
+    @return (单四区上限, 奇偶单边上限, 同尾上限)
+    """
+    zone_cap = int(math.floor(cfg.max_zone4_ratio * float(size) + 1e-9))
+    parity_cap = int(math.floor(cfg.max_parity_ratio * float(size) + 1e-9))
+    return (max(1, zone_cap), max(1, parity_cap), cfg.max_same_tail)
+
+
+def repeat_quota(size: int, cfg: PoolConfig) -> tuple[int, int, int]:
+    """计算 B6 重号配比区间与目标值。
+
+    @param size 复式池目标规模
+    @param cfg 号码池配置
+    @return (min_rep, max_rep, target_rep)
+    """
+    min_rep = max(0, min(size, int(math.ceil(cfg.repeat_ratio_min * float(size)))))
+    max_rep = max(min_rep, min(size, int(math.floor(cfg.repeat_ratio_max * float(size)))))
+    target = int(math.floor(cfg.repeat_ratio * float(size) + 0.5))
+    target = max(min_rep, min(max_rep, target))
+    return (min_rep, max_rep, target)
 
 
 def apply_repeat_quota(
@@ -29,64 +81,49 @@ def apply_repeat_quota(
     *,
     size: int,
 ) -> tuple[list[int], tuple[str, ...]]:
-    """控制候选池中的上期重号比例（契约 R36、8.md L202）。
+    """控制候选池中的上期重号比例（契约 R36 / B6）。
 
-    【高分优先软配额 (Score-Preserving Soft Quota)】
-    步骤 1: 计算合规重号数量区间 [min_rep, max_rep]；
-    步骤 2: 优先检查全量排序 Top-size 天然入选号码集；
-    步骤 3: 若天然重号数已在合规区间内，100% 保留高分原貌（零无谓置换）；
-    步骤 4: 若重号溢出或不足，仅按得分升序置换最末位的必要差额号码，实现最小侵入。
+    【最小侵入置换】只调整"最末位必要差额"的号码，尽量保留高分原貌；天然重号数
+    已在 `[min_rep, max_rep]` 区间时零置换直接返回。
 
-    @param order 按 FinalScore 降序排列的 80 码 (1-based)
-    @param last_draw 上期开出的号码集合 (1-based)
+    @param order 按 FinalScore 降序排列的 80 码（1-based）
+    @param last_draw 上期开出的号码集合（1-based）
     @param cfg 号码池配置
     @param size 目标复式池大小
-    @return (筛选出的号码列表, 告警信息元组)
+    @return (调整后的号码列表, 中文告警元组)
     """
-    min_rep = int(math.ceil(cfg.repeat_ratio_min * float(size)))
-    max_rep = int(math.floor(cfg.repeat_ratio_max * float(size)))
-    min_rep = max(0, min(size, min_rep))
-    max_rep = max(min_rep, min(size, max_rep))
-
+    min_rep, max_rep, _target = repeat_quota(size, cfg)
     warnings: list[str] = []
-    top_candidates = list(order[:size])
-    repeats_in_top = [n for n in top_candidates if n in last_draw]
+    top = list(order[:size])
+    repeats_in_top = [num for num in top if num in last_draw]
     n_rep = len(repeats_in_top)
 
-    # 步骤 3: 天然重号合规，零置换直接返回
     if min_rep <= n_rep <= max_rep:
-        return (top_candidates, ())
+        return (top, ())
 
-    # 步骤 4: 超限或不足时做最小差额置换
     if n_rep > max_rep:
         excess = n_rep - max_rep
-        to_remove = set(repeats_in_top[-excess:])
-        news_outside = [n for n in order[size:] if n not in last_draw]
-        to_add = news_outside[:excess]
-        if len(to_add) < excess:
-            warnings.append(f"外部非重号不足 {excess} 码，实际补齐 {len(to_add)} 码")
-        result = [n for n in top_candidates if n not in to_remove] + to_add
+        remove = set(repeats_in_top[-excess:])
+        add = [num for num in order[size:] if num not in last_draw][:excess]
+        result = [num for num in top if num not in remove] + add
+        if len(add) < excess:
+            warnings.append(f"池外非重号不足 {excess} 码，实际补充 {len(add)} 码")
     else:
         deficit = min_rep - n_rep
-        news_in_top = [n for n in top_candidates if n not in last_draw]
-        to_remove = set(news_in_top[-deficit:])
-        repeats_outside = [n for n in order[size:] if n in last_draw]
-        to_add = repeats_outside[:deficit]
-        if len(to_add) < deficit:
-            warnings.append(f"外部重号不足 {deficit} 码，实际补齐 {len(to_add)} 码")
-        result = [n for n in top_candidates if n not in to_remove] + to_add
+        remove = set([num for num in top if num not in last_draw][-deficit:])
+        add = [num for num in order[size:] if num in last_draw][:deficit]
+        result = [num for num in top if num not in remove] + add
+        if len(add) < deficit:
+            warnings.append(f"池外重号不足 {deficit} 码，实际补充 {len(add)} 码")
 
-    # 若极度缺号，按原顺序补齐
-    if len(result) < size:
-        for n in order:
-            if len(result) >= size:
-                break
-            if n not in result:
-                result.append(n)
+    for num in order:
+        if len(result) >= size:
+            break
+        if num not in result:
+            result.append(num)
 
-    result_set = set(result[:size])
-    final_ordered = [n for n in order if n in result_set]
-    return (final_ordered, tuple(warnings))
+    selected = set(result[:size])
+    return ([num for num in order if num in selected], tuple(warnings))
 
 
 def greedy_pool(
@@ -95,40 +132,84 @@ def greedy_pool(
     cfg: PoolConfig,
     *,
     size: int,
+    active: frozenset[str] | None = None,
+    repeat_target: int | None = None,
+    last_draw: frozenset[int] | None = None,
 ) -> tuple[list[int], tuple[str, ...]]:
-    """从高分向低分贪心扫描入选号码池，并动态维护空间形态均衡约束（契约 R34）。
+    """按打分降序贪心选池，**在扫描过程中真实执行**启用的硬约束（契约 R34）。
 
-    @param scores (80,) float64 打分数组
-    @param snapshot 特征快照
+    @param scores (80,) FinalScore
+    @param snapshot 特征快照（保留参数以对齐契约签名，当前实现只需静态属性表）
     @param cfg 号码池约束配置
     @param size 目标池大小
-    @return (选出的号码列表 1-based, 告警信息元组)
+    @param active 启用中的约束键集合；None 表示全部启用
+    @param repeat_target 重号目标个数；None 表示不约束重号比
+    @param last_draw 上期开奖号码集合（1-based）
+    @return (选出的号码列表 1-based 升序, 中文告警元组)
     """
-    nums = np.arange(1, N_NUM + 1, dtype=np.int32)
-    # 按得分降序排序索引
-    sort_order = [int(nums[i]) for i in np.argsort(-scores)]
+    active_keys = frozenset(cfg.relax_order) if active is None else frozenset(active)
+    repeats = frozenset(last_draw or ())
+    zone_cap, parity_cap, tail_cap = _caps(cfg, size)
+    target_size = int(size)
+    if target_size <= 0:
+        return ([], ("目标池大小为 0，无需选池",))
+
+    warnings: list[str] = []
+    if "repeat_ratio" in active_keys and repeat_target is None:
+        warnings.append("缺少上期开奖/重号目标，本次选池未执行重号配比约束（仅按形态与得分选池）")
 
     selected: list[int] = []
-    # 贪心选取
-    for num in sort_order:
-        candidate = selected + [num]
-        balanced, _ = is_balanced(candidate, cfg)
-        if balanced:
-            selected.append(num)
-            if len(selected) == size:
+    zone_count = [0, 0, 0, 0]
+    tail_count: dict[int, int] = {}
+    odd_count = 0
+    repeat_count = 0
+
+    for num in _score_order(scores):
+        if len(selected) >= target_size:
+            break
+        zone = zone4_of(num)
+        tail = tail_of(num)
+        is_repeat = num in repeats
+        taken = len(selected)
+
+        if "zone4" in active_keys and zone_count[zone] + 1 > zone_cap:
+            continue
+        if "parity" in active_keys:
+            next_odd = odd_count + (1 if num % 2 == 1 else 0)
+            next_even = (taken + 1) - next_odd
+            if max(next_odd, next_even) > parity_cap:
+                continue
+        if "same_tail" in active_keys and tail_count.get(tail, 0) + 1 > tail_cap:
+            continue
+        if "repeat_ratio" in active_keys and repeat_target is not None:
+            if is_repeat and repeat_count + 1 > repeat_target:
+                continue
+            if (not is_repeat) and (taken + 1 - repeat_count) > target_size - repeat_target:
+                continue
+
+        selected.append(num)
+        zone_count[zone] += 1
+        tail_count[tail] = tail_count.get(tail, 0) + 1
+        odd_count += 1 if num % 2 == 1 else 0
+        repeat_count += 1 if is_repeat else 0
+
+    # 形态约束过紧导致凑不满：按得分顺序放宽补齐，但必须留痕（禁止静默少码）
+    if len(selected) < target_size:
+        shortfall = target_size - len(selected)
+        chosen = set(selected)
+        for num in _score_order(scores):
+            if len(selected) >= target_size:
                 break
+            if num in chosen:
+                continue
+            selected.append(num)
+            chosen.add(num)
+        warnings.append(
+            f"形态硬约束过紧，已放宽补齐 {shortfall} 码至目标 {target_size} 码"
+            f"（实际约束缺失，报告中必须披露）"
+        )
 
-    # 若未达到目标大小，进行兜底补齐并记录放宽
-    warnings: list[str] = []
-    if len(selected) < size:
-        warnings.append(f"严格形态约束下仅选出 {len(selected)} 码，触发自动补齐")
-        for num in sort_order:
-            if num not in selected:
-                selected.append(num)
-                if len(selected) == size:
-                    break
-
-    return (selected, tuple(warnings))
+    return (sorted(selected), tuple(warnings))
 
 
 def enforce_constraints(
@@ -137,16 +218,43 @@ def enforce_constraints(
     cfg: PoolConfig,
     *,
     size: int,
+    active: frozenset[str] | None = None,
 ) -> tuple[list[int], tuple[str, ...]]:
-    """应用空间形态硬约束，冲突时按 relax_order 逐项有序放宽并留痕（契约 R34）。"""
-    balanced, reasons = is_balanced(candidates, cfg)
-    if balanced and len(candidates) == size:
-        return (list(candidates), ())
+    """对已选号码池做硬约束**复核**，返回违反原因（契约 R34）。
 
-    warnings: list[str] = []
-    for r in reasons:
-        warnings.append(f"约束冲突放宽: {r}")
-    return (list(candidates[:size]), tuple(warnings))
+    @param candidates 候选号码池（1-based）
+    @param snapshot 特征快照（对齐契约签名）
+    @param cfg 号码池约束配置
+    @param size 目标池大小
+    @param active 启用中的约束键集合；None 表示全部启用
+    @return (截断到 size 的号码池, 违反原因元组)
+    """
+    active_keys = frozenset(cfg.relax_order) if active is None else frozenset(active)
+    pool = sorted(int(num) for num in candidates)[: int(size)]
+    if not pool:
+        return (pool, ("候选池为空",))
+
+    zone_cap, parity_cap, tail_cap = _caps(cfg, int(size))
+    reasons: list[str] = []
+    if "zone4" in active_keys:
+        zone_count = [0, 0, 0, 0]
+        for num in pool:
+            zone_count[zone4_of(num)] += 1
+        worst = max(zone_count)
+        if worst > zone_cap:
+            reasons.append(f"单四区最多 {worst} 码 > 上限 {zone_cap} 码")
+    if "parity" in active_keys:
+        odd = sum(1 for num in pool if num % 2 == 1)
+        if max(odd, len(pool) - odd) > parity_cap:
+            reasons.append(f"奇偶单边最多 {max(odd, len(pool) - odd)} 码 > 上限 {parity_cap} 码")
+    if "same_tail" in active_keys:
+        tail_count: dict[int, int] = {}
+        for num in pool:
+            tail_count[tail_of(num)] = tail_count.get(tail_of(num), 0) + 1
+        worst_tail = max(tail_count.items(), key=lambda item: item[1])
+        if worst_tail[1] > tail_cap:
+            reasons.append(f"尾数 {worst_tail[0]} 出现 {worst_tail[1]} 次 > 上限 {tail_cap} 次")
+    return (pool, tuple(reasons))
 
 
 def select_gold(
@@ -155,22 +263,145 @@ def select_gold(
     votes: np.ndarray,
     cfg: PoolConfig,
 ) -> list[int]:
-    """从优选复式池中选出 3~5 码核心金胆池（契约 R35、8.md L155）。
+    """按契约 A5 选取金胆池（P8-M2：不再恒取 5 码）。
 
-    排序原则：优先按 FinalScore 降序，并列时按共振票数降序，再并列按号码升序。
-    选出后返回升序排好的金胆池列表。
-    @param main 优选复式池 (1-based)
-    @param final (80,) 最终综合得分
+    ``n_gold = clip(round(0.30 × len(main)), gold_min, gold_max)``；
+    选取顺序：先取 ``V ≥ 3`` 的号码按 FinalScore 降序，不足再用 FinalScore 降序补齐；
+    结果恒为 ``main`` 的子集（硬约束 ``gold ⊂ main``）。
+
+    @param main 复式池（1-based 升序）
+    @param final (80,) FinalScore
     @param votes (80,) 共振票数
     @param cfg 号码池配置
-    @return 升序排好的金胆列表 (长度 ∈ [gold_min, gold_max])
+    @return 金胆池（1-based 升序）
     """
-    gold_count = max(cfg.gold_min, min(cfg.gold_max, len(main)))
-    # 构造排序键: (-final, -votes, num)
-    main_candidates = list(main)
-    main_candidates.sort(key=lambda n: (-final[n - 1], -int(votes[n - 1]), n))
-    selected = main_candidates[:gold_count]
-    return sorted(selected)
+    pool = list(main)
+    if not pool:
+        return []
+    raw_count = int(math.floor(GOLD_RATIO * float(len(pool)) + 0.5))
+    n_gold = max(cfg.gold_min, min(cfg.gold_max, raw_count))
+    n_gold = min(n_gold, len(pool))
+
+    def sort_key(num: int) -> tuple[float, int]:
+        return (-float(final[num - 1]), int(num))
+
+    high_votes = [num for num in pool if int(votes[num - 1]) >= GOLD_VOTE_PRIORITY]
+    high_votes.sort(key=sort_key)
+    chosen = high_votes[:n_gold]
+    if len(chosen) < n_gold:
+        rest = [num for num in pool if num not in chosen]
+        rest.sort(key=sort_key)
+        chosen.extend(rest[: n_gold - len(chosen)])
+    return sorted(chosen)
+
+
+def _relax_detail(
+    key: str,
+    selected: Sequence[int],
+    size: int,
+    cfg: PoolConfig,
+    last_draw: frozenset[int],
+) -> str:
+    """生成"放宽到多少"的中文留痕（B7 要求可读）。
+
+    @param key 被放宽的约束键
+    @param selected 最终号码池
+    @param size 目标池大小
+    @param cfg 号码池配置
+    @param last_draw 上期开奖号码集合
+    @return 中文说明
+    """
+    pool = list(selected)
+    if key == "same_tail":
+        tail_count: dict[int, int] = {}
+        for num in pool:
+            tail_count[tail_of(num)] = tail_count.get(tail_of(num), 0) + 1
+        worst = max(tail_count.items(), key=lambda item: item[1])
+        return f"放宽 [same_tail]：尾数 {worst[0]} 达 {worst[1]} 个（原上限 {cfg.max_same_tail}）"
+    if key == "parity":
+        odd = sum(1 for num in pool if num % 2 == 1)
+        return (
+            f"放宽 [parity]：奇数 {odd} / 偶数 {len(pool) - odd}，单边占比 "
+            f"{max(odd, len(pool) - odd) / max(1, len(pool)):.1%}（原上限 {cfg.max_parity_ratio:.1%}）"
+        )
+    if key == "zone4":
+        zone_count = [0, 0, 0, 0]
+        for num in pool:
+            zone_count[zone4_of(num)] += 1
+        return (
+            f"放宽 [zone4]：单四区最多 {max(zone_count)} / {len(pool)} 码，占比 "
+            f"{max(zone_count) / max(1, len(pool)):.1%}（原上限 {cfg.max_zone4_ratio:.1%}）"
+        )
+    if key == "repeat_ratio":
+        rep = sum(1 for num in pool if num in last_draw)
+        return (
+            f"放宽 [repeat_ratio]：重号 {rep} / 新号 {len(pool) - rep}，重号占比 "
+            f"{rep / max(1, len(pool)):.1%}（目标区间 "
+            f"[{cfg.repeat_ratio_min:.1%}, {cfg.repeat_ratio_max:.1%}]）"
+        )
+    return f"放宽 [{key}]（未知约束键）"
+
+
+def _build_details(
+    snapshot: FeatureSnapshot,
+    final: np.ndarray,
+    votes: np.ndarray,
+    base: np.ndarray,
+    verdicts: Sequence[RuleVerdict] | None,
+    last_draw: frozenset[int],
+    gold: Sequence[int],
+    main: Sequence[int],
+) -> dict[int, NumberDetail]:
+    """构造 80 码逐号明细（报告唯一数据源，契约 §4.3.1）。
+
+    @param snapshot 特征快照
+    @param final (80,) FinalScore
+    @param votes (80,) 共振票数
+    @param base (80,) BaseScore
+    @param verdicts 五规则判定（可为 None，则 r1..r5 全 False）
+    @param last_draw 上期开奖号码
+    @param gold 金胆池
+    @param main 复式池
+    @return 号码 → NumberDetail
+    """
+    masks = {verdict.rule_id: np.asarray(verdict.mask, dtype=bool) for verdict in (verdicts or ())}
+    rank_of: dict[int, int] = {}
+    order_idx = np.lexsort((np.arange(1, N_NUM + 1), -np.asarray(final, dtype=np.float64)))
+    for rank, index in enumerate(order_idx, start=1):
+        rank_of[int(index) + 1] = rank
+
+    gold_set = set(gold)
+    main_set = set(main)
+    details: dict[int, NumberDetail] = {}
+    for index in range(N_NUM):
+        num = index + 1
+        details[num] = NumberDetail(
+            num=num,
+            final=float(final[index]),
+            base=float(base[index]),
+            votes=int(votes[index]),
+            rank=rank_of[num],
+            zone4=int(snapshot.zone4[index]),
+            zone8=int(snapshot.zone8[index]),
+            is_odd=bool(snapshot.is_odd[index]),
+            is_prime=bool(snapshot.is_prime[index]),
+            size_class=int(snapshot.size_class[index]),
+            tail=int(snapshot.tail[index]),
+            is_repeat=num in last_draw,
+            r1=bool(masks.get("R1", np.zeros(N_NUM, dtype=bool))[index]),
+            r2=bool(masks.get("R2", np.zeros(N_NUM, dtype=bool))[index]),
+            r3=bool(masks.get("R3", np.zeros(N_NUM, dtype=bool))[index]),
+            r4=bool(masks.get("R4", np.zeros(N_NUM, dtype=bool))[index]),
+            r5=bool(masks.get("R5", np.zeros(N_NUM, dtype=bool))[index]),
+            freq_10=float(snapshot.freq_10[index]),
+            freq_25=float(snapshot.freq_25[index]),
+            freq_50=float(snapshot.freq_50[index]),
+            freq_all=float(snapshot.freq_all[index]),
+            pressure=float(snapshot.pressure[index]),
+            gold_flag=num in gold_set,
+            in_main=num in main_set,
+        )
+    return details
 
 
 def build_pool(
@@ -181,119 +412,117 @@ def build_pool(
     *,
     pool_size: int,
     cfg: AppConfig,
+    ranks: Mapping[str, np.ndarray] | None = None,
+    verdicts: Sequence[RuleVerdict] | None = None,
+    base: np.ndarray | None = None,
 ) -> PoolResult:
-    """构建完整的选拔号码池与逐号全参明细（契约 R34–R36、§4.3）。
+    """构建候选池：真实执行硬约束 + 有序放宽留痕 + A5 金胆（契约 R34–R36）。
 
     @param snapshot 特征快照
     @param final (80,) FinalScore
-    @param votes (80,) 共振票数
-    @param last_draw 上期开奖号码 (1-based)
-    @param pool_size 目标复式池大小
+    @param votes (80,) 共振票数（int）
+    @param last_draw 上期开奖号码集合
+    @param pool_size 复式池目标规模
     @param cfg 全局配置
+    @param ranks 百分位秩（仅用于对齐契约签名，可空）
+    @param verdicts 五规则判定（用于逐号明细，可空）
+    @param base (80,) BaseScore（可空则记 0）
     @return PoolResult
-    @raises InfeasibleConstraintError 极度冲突不可行
+    @raises InfeasibleConstraintError 全部约束放宽后仍无法凑满目标规模
     """
-    p_cfg = cfg.pool
-    nums = np.arange(1, N_NUM + 1, dtype=np.int32)
-    # 全量 80 码降序排列（并列按号码升序）
-    sort_keys = [(-final[i], -int(votes[i]), nums[i]) for i in range(N_NUM)]
-    order_indices = sorted(range(N_NUM), key=lambda idx: sort_keys[idx])
-    order = tuple(int(nums[idx]) for idx in order_indices)
+    pool_cfg = cfg.pool
+    size = int(pool_size)
+    if size <= 0:
+        raise InfeasibleConstraintError("复式池目标规模必须为正整数；请检查 pool.main_default")
+    if size > N_NUM:
+        raise InfeasibleConstraintError(f"复式池目标规模 {size} 超过号码总数 {N_NUM}")
 
+    _min_rep, _max_rep, repeat_target = repeat_quota(size, pool_cfg)
+    score_order = _score_order(final)
     warnings: list[str] = []
-    relaxed_list: list[str] = []
+    relaxed: list[str] = []
+    selected: list[int] = []
 
-    # 1. 应用重号配比控制
-    quota_candidates, quota_warns = apply_repeat_quota(order, last_draw, p_cfg, size=pool_size)
-    warnings.extend(quota_warns)
+    order_steps: list[str | None] = [None] + list(pool_cfg.relax_order)
+    for relax_key in order_steps:
+        active = set(pool_cfg.relax_order)
+        if relax_key is not None:
+            active.discard(relax_key)
+            relaxed.append(relax_key)
+        selected, _warns = greedy_pool(
+            final,
+            snapshot,
+            pool_cfg,
+            size=size,
+            active=frozenset(active),
+            repeat_target=repeat_target,
+            last_draw=last_draw,
+        )
+        if len(selected) >= size:
+            break
 
-    # 2. 校验与强制空间均衡度
-    balanced, unbal_reasons = is_balanced(quota_candidates, p_cfg)
-    feasible = balanced
-    if not balanced:
-        for r_name in p_cfg.relax_order:
-            relaxed_list.append(r_name)
-        for r in unbal_reasons:
-            warnings.append(f"形态约束放宽 [{', '.join(p_cfg.relax_order)}]: {r}")
-
-    main_pool = sorted(quota_candidates[:pool_size])
-    gold_pool = tuple(select_gold(main_pool, final, votes, p_cfg))
-
-    repeat_count = sum(1 for n in main_pool if n in last_draw)
-    new_count = len(main_pool) - repeat_count
-
-    # 3. 构造 80 码逐号全参明细 NumberDetail (契约 §4.3.1)
-    # 预先求 rank (1-based, 1=最高)
-    rank_map: dict[int, int] = {}
-    for rank_idx, num in enumerate(order):
-        rank_map[num] = rank_idx + 1
-
-    from kl8.config import RuleConfig
-    from kl8.layer4_scoring.hybrid import base_score
-    from kl8.layer4_scoring.rules import evaluate_rules
-    from kl8.layer4_scoring.borda import rank_matrix
-
-    features_dict = {
-        "freq_10": snapshot.freq_10,
-        "mom_10_25": snapshot.mom_10_25,
-        "mom_25_50": snapshot.mom_25_50,
-        "follow_10": snapshot.follow_10,
-        "follow_25": snapshot.follow_25,
-        "follow_50": snapshot.follow_50,
-        "follow_all": snapshot.follow_all,
-        "co_25": snapshot.co_25,
-        "co_50": snapshot.co_50,
-        "co_all": snapshot.co_all,
-    }
-    ranks = rank_matrix(features_dict)
-    base_arr = base_score(snapshot, ranks, cfg.weights)
-    verdicts = evaluate_rules(snapshot, ranks, cfg.rules)
-    m1, m2, m3, m4, m5 = [v.mask for v in verdicts]
-
-    gold_set = set(gold_pool)
-    main_set = set(main_pool)
-
-    details: dict[int, NumberDetail] = {}
-    for i in range(N_NUM):
-        num = i + 1
-        details[num] = NumberDetail(
-            num=num,
-            final=float(final[i]),
-            base=float(base_arr[i]),
-            votes=int(votes[i]),
-            rank=rank_map[num],
-            zone4=int(snapshot.zone4[i]),
-            zone8=int(snapshot.zone8[i]),
-            is_odd=bool(snapshot.is_odd[i]),
-            is_prime=bool(snapshot.is_prime[i]),
-            size_class=int(snapshot.size_class[i]),
-            tail=int(snapshot.tail[i]),
-            is_repeat=(num in last_draw),
-            r1=bool(m1[i]),
-            r2=bool(m2[i]),
-            r3=bool(m3[i]),
-            r4=bool(m4[i]),
-            r5=bool(m5[i]),
-            freq_10=float(snapshot.freq_10[i]),
-            freq_25=float(snapshot.freq_25[i]),
-            freq_50=float(snapshot.freq_50[i]),
-            freq_all=float(snapshot.freq_all[i]),
-            pressure=float(snapshot.pressure[i]),
-            gold_flag=(num in gold_set),
-            in_main=(num in main_set),
+    if len(selected) < size:
+        raise InfeasibleConstraintError(
+            f"在全部 {len(order_steps) - 1} 项形态约束放宽后仍只能选出 {len(selected)}/{size} 码；"
+            "请调低 pool.main_default 或放宽 pool.max_zone4_ratio 等阈值后重跑"
         )
 
+    # B7：只记录真实放宽项，并写明放宽到多少（可读、可审计）
+    for relax_key in relaxed:
+        warnings.append(_relax_detail(relax_key, selected, size, pool_cfg, last_draw))
+
+    # R36 兜底：若重号比仍越界（repeat_ratio 已被放宽），尝试最小侵入置换
+    min_rep, max_rep, _target = repeat_quota(size, pool_cfg)
+    repeat_now = sum(1 for num in selected if num in last_draw)
+    if not min_rep <= repeat_now <= max_rep:
+        adjusted, quota_warns = apply_repeat_quota(score_order, last_draw, pool_cfg, size=size)
+        _checked, shape_reasons = enforce_constraints(
+            adjusted, snapshot, pool_cfg, size=size, active=frozenset(pool_cfg.relax_order)
+        )
+        if adjusted and len(adjusted) >= size and not shape_reasons:
+            selected = adjusted[:size]
+            warnings.append(
+                f"重号配比按 R36 最小侵入置换修正：重号 {repeat_now} → "
+                f"{sum(1 for num in selected if num in last_draw)} / {size}"
+            )
+        else:
+            warnings.append("重号配比越界且无法在不破坏形态约束的前提下置换修正，保留当前池")
+        warnings.extend(quota_warns)
+
+    # 最终复核（构造即满足；此处作为防御性自检，违反即抛错，禁止带病出单）
+    checked, reasons = enforce_constraints(
+        selected, snapshot, pool_cfg, size=size, active=frozenset(pool_cfg.relax_order)
+    )
+    remaining_relaxed = [key for key in relaxed if key in pool_cfg.relax_order]
+    if reasons and not remaining_relaxed:
+        raise InfeasibleConstraintError(
+            "候选池违反硬约束且未记录任何放宽项：" + "；".join(reasons) + "；请检查选池实现"
+        )
+
+    main_pool = sorted(int(num) for num in checked[:size])
+    gold_pool = select_gold(main_pool, final, votes, pool_cfg)
+    balanced, shape_reasons = is_balanced(main_pool, pool_cfg)
+    feasible = bool(balanced and not relaxed)
+    if shape_reasons and feasible:
+        # is_balanced 的浮点占比口径比整数上限更严格，二者不一致时以告警披露
+        warnings.append("形态体检提示（非阻断）：" + "；".join(shape_reasons))
+
+    base_arr = np.zeros(N_NUM, dtype=np.float64) if base is None else np.asarray(base, dtype=np.float64)
+    details = _build_details(
+        snapshot, final, votes, base_arr, verdicts, last_draw, gold_pool, main_pool
+    )
+    repeat_count = sum(1 for num in main_pool if num in last_draw)
     return PoolResult(
         gold=tuple(gold_pool),
         main=tuple(main_pool),
-        votes=votes,
-        scores=final,
-        order=order,
+        votes=np.asarray(votes, dtype=np.int8),
+        scores=np.asarray(final, dtype=np.float64),
+        order=tuple(score_order),
         details=details,
         warnings=tuple(warnings),
-        relaxed=tuple(relaxed_list),
+        relaxed=tuple(relaxed),
         feasible=feasible,
         repeat_count=repeat_count,
-        new_count=new_count,
+        new_count=len(main_pool) - repeat_count,
         size=len(main_pool),
     )

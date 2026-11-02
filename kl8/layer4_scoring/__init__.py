@@ -1,22 +1,25 @@
 """快乐8 综合打分、五规则共振与候选池过滤层（Layer 4 Scoring）。
 
-唯一打分入口 score_round：
-- 执行 Borda 百分位秩归一化
-- 评估五条正交规则集并计算共振票数
-- 执行加权打分与共振票数加成 (FinalScore = BaseScore + λ * V)
-- 过滤组装核心金胆池与优选复式池
+唯一打分入口 ``score_round``（P8-H1 修复后）：
+- Borda 百分位秩归一化（``rank_matrix``）；
+- 评估五条正交规则集并统计**整型**共振票数 V（报告展示口径）；
+- 按契约 B5 计算**等效票数** ``Σ_r (w_r/w̄)·pass_r``，w_r 来自自适应状态或
+  配置化均匀兜底，``FinalScore = BaseScore/Σω + λ·等效票数``；
+- 硬约束贪心选池 + B6 重号配比 + B7 有序放宽留痕 + A5 金胆池。
+
+所有下游（报告、回测、注单）只读 `ScoreRoundResult`，不得自行重算票数/权重。
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Mapping
 
 import numpy as np
 
 from kl8.config import AppConfig
 from kl8.datatypes import FeatureSnapshot, PoolResult, RuleVerdict
-from kl8.layer4_scoring.adaptive import AdaptiveState
+from kl8.layer4_scoring.adaptive import AdaptiveState, default_rule_weights
 from kl8.layer4_scoring.borda import percentile_rank, rank_matrix
 from kl8.layer4_scoring.filter import build_pool
 from kl8.layer4_scoring.hybrid import ScoreResult, score_all
@@ -28,11 +31,28 @@ class ScoreRoundResult:
     """当期打分与候选池构建完整结果（契约 §4.7）。"""
 
     snapshot: FeatureSnapshot
+    """特征快照。"""
+
     ranks: Mapping[str, np.ndarray]
+    """百分位秩矩阵（键 → (80,)）。"""
+
     verdicts: tuple[RuleVerdict, ...]
+    """五规则判定（固定 R1..R5 顺序）。"""
+
     votes: np.ndarray
+    """整型共振票数 V，(80,) int8（报告/回测展示口径）。"""
+
     scores: ScoreResult
+    """综合打分结果（含等效票数 weighted_votes 与实际 rule_weights）。"""
+
     pool: PoolResult
+    """金胆池 + 复式池。"""
+
+    weighted_votes: np.ndarray | None = None
+    """契约 B5 等效票数 Σ(w_r/w̄)·pass_r，(80,) float64。"""
+
+    rule_weights: Mapping[str, float] = field(default_factory=dict)
+    """实际参与加成的规则权重（归一化后 Σ=1）。"""
 
 
 def score_round(
@@ -45,7 +65,7 @@ def score_round(
 
     @param snapshot 特征工程快照
     @param cfg 全局配置
-    @param adaptive_state 可选自适应权重状态
+    @param adaptive_state 可选自适应权重状态（None → 配置化均匀兜底）
     @return ScoreRoundResult
     """
     # 1. 抽取用于规则与打分的特征进行 Borda 百分位秩归一化
@@ -68,22 +88,30 @@ def score_round(
     }
     ranks = rank_matrix(features_to_rank)
 
-    # 2. 评估五大正交规则并统计共振票数
+    # 2. 评估五大正交规则并统计整型共振票数（报告口径）
     verdicts = evaluate_rules(snapshot, ranks, cfg.rules)
     votes = vote(verdicts)
 
-    # 3. 综合打分（应用实测信噪比加权共振当量）
-    rule_weights = adaptive_state.weights if adaptive_state is not None else {
-        "R1": 1.0, "R2": 0.8, "R3": 0.8, "R4": 0.4, "R5": 1.8
-    }
-    weighted_votes = vote(verdicts, weights=rule_weights)
-    scores = score_all(snapshot, ranks, cfg.weights, votes=weighted_votes, rule_weights=rule_weights)
+    # 3. 规则权重：自适应状态优先，否则走配置化均匀先验（禁止字面量兜底）
+    if adaptive_state is not None:
+        rule_weights: Mapping[str, float] = dict(adaptive_state.weights)
+    else:
+        rule_weights = default_rule_weights(cfg.adaptive)
 
-    # 4. 获取上期开出的 20 个球号用于重号配比控制
-    # 遗漏为 0 的号码即上期开出
+    # 4. 综合打分（内部按 B5 计算等效票数 + 归一化）
+    scores = score_all(
+        snapshot,
+        ranks,
+        cfg.weights,
+        votes=votes,
+        verdicts=verdicts,
+        rule_weights=rule_weights,
+    )
+
+    # 5. 上期开出的 20 个球号（遗漏为 0）用于重号配比控制
     last_draw = frozenset(int(i + 1) for i in range(len(snapshot.gap)) if snapshot.gap[i] == 0)
 
-    # 5. 过滤构建号码池
+    # 6. 过滤构建号码池（复用已算好的得分/规则，零重复计算）
     pool = build_pool(
         snapshot,
         scores.final,
@@ -91,8 +119,12 @@ def score_round(
         last_draw,
         pool_size=cfg.pool.main_default,
         cfg=cfg,
+        ranks=ranks,
+        verdicts=verdicts,
+        base=scores.base,
     )
 
+    equivalence = scores.weighted_votes
     return ScoreRoundResult(
         snapshot=snapshot,
         ranks=ranks,
@@ -100,12 +132,15 @@ def score_round(
         votes=votes,
         scores=scores,
         pool=pool,
+        weighted_votes=equivalence,
+        rule_weights=dict(scores.rule_weights),
     )
 
 
 __all__ = [
     "ScoreRoundResult",
     "build_pool",
+    "default_rule_weights",
     "evaluate_rules",
     "percentile_rank",
     "rank_matrix",

@@ -181,7 +181,7 @@ def lookup_table(
             # 校验并返回
             return tuple(tuple(int(x) for x in ticket) for ticket in raw_tickets)
         return None
-    except Exception as e:
+    except (OSError, ValueError, TypeError, KeyError) as e:
         raise CoveringError(f"读取覆盖表文件 {p} 失败: {e}") from e
 
 
@@ -232,8 +232,9 @@ def solve_ilp(
             chosen_indices = np.where(res.x > 0.5)[0]
             chosen = tuple(tuple(candidates[idx]) for idx in chosen_indices)
             return chosen
-    except Exception:
-        pass
+    except (ValueError, RuntimeError, np.linalg.LinAlgError):
+        # MILP 求解器在退化/超时下可能抛数值异常；返回 None 由上层降级贪心+退火
+        return None
 
     return None
 
@@ -374,10 +375,22 @@ def solve(
     m: int,
     weights: np.ndarray,
     cfg: CoveringConfig,
+    *,
+    seed: int = 0,
 ) -> CoveringReport:
     """组合覆盖全流程求解调度（契约 R37–R40、§3.11）。
 
     流程：查表 -> ILP -> 贪心 + 模拟退火 -> 穷举校验保底并生成报告。
+
+    @param v 覆盖池规模
+    @param k 单注号码个数
+    @param t 保底命中数
+    @param m 池内命中数假设
+    @param weights (v,) 池内号码权重
+    @param cfg 覆盖配置
+    @param seed 随机种子（契约 B10：唯一随机源为 cfg.seed，调用方透传）
+    @return CoveringReport
+    @raises InfeasibleConstraintError 规模超限
     """
     t_start = time.perf_counter()
     if v > cfg.max_pool_v:
@@ -424,7 +437,7 @@ def solve(
             degrade_reason = "规模超出 ILP 上限或无求解器，降级使用带权贪心与模拟退火"
             warnings.append(degrade_reason)
             method = "greedy+anneal"
-            tickets_pos = greedy_weighted(v, k, t, m, weights, budget=cfg.budget, seed=42)
+            tickets_pos = greedy_weighted(v, k, t, m, weights, budget=cfg.budget, seed=seed)
             if len(tickets_pos) < cfg.budget and cfg.sa_iterations > 0:
                 tickets_pos = anneal(
                     v, k, t, m, weights,
@@ -432,7 +445,7 @@ def solve(
                     iterations=cfg.sa_iterations,
                     t0=cfg.sa_t0,
                     cooling=cfg.sa_cooling,
-                    seed=42,
+                    seed=seed,
                 )
 
     # 3. 截断到最大预算

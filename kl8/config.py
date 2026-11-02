@@ -331,7 +331,7 @@ class CoveringConfig:
     """单注和值安全带宽（相对池均值 × k 的上下浮动比例）。"""
 
     table_path: str = "kl8/layer5_combinatorial/covering_tables.json"
-    """经典参数覆盖表路径。"""
+    """经典参数覆盖表路径（build_ticket_plan 会透传；查表未命中时自动回落求解器）。"""
 
 
 @dataclass(frozen=True)
@@ -409,6 +409,12 @@ class BacktestConfig:
 
     lift_signal: float = 1.05
     """Lift@K 判定显著超额信号的阈值 ∈[1.0, 1.2]（契约 R43、v1.1.0）。"""
+
+    min_n_signal: int = 500
+    """显著性最小样本量门槛：n < 本值 → is_signal 恒 False（契约 R43 v1.3.0 / 8.md L188「500 期以上」）。"""
+
+    bonferroni: bool = True
+    """是否对 cfg.backtest.ks 的多次检验做 Bonferroni 校正（alpha_adj = alpha_sig / len(ks)）。"""
 
 
 @dataclass(frozen=True)
@@ -774,7 +780,7 @@ def validate_config(cfg: AppConfig) -> None:
     _check_int("covering.max_pair_overlap", covering.max_pair_overlap, 0, covering.k)
     _check_int("covering.max_consecutive_in_ticket", covering.max_consecutive_in_ticket, 1, covering.k)
     _check_bool("covering.forbid_all_odd_even", covering.forbid_all_odd_even)
-    _check_float("covering.sum_margin", covering.sum_margin, 0.0, 1.0, inclusive=False)
+    _check_float("covering.sum_margin", covering.sum_margin, 0.2, 0.8)
     _check_str("covering.table_path", covering.table_path)
 
     # —— 机器学习 ——
@@ -823,6 +829,8 @@ def validate_config(cfg: AppConfig) -> None:
     _check_bool("backtest.include_tickets", backtest.include_tickets)
     _check_float("backtest.alpha_sig", backtest.alpha_sig, 0.0, 1.0, inclusive=False)
     _check_float("backtest.lift_signal", backtest.lift_signal, 1.0, 1.2, inclusive=True)
+    _check_int("backtest.min_n_signal", backtest.min_n_signal, 100, 2000)
+    _check_bool("backtest.bonferroni", backtest.bonferroni)
 
     # —— 全局 ——
     _check_str("history_path", cfg.history_path)

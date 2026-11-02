@@ -323,3 +323,78 @@ def hypergeometric_var(
         return 0.0
     p = n_draw / n_total
     return n_pick * p * (1.0 - p) * (n_total - n_pick) / (n_total - 1)
+
+
+# =============================================================================
+# 四、契约固定系数（非业务可调项，故不进 config；修改须升版契约）
+# =============================================================================
+GOLD_RATIO: Final[float] = 0.30
+"""金胆池规模系数（契约 A5 自定：n_gold = clip(round(0.30×len(main)), gold_min, gold_max)）。
+
+8.md L155 只给示例区间「如 3~5 码」，0.30 系数与「V≥3 优先」均为**契约自定**，
+不随用户调参，因此收敛到本模块而非 config.py。
+"""
+
+GOLD_VOTE_PRIORITY: Final[int] = 3
+"""金胆池优先票数门槛（契约 A5：先取 V ≥ 3 的号码按 FinalScore 降序，不足再补）。"""
+
+VOTE_HIGH_THRESHOLD: Final[int] = 3
+"""高共振票数组门槛（R45 归因：V ≥ 3 视为高票组）。"""
+
+VOTE_LOW_MAX: Final[int] = 1
+"""低共振票数组上限（R45 归因：V ≤ 1 视为低票组）。"""
+
+PLAY_KT: Final[Mapping[str, tuple[int, int]]] = {"pick5": (5, 4), "pick7": (7, 5)}
+"""玩法 → (单注码数 k, 保底命中数 t)（契约 A8：选五 20 注 / 选七 10 注）。
+
+L5 的 `build_ticket_plan` 必须从本表取 k/t，禁止在函数体内写死 5/4/7/5（红线 C1）。
+"""
+
+ML_FEATURE_WARMUP: Final[int] = 10
+"""ML 训练样本可用的最小前置期数：前 10 期窗口未满，不进入训练集（C1 收口）。"""
+
+RULE_IDS: Final[tuple[str, ...]] = ("R1", "R2", "R3", "R4", "R5")
+"""五条正交规则固定编号顺序（投票、权重、归因、报告共用的单一数据源）。"""
+
+RULE_NAMES: Final[Mapping[str, str]] = {
+    "R1": "多尺度强跟随共振",
+    "R2": "温热多头趋势共振",
+    "R3": "动量金叉加速",
+    "R4": "强共现伴生拉动",
+    "R5": "全量回归临界回补",
+}
+"""五条规则的中文名称（P8-M5：报告层禁止再写错名/硬编码，统一从此取）。"""
+
+PLAY_LABELS: Final[Mapping[str, str]] = {"pick5": "选五", "pick7": "选七"}
+"""玩法内部键 → 中文名（报告层唯一来源；未登记玩法原样回退）。"""
+
+NO_BASELINE_TEXT: Final[str] = "首期无复盘基线（无可用的上期预测记录）"
+"""首期无复盘基线固定文案（契约 §3.14.1：缺文件/损坏/无更早记录时必须逐字输出）。"""
+
+ROI_NA_TEXT: Final[str] = "ROI: N/A（官方奖级未确认）"
+"""奖级未确认时的 ROI 披露文案（契约裁决 A10 / §6.6，三类报告共用）。"""
+
+
+def sum_band(n_pick: int, sigmas: float = 2.0) -> tuple[int, int]:
+    """计算 n_pick 个号码和值的理论合理区间 ``E ± sigmas·σ``（无放回超几何抽样）。
+
+    【为什么放这里】报告需要给出"合理和值区间"，但区间随 k 变化且必须有数学依据；
+    旧实现写死固定和值区间（契约 §6.6 点名禁止）。本函数由 N_NUM 推导，零魔法数字。
+
+    @param n_pick 选号个数
+    @param sigmas 标准差倍数（默认 2σ，约 95% 覆盖）
+    @return (下界, 上界) 整数和值区间
+    """
+    if n_pick <= 0:
+        return (0, 0)
+    expected = float(n_pick) * float(N_NUM + 1) / 2.0
+    variance = (
+        float(n_pick)
+        * ((float(N_NUM) ** 2 - 1.0) / 12.0)
+        * ((float(N_NUM) - float(n_pick)) / (float(N_NUM) - 1.0))
+    )
+    std = math.sqrt(max(0.0, variance))
+    return (
+        int(round(expected - sigmas * std)),
+        int(round(expected + sigmas * std)),
+    )

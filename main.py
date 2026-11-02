@@ -25,12 +25,16 @@ if hasattr(sys.stdout, "reconfigure"):
     try:
         sys.stdout.reconfigure(encoding="utf-8")
         sys.stderr.reconfigure(encoding="utf-8")
-    except Exception:
+    except (AttributeError, OSError, ValueError):
+        # 已重定向到不支持 reconfigure 的流（如管道/测试替身），保持原编码继续运行
         pass
 
 from kl8.config import AppConfig, load_config, merge_cli_overrides
+from kl8.constants import PLAY_LABELS, ROI_NA_TEXT
 from kl8.errors import KL8Error
+from kl8.evaluation.metrics import format_roi_bp
 from kl8.pipeline import DailyResult, run_audit, run_backtest, run_daily
+from kl8.reporting.text_report import sample_note
 
 DEFAULT_HISTORY_PATH = "kl8_history.txt"
 # 日常模式伴随回测期数（够用且不会让双击入口长时间静默）
@@ -203,8 +207,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return se.code if isinstance(se.code, int) else 1
 
     try:
-        # 步骤 1: 加载并合并 CLI 配置覆盖
-        cfg = load_config(args.config)
+        # 步骤 1: 加载并合并 CLI 配置覆盖（--config 是文件路径，必须走 path 参数）
+        cfg = load_config(path=args.config)
         cfg = merge_cli_overrides(cfg, args)
 
         # 步骤 1.1: 可选的 LightGBM 诊断通道开启（契约 B4：默认关闭，--ml 显式打开）
@@ -239,21 +243,29 @@ def main(argv: Sequence[str] | None = None) -> int:
 
             # 打印精炼控制台摘要
             print(f"✔ 预测目标: 第 {res.target_period} 期 | 开奖日期: {res.target_date}")
-            print(f"🔥 超级金胆 (5码):   {' '.join(f'{n:02d}' for n in res.pool.gold)}")
+            print(f"🔥 超级金胆 ({len(res.pool.gold)}码):   {' '.join(f'{n:02d}' for n in res.pool.gold)}")
             print(f"⭐ 精选大底 ({len(res.pool.main)}码): {' '.join(f'{n:02d}' for n in res.pool.main)}")
 
             if res.plans:
                 print("🎟️ 推荐保底实战票:")
-                for p_idx, plan in enumerate(res.plans, start=1):
-                    print(f"   [{plan.play.upper()} 计划, 选号k={plan.k}, 预算={plan.budget}注]:")
+                for plan in res.plans:
+                    play_cn = PLAY_LABELS.get(plan.play, plan.play)
+                    design = plan.guarantee_level.get("design", "")
+                    print(
+                        f"   [{play_cn} 计划, 选号k={plan.k}, 预算={plan.budget}注, 设计={design}]:"
+                    )
                     for t_idx, tk in enumerate(plan.tickets, start=1):
                         print(f"     第 {t_idx:02d} 注: [ {' '.join(f'{x:02d}' for x in tk)} ]")
+                    if cfg.prize_table.get(plan.play) is None:
+                        print(f"     {ROI_NA_TEXT}")
 
             print("\n📁 全渠道交付物已就绪:")
             print(f"   📄 TXT 精要报告:   {res.report_paths['text']}")
             print(f"   📱 微信发布文案:   {res.report_paths['wechat']}")
             print(f"   📊 商业 Excel:     {res.report_paths['excel']}")
             print(f"   💾 自适应状态文件: {res.report_paths['state']}")
+            if "prev_prediction" in res.report_paths:
+                print(f"   🧾 复盘状态文件:   {res.report_paths['prev_prediction']}")
 
             if res.warnings:
                 print("\n⚠️ 执行提示与警告:")
@@ -288,22 +300,76 @@ def main(argv: Sequence[str] | None = None) -> int:
 
             print(f"✔ 实际评估样本量: {bt.n_sample} 期 (冷启动 T0={bt.t0})")
             print(f"✔ 覆盖期号范围:   第 {bt.start_period} 期 ~ 第 {bt.end_period} 期")
-            print("\n📈 Top-K 提升度 (Lift@K) 显著性检验:")
-            print("   Top-K  实测均中  理论期望  提升度(Lift)  t统计量   p值       显著判定")
-            for k_val, lstat in sorted(bt.lift.items(), key=lambda x: x[0]):
+            print(
+                f"✔ 防穿越校验:     已校验 {bt.lookahead_checked} 期，越界 {len(bt.lookahead_violations)} 期"
+            )
+            if bt.lookahead_violations:
+                print(f"   ! 越界期号: {', '.join(str(p) for p in bt.lookahead_violations)}")
+
+            if any(stat.n < cfg.backtest.min_n_signal for stat in bt.lift.values()):
+                print(f"   ! {sample_note(cfg.backtest.min_n_signal)}")
+
+            print("\n📈 Top-K 提升度 (Lift@K) 显著性检验（三条件：n 门槛 + Lift + Bonferroni p）:")
+            print("   Top-K  实测均中  理论期望  提升度   t统计量   p值     校正α    n      判定")
+            for _k_val, lstat in sorted(bt.lift.items(), key=lambda x: x[0]):
                 sig_str = "★显著" if lstat.is_signal else "平稳"
                 print(
-                    f"   Top-{k_val:02d}   {lstat.mean_hit:5.2f}     {lstat.expected:5.2f}      {lstat.lift:6.3f}     {lstat.t_stat:6.3f}  {lstat.p_value:.4f}     {sig_str}"
+                    f"   Top-{lstat.k:02d}   {lstat.mean_hit:5.2f}     {lstat.expected:5.2f}     "
+                    f"{lstat.lift:6.3f}   {lstat.t_stat:6.3f}  {lstat.p_value:.4f}  "
+                    f"{lstat.alpha_adj:.4f}  {lstat.n:4d}   {sig_str}"
                 )
+
+            print("\n📊 R45 规则独立查准率归因:")
+            if bt.attribution is None:
+                print("   暂无归因数据。")
+            else:
+                for rule_id, stat in sorted(bt.attribution.per_rule.items()):
+                    print(
+                        f"   {rule_id}: 平均池 {stat.pool_size_avg:4.1f} 码 | 命中率 {stat.hit_rate:6.2%} | "
+                        f"Lift {stat.lift:5.3f} | z={stat.z:+.2f}"
+                    )
+                high = bt.attribution.high_votes
+                low = bt.attribution.low_votes
+                print(
+                    f"   高票组(V≥3): n={int(high.get('n', 0))}, 命中率={high.get('hit_rate', 0.0):.2%}, "
+                    f"Lift={high.get('lift', 0.0):.3f}"
+                )
+                print(
+                    f"   低票组(V≤1): n={int(low.get('n', 0))}, 命中率={low.get('hit_rate', 0.0):.2%}, "
+                    f"Lift={low.get('lift', 0.0):.3f} | 两比例检验 z={high.get('z', 0.0):+.2f}"
+                )
+
+            if bt.high_tier:
+                print("\n🎯 高奖级触发率（实际 vs 超几何理论，单注口径；§7.4 勘误）:")
+                for _tier_key, tier in sorted(bt.high_tier.items()):
+                    theory = (
+                        f"{tier.theory_rate:.4%}（≈1/{int(1.0 / tier.theory_rate)} 期）"
+                        if tier.theory_rate > 0
+                        else "N/A"
+                    )
+                    denom = (
+                        f"{tier.n_rounds} 期 / {tier.n_trials} 注"
+                        if tier.n_trials > tier.n_rounds
+                        else f"{tier.n_rounds} 期"
+                    )
+                    print(
+                        f"   {tier.tier}: 实际 {tier.observed_rate:.4%} | 理论 {theory} | "
+                        f"比值 {tier.ratio:.2f} | n={denom}"
+                    )
 
             if bt.bankroll is not None:
                 b = bt.bankroll
                 print("\n💰 资金收益与风险指标:")
                 print(f"   总投入: {b.total_cost_yuan} 元 | 总奖金: {b.total_prize_yuan} 元 | 净利润: {b.net_yuan} 元")
-                print(f"   投资回报率 (ROI): {b.roi * 100:.2f}% | 最大回撤: {b.max_drawdown_yuan} 元 | 最长连挂: {b.max_losing_streak} 期")
+                roi_str = format_roi_bp(b.roi_bp) if b.roi_available else ROI_NA_TEXT
+                print(
+                    f"   投资回报率 (ROI): {roi_str} | 最大回撤: {b.max_drawdown_yuan} 元 | "
+                    f"最长连挂: {b.max_losing_streak} 期"
+                )
 
+            print(f"\n✔ 报告自洽机检: {bt.self_check}")
             print(f"\n⏱️ 回测总耗时: {bt.elapsed_s:.3f} 秒")
-            return 0
+            return 0 if bt.self_check.get("no_lookahead", False) else 1
 
         elif args.mode == "audit":
             print("=" * 70)
@@ -319,8 +385,21 @@ def main(argv: Sequence[str] | None = None) -> int:
 
             print(f"✔ 回测自洽性机检项: {audit_res['backtest_self_check']}")
             print(f"✔ 评估期数: {audit_res['backtest_samples']} 期")
+            print(
+                f"✔ 防穿越覆盖: 已校验 {audit_res.get('lookahead_checked', 0)} 期，"
+                f"越界 {len(audit_res.get('lookahead_violations', ()))} 期"
+            )
+            for v_period in audit_res.get("lookahead_violations", ()):
+                print(f"   ! 防穿越越界期号: {v_period}")
+            signals = audit_res.get("lift_signals", {})
+            sig_keys = [int(k) for k, is_sig in signals.items() if is_sig]
+            if sig_keys:
+                print(f"✔ 达到显著性门槛的 Top-K: {', '.join(f'Top-{k}' for k in sorted(sig_keys))}")
+            else:
+                print("✔ 达到显著性门槛的 Top-K: 无（未通过样本量/Lift/Bonferroni 三条件）")
             print(f"✔ 指纹血缘: {audit_res['config_hash']}")
-            return 0 if code_ok else 1
+            no_leak = audit_res["backtest_self_check"].get("no_lookahead", False)
+            return 0 if (code_ok and no_leak) else 1
 
         return 0
 

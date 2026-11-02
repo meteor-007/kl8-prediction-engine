@@ -1,0 +1,44 @@
+🎉【快乐8 五层动力学系统 · 重构上线】
+
+🏗 架构：五层解耦
+数据表征 → 随机性基准/偏态探测 → 多尺度特征 → 五规则共振+混合打分 → 覆盖缩水+Walk-Forward 回测
+· 防穿越唯一入口 history.truncated，严禁随机 K-Fold
+· 阈值/权重全部收敛到 config（零魔法数字）
+· 48 项需求点逐条有实现点+单测映射（requirement-mapping.csv）
+
+✅ 质量状态
+· 用例 175 例全绿（统计口径：unittest 发现数；重构基线 124 + QA 补测 51；终值以 P9 终态实跑为准）
+· compileall exit 0；audit 模式防穿越机检通过（均以 P9 终态复核为准）
+· P8 体检卡 6 High / 15 Medium 已列入返工，放行前清零
+
+📊 回测口径（诚实披露，不吹）
+· 严格 Walk-Forward，T0=300 冷启动，逐期推进，无未来信息
+· 显著性硬门槛：n≥500 且 Bonferroni α=0.01；n<500 一律标「样本量不足，仅供参考」
+· 100 期实测：Lift≈1.03~1.07（约 1.0~1.07 区间），统计上不显著；ROI 为负
+· ⚠️ 当前不具备可验证的统计优势，请勿据此加大投入；选七/选三奖级未确认，ROI 输出 N/A
+
+📦 新交付物（旧八区分桶推荐已下线）
+· 核心金胆池 3~5 码
+· 精选复式大底 10~15 码（默认 12）
+· 覆盖注单（选五 20 注 / 选七 10 注；出 5 保 4，m 为假设参数非预测）
+· 报告：output/reports/Keno预测精要_日期_第N期.txt
+· 微信：output/wechat/Keno微信发布_日期_第N期.txt
+· 表格：output/excel/Keno动力学决策_日期_第N期.xlsx
+· 状态：output/state/adaptive_weights.json
+· 新增：output/state/prev_prediction.json（上期预测如实复盘）
+
+🎯 首期样例（第 2026292 期，样例结构；号码随每日开奖更新）
+金胆 5 码：07 09 41 44 73
+复式 12 码：01 02 07 09 34 41 44 50 53 56 59 73
+（样例取自 P8 修复轮前快照，仅演示版式，正式号码以当日 output/ 文件为准）
+※ 该样例产出于修复轮之前（含已知 6 项 High 缺陷），仅演示版式，不可作为最终交付样本；终版样例将在修复轮后重出。
+
+▶️ 一键运行
+1) 双击「运行微积分预测.bat」（= --no-sync --backtest 30 --full-print）
+2) 回测：python main.py --no-sync --mode backtest --backtest 100
+3) 审计：python main.py --no-sync --mode audit --backtest 30
+
+🛑 已删除（git 历史可恢复）
+12 个 calc_* 旧模块、2 个旧脚本、3 个旧测试、48 个旧命名交付件（微积分八区预测报告 / 微信分桶推荐 / 快乐8微积分*.xlsx）、根 __pycache__
+
+ℹ️ 依据 docs/8.md 技术路线 + contract.md v1.3.0；本系统仅做统计研究，不构成投注建议，理性购彩。

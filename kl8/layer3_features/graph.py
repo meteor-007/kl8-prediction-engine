@@ -24,6 +24,21 @@ try:
 except ImportError:
     _HAS_NX = False
 
+#: networkx 分支允许捕获的异常（P8-M7：禁止裸 except；覆盖收敛失败、空图、数值退化）。
+_NX_ERRORS: tuple[type[BaseException], ...] = (
+    ValueError,
+    TypeError,
+    ZeroDivisionError,
+    np.linalg.LinAlgError,
+)
+if _HAS_NX:  # pragma: no branch —— 未安装 networkx 时无需登记其异常类型
+    _NX_ERRORS = _NX_ERRORS + (
+        nx.NetworkXError,
+        nx.NetworkXException,
+        nx.NetworkXUnbounded,
+        nx.PowerIterationFailedConvergence,
+    )
+
 
 @dataclass(frozen=True)
 class GraphResult:
@@ -93,7 +108,8 @@ def pagerank(
                 pr_dict = nx.pagerank(G, alpha=alpha, weight="weight", max_iter=max_iter, tol=tol)
                 raw = np.array([pr_dict.get(i, 0.0) for i in range(N_NUM)], dtype=np.float64)
                 return _min_max_scale(raw)
-        except Exception:
+        except _NX_ERRORS:
+            # 网络拓扑算法在退化输入下可能抛数值/收敛异常，降级到 NumPy 方案
             pass
 
     # NumPy 幂迭代降级方案
@@ -130,7 +146,8 @@ def eigenvector_centrality(
                 ec_dict = nx.eigenvector_centrality_numpy(G, weight="weight")
                 raw = np.array([abs(ec_dict.get(i, 0.0)) for i in range(N_NUM)], dtype=np.float64)
                 return _min_max_scale(raw)
-        except Exception:
+        except _NX_ERRORS:
+            # 网络拓扑算法在退化输入下可能抛数值/收敛异常，降级到 NumPy 方案
             pass
 
     # NumPy 谱分析降级
@@ -141,7 +158,7 @@ def eigenvector_centrality(
         eigenvalues, eigenvectors = np.linalg.eigh(pos_a)
         leading_vector = np.abs(eigenvectors[:, -1])
         return _min_max_scale(leading_vector)
-    except Exception:
+    except (np.linalg.LinAlgError, ValueError):
         return np.zeros(N_NUM, dtype=np.float64)
 
 
@@ -178,7 +195,8 @@ def louvain_communities(
                         comm_id[i] = len(comms)
                         comm_size[i] = 1
                 return (comm_id, comm_size)
-        except Exception:
+        except _NX_ERRORS:
+            # 网络拓扑算法在退化输入下可能抛数值/收敛异常，降级到 NumPy 方案
             pass
 
     # 降级方案：按最大连接分配

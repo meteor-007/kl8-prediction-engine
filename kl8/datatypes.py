@@ -33,7 +33,7 @@ from typing import Any, Mapping
 
 import numpy as np
 
-from kl8.constants import DATE_PATTERN, K_DRAW, N_NUM
+from kl8.constants import DATE_PATTERN, K_DRAW, N_NUM, PLAY_LABELS
 from kl8.errors import DataFormatError, InsufficientDataError
 
 #: 80 维浮点向量别名（0-based 索引 ↔ 号码 i+1）。
@@ -914,7 +914,7 @@ class TicketPlan:
 
         @return "选五" 或 "选七"（未知玩法回退为原文）
         """
-        return {"pick5": "选五", "pick7": "选七"}.get(self.play, self.play)
+        return PLAY_LABELS.get(self.play, self.play)
 
     @property
     def n_tickets(self) -> int:
@@ -986,6 +986,27 @@ class BacktestRow:
     warnings: tuple[str, ...] = ()
     """该期降级/异常说明。"""
 
+    rule_stats: Mapping[str, tuple[int, int]] = field(default_factory=dict)
+    """各规则当期筛选池表现：规则号 → (命中号码数, 该规则命中码总数)。
+
+    仅由 ``evaluation.walkforward`` 在当期开奖揭晓后填充（R45 规则归因与 R33
+    自适应权重真算的唯一数据来源）；手工构造行可为空，下游必须做空安全。
+    """
+
+    vote_group_stats: Mapping[str, tuple[int, int]] = field(default_factory=dict)
+    """票数分组表现：``"high"``（V≥3）/``"low"``（V≤1）→ (命中号码数, 组内号码数)。
+
+    用于 R45「高票组相对低票组超额命中率」的两比例检验；空表示该期未统计。
+    """
+
+    ticket_hits: tuple[int, ...] = ()
+    """当期全部注单的逐注命中数（单注口径，升序或按注序）。
+
+    R44 高奖级触发率的**正确分母**：理论概率 ``P(选五中五)`` 是单注概率，
+    不能用"每期最佳票"去比（N 注放大会造成虚假高倍触发率）。空元组表示该期
+    未生成注单或为手工构造行，下游自动退化为 ``best_ticket_hit`` 口径。
+    """
+
 
 @dataclass(frozen=True)
 class BacktestReport:
@@ -1029,6 +1050,12 @@ class BacktestReport:
 
     warnings: tuple[str, ...] = ()
     """全局告警。"""
+
+    lookahead_checked: int = 0
+    """真实执行防穿越校验的期数（每期校验一次 ``as_of_index ≤ as_of_t``）。"""
+
+    lookahead_violations: tuple[int, ...] = ()
+    """越界期号列表（空表示无穿越；非空时 ``self_check["no_lookahead"]`` 必为 False）。"""
 
     def __post_init__(self) -> None:
         """自检位回填：``n_sample == len(rows)`` 必须恒成立。

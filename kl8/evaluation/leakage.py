@@ -119,7 +119,8 @@ def audit_grep_no_shuffle(root: str | Path = "kl8") -> tuple[str, ...]:
                     for pat in forbidden_patterns:
                         if pat.search(line):
                             violations.append(f"{file_path}:{line_no}: {line}")
-        except Exception:
-            pass
+        except (OSError, UnicodeDecodeError) as exc:
+            # 单个文件不可读不应中断全仓审计，但必须留痕（禁止静默 pass）
+            violations.append(f"{file_path}: 读取失败（{exc}），本次审计未覆盖该文件")
 
     return tuple(violations)
