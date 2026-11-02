@@ -2,7 +2,7 @@
 
 > **本契约需求点编号 R1–R48，共 48 项；项目文档与后续任务中的「43 点」为早期笔误，以本表 48 项为准。**
 >
-> - 版本：**v1.3.0**（2026-11-02，吸收 P8 体检卡暴露的**契约级缺口**：§7.4「8.md L190 概率勘误」、A2 口径冻结、新增 §3.14.1 复盘状态契约 `prev_prediction.json`、R43/R44 显著性硬规则（n≥500 + Bonferroni）、新增 §6.6「报告禁止项（可 grep）」；详见 §7.3）｜ 冻结日：2026-11-02 ｜ 作者：req-architect（智小研）
+> - 版本：**v1.3.1**（2026-11-02，映射校正：修 G1/发小顺 机检发现的 3 处 CSV↔契约偏差——R2 实现模块补 `state.py`、R46 用例名 `test_bankroll_roi_drawdown`→`test_bankroll_integer_yuan`、R48 用例名 `test_config_validation`→`test_weights_sum_violation_rejected`；并完成 **48/48 行**「实现模块::符号 + 测试文件::用例名」实测校验。详见 §7.3）｜ 冻结日：2026-11-02 ｜ 作者：req-architect（智小研）
 > - 适用阶段：P2（基础层）→ P3（layer2/3）→ P4（layer4）→ P5（layer5）→ P6（evaluation/reporting/pipeline/main）
 > - 权威优先级：**docs/8.md（业务需求，唯一权威）> 本契约（工程落地口径与签名冻结）> 旧实现 `calc_*.py`（仅语义参考，P9 删除）**
 > - 冻结效力：**§3 模块签名与 §4 数据结构字段名/顺序为冻结项，下游开发禁止改签名、禁止改字段名、禁止改返回顺序**；确需变更必须由 Lead 发起契约版本升级（v1.x）并同步 P2–P9。
@@ -63,7 +63,7 @@
 | 需求 ID | 可验收需求摘要 | 8.md 行号 | 实现模块.函数 | 测试文件::用例名 |
 | :--- | :--- | :--- | :--- | :--- |
 | R1 | 二值化状态矩阵 `X∈{0,1}^{T×80}`，每行行和恒为 20，形状/取值/行和强校验 | L30、L47–50 | `kl8/layer1_representation/state.py::BinaryStateMatrix.from_dataset`、`BinaryStateMatrix.row_sum` | `tests/test_state.py::test_binary_matrix_shape_and_row_sum` |
-| R2 | 四尺度窗口 `W={10G,25G,50G,ALL}` 的定义、切片与 O(1) 窗口查询 | L34–35、L52–57 | `kl8/layer1_representation/windows.py::resolve_windows`、`state.py::BinaryStateMatrix.window_matrix`、`window_sum` | `tests/test_windows.py::test_four_scale_windows` |
+| R2 | 四尺度窗口 `W={10G,25G,50G,ALL}` 的定义、切片与 O(1) 窗口查询 | L34–35、L52–57 | `kl8/layer1_representation/windows.py::resolve_windows`；`state.py::BinaryStateMatrix.window_matrix`、`state.py::BinaryStateMatrix.window_sum` | `tests/test_windows.py::test_four_scale_windows` |
 | R3 | 冷启动窗口回退 `w_eff=min(w,T)`，`T<w` 时不报错、方差由平滑抑制 | L57、L201 | `kl8/layer1_representation/windows.py::effective_window`、`is_cold_start` | `tests/test_windows.py::test_cold_start_fallback` |
 | R4 | 原始开奖数据清洗/校验/标准化：格式解析、20 码去重、1..80、升序重排、去重期号、降序文件自检、不连续仅 warning | L30–31（+§0.1 实测） | `kl8/history.py::parse_line`、`load_dataset`、`save_dataset` | `tests/test_history.py::test_parse_validate_and_sort` |
 | R5 | 单球单期理论先验 `p0=K/N=0.25` | L66、L97 | `kl8/layer2_baseline/priors.py::p0` | `tests/test_priors.py::test_p0_value` |
@@ -104,18 +104,18 @@
 | R40 | 带概率权重贪心集合覆盖 + 模拟退火固定预算优化（seed 固定） | L170 | `covering.py::greedy_weighted`、`anneal` | `tests/test_covering.py::test_greedy_weighted_and_sa_determinism` |
 | R41 | 注单后处理与双玩法落地（极端和值/全奇全偶/3 连剔除、去重、预算截断、正交重叠上限、选五/选七） | L161–170 | `kl8/layer5_combinatorial/tickets.py::postprocess`、`build_ticket_plan` | `tests/test_tickets.py::test_postprocess_and_dual_play` |
 | R42 | Walk-Forward 滚动回测：T0=300 冷启动、逐期推进 `[1..t]→t+1`、**严禁随机 K-Fold** | L176–182 | `kl8/evaluation/walkforward.py::run_walkforward`、`iter_windows` | `tests/test_walkforward.py::test_walkforward_flow_no_leak` |
-| R43 | Top-K 平均命中率与 `Lift@K=mean_hit/(0.25K)` + 单侧 t 检验显著性 + 95% CI。**显著性硬规则（v1.3.0）**：① **样本量门槛**：`n < cfg.backtest.min_n_signal(500)` → `is_signal` 一律 **False**，报告必须标注「样本量不足（n<500），结论仅供参考」；② **多重比较校正**：对 `K∈cfg.backtest.ks`（5 次检验）做 Bonferroni，`alpha_adj = cfg.backtest.alpha_sig / len(ks) = 0.01`；③ `is_signal = (n ≥ min_n_signal) and (lift > lift_signal) and (p_value < alpha_adj)` | L185–188 | `kl8/evaluation/metrics.py::lift_at_k`、`t_test_one_sided` | `tests/test_metrics.py::test_lift_at_k_handcalc`、`test_lift_signal_requires_n500_and_bonferroni` |
+| R43 | Top-K 平均命中率与 `Lift@K=mean_hit/(0.25K)` + 单侧 t 检验显著性 + 95% CI。**显著性硬规则（v1.3.0）**：① **样本量门槛**：`n < cfg.backtest.min_n_signal(500)` → `is_signal` 一律 **False**，报告必须标注「样本量不足（n<500），结论仅供参考」；② **多重比较校正**：对 `K∈cfg.backtest.ks`（5 次检验）做 Bonferroni，`alpha_adj = cfg.backtest.alpha_sig / len(ks) = 0.01`；③ `is_signal = (n ≥ min_n_signal) and (lift > lift_signal) and (p_value < alpha_adj)` | L185–188 | `kl8/evaluation/metrics.py::lift_at_k`、`t_test_one_sided` | `tests/test_metrics.py::test_lift_at_k_handcalc`；`tests/test_metrics.py::test_lift_signal_requires_n500_and_bonferroni`（**v1.3.0 新增要求，当前仓库尚不存在**，P8 修复轮补齐） |
 | R44 | 高奖级触发率：实测频率 vs 精确超几何理论概率（选三中三 / 选五中四·五 / 选七中六·七）。**v1.3.0**：若同时输出显著性，同样受 R43 两条硬规则约束（`n≥500` + Bonferroni 校正 `α=0.01`）；否则只报点估计与理论值，**不得标「显著」** | L189–190 | `metrics.py::high_tier_rate`、`hypergeometric_baseline` | `tests/test_metrics.py::test_high_tier_vs_hypergeometric` |
 | R45 | 规则正交性与归因：R1–R5 独立胜率 + `V≥3` vs 低票组超额命中与 z | L191–192 | `metrics.py::rule_attribution` | `tests/test_metrics.py::test_rule_attribution` |
-| R46 | 资金曲线：ROI、最大回撤、最长连挂（整数元，注单成本×2 元） | L193–194 | `metrics.py::bankroll` | `tests/test_metrics.py::test_bankroll_roi_drawdown` |
+| R46 | 资金曲线：ROI、最大回撤、最长连挂（整数元，注单成本×2 元） | L193–194 | `metrics.py::bankroll` | `tests/test_metrics.py::test_bankroll_integer_yuan` |
 | R47 | 严格防穿越审计：唯一截断入口 + `max_accessed_t≤t` 断言 + 未来投毒逐位不变性 + 无 shuffle 型交叉验证 | L28、L200 | `kl8/evaluation/leakage.py::assert_no_lookahead`、`poison_future`、`fingerprint_snapshot`；`history.truncated` | `tests/test_leakage.py::test_poison_future_invariance` |
-| R48 | 工程落地：配置校验 + CLI + 数据同步 + 三类交付件（TXT/微信/Excel）+ 幂等状态 + 性能预算 | L30–39、L198–202 | `kl8/pipeline.py::run_daily`、`run_backtest`、`run_audit`；`kl8/reporting/*`；`kl8/config.py::load_config`；`kl8/sync.py::sync_history`；`main.py::main` | `tests/test_pipeline.py::test_end_to_end_daily_and_backtest`、`tests/test_config.py::test_config_validation` |
+| R48 | 工程落地：配置校验 + CLI + 数据同步 + 三类交付件（TXT/微信/Excel）+ 幂等状态 + 性能预算 | L30–39、L198–202 | `kl8/pipeline.py::run_daily`、`run_backtest`、`run_audit`；`kl8/reporting/*`；`kl8/config.py::load_config`；`kl8/sync.py::sync_history`；`main.py::main` | `tests/test_pipeline.py::test_end_to_end_daily_and_backtest`、`tests/test_config.py::test_weights_sum_violation_rejected` |
 
 ### §1.3 R48 子项拆解（避免单行过载，逐条可验收）
 
 | 子项 | 内容 | 验收证据 |
 | :--- | :--- | :--- |
-| R48-a | `AppConfig` 深合并 + 严格校验（七维 Σω=1、α∈[0.5,2.0]、λ∈[0.05,0.10]、gold<main、k≤池大小），非法抛 `ConfigError` 中文提示 | `tests/test_config.py::test_config_validation`；config-schema.md §5 |
+| R48-a | `AppConfig` 深合并 + 严格校验（七维 Σω=1、α∈[0.5,2.0]、λ∈[0.05,0.10]、gold<main、k≤池大小），非法抛 `ConfigError` 中文提示 | `tests/test_config.py::test_weights_sum_violation_rejected`（另：`test_deep_merge_keeps_siblings` 覆盖深合并）；config-schema.md §5 |
 | R48-b | CLI：保留旧参数（`--history/--no-sync/--quick/--full-sync/--period/--date/--backtest/--full-print`）+ 现代参数（`--mode/--k/--budget/--warmup/--pool-size/--seed/--config`）+ **v1.2.0 新增 `--ml`、`--no-tickets`**；`--backtest` 未显式指定时**按模式分派**（daily→30、backtest/audit→100，`0`=daily 关闭伴随回测）；异常统一中文提示并返回非 0 | `python main.py --help`；`python main.py --no-sync --backtest 30`；`python main.py --mode backtest --no-sync --no-tickets` |
 | R48-c | 数据同步：官网主源 + 备用源增量；网络失败仅告警不崩；文件降序写回并保留全量 | `kl8/sync.py::sync_history` 返回值 `SyncResult`；`tests/test_pipeline.py`（离线 mock） |
 | R48-d | 三类交付件：`output/reports/Keno分析报告_YYYYMMDD.txt`（六段式 + 附录 A/B）、`output/wechat/Keno发布_YYYYMMDD_第N期.txt`、`output/excel/Keno分析_YYYYMMDD_第N期.xlsx`（6 Sheet） | `tests/test_pipeline.py::test_end_to_end_daily_and_backtest`；P7 端到端实测 |
@@ -962,7 +962,7 @@ def main(argv: Sequence[str] | None = None) -> int: ...   # 0 成功 / 1 参数�
 | 降级与告警 | 写失败 → 写入 `DailyResult.warnings`（「复盘状态写入失败：…」，不中断交付）；读失败 → 同上 + 走「首期无复盘基线」分支 |
 | 报告消费 | 三类交付件（TXT/微信/Excel）的复盘段落只读 `prev_prediction` 结果，**不得各自重算**（B8 单一数据源） |
 
-> 落地归属：`kl8/pipeline.py`（写）+ `kl8/reporting/text_report.py`/`wechat.py`/`excel.py`（读）；P8 修复轮需同步补单测 `tests/test_pipeline.py::test_prev_prediction_roundtrip_is_idempotent` 与 `test_prev_prediction_missing_shows_baseline_message`。
+> 落地归属：`kl8/pipeline.py`（写）+ `kl8/reporting/text_report.py`/`wechat.py`/`excel.py`（读）；**P8 修复轮必须新增**单测 `tests/test_pipeline.py::test_prev_prediction_roundtrip_is_idempotent` 与 `test_prev_prediction_missing_shows_baseline_message`（**当前仓库尚不存在**，属本契约新增交付物，P7 复核时按"待新增"而非"缺失"处理）。
 
 ---
 
@@ -1165,13 +1165,13 @@ def main(argv: Sequence[str] | None = None) -> int: ...   # 0 成功 / 1 参数�
 
 | 编号 | 8.md 原文缺口 | 裁决（可执行口径） | 理由 / 兼容性 | 落点 |
 | :--- | :--- | :--- | :--- | :--- |
-| **A1** | L143 `R(Trend_i)` 未定义 Trend | `Trend_i = 0.5·R(Freq_10G) + 0.3·R(Mom_10-25) + 0.2·R(Mom_25-50)`，**秩空间**加权（先各自取百分位秩再加权） | 与 8.md「跨尺度量纲统一」+「动量金叉」一致；权重可配（`weights.trend_w_*`），三者同为 (0,1] 量纲，避免频率/差分混量纲 | `hybrid.trend_score`；`tests/test_scoring.py::test_trend_score_weights` |
+| **A1** | L143 `R(Trend_i)` 未定义 Trend | `Trend_i = 0.5·R(Freq_10G) + 0.3·R(Mom_10-25) + 0.2·R(Mom_25-50)`，**秩空间**加权（先各自取百分位秩再加权） | 与 8.md「跨尺度量纲统一」+「动量金叉」一致；权重可配（`weights.trend_w_*`），三者同为 (0,1] 量纲，避免频率/差分混量纲 | `hybrid.trend_score`；`tests/test_qa_numerics.py::test_trend_score_formula`（原 `test_scoring.py::test_trend_score_weights` 不存在，v1.3.1 校正） |
 | **A2** | L143 `R(C̄o_i)` 的 C̄o 聚合方式未定义 | `C̄o_i = mean(R(Co_25G), R(Co_50G), R(Co_ALL))`，**先秩后均**，**不含 10G** | 10G 共现样本仅 10 期，`CoScore` 方差最大，纳入会主导排序；25/50/ALL 覆盖中短中长期，与 R4 的窗口选择一致。**※ 口径冻结（v1.3.0）**：`C̄o` 必须是**等权先秩后均**（÷3），**实现与测试均不得改为加权式**（历史事故：曾改为 `0.20/0.20/0.60` 并在 `tests/test_qa_numerics.py` 把它标成"裁决 A2"断言）；**本口径自 v1.0.0 起未变更，任何加权版本均为偏离** | `hybrid.co_aggregate`；`FeatureSnapshot.co_centered_mean` 只作报告展示原始值，**禁止**替代 `R(C̄o)` |
 | **A3** | L117「大中小比」未给分界 | 小 `01-27`、中 `28-54`、大 `55-80`（27/27/26）；「大小比」保留老口径 `01-40 / 41-80` 作为报告附加字段，**不参与均衡硬约束** | 8.md 未定义，等分最稳；老系统 1–40/41–80 用于兼容报告阅读习惯，但不作为过滤条件 | `constants.SIZE_BOUNDS`、`size_class_of`；`tests/test_morphology.py` |
-| **A4** | L118「AC 值」未给公式 | `AC = \|{ \|a-b\| : a<b, a,b ∈ 注单 }\| - (k-1)`；单注 k 码最小 0；对 20 码开奖号同式（k=20） | 标准 AC 定义（算术复杂度）；8.md「衡量号码间距的离散度」即差集势减线性项 | `morphology.ac_value`；`tests/test_morphology.py::test_ac_value` |
+| **A4** | L118「AC 值」未给公式 | `AC = \|{ \|a-b\| : a<b, a,b ∈ 注单 }\| - (k-1)`；单注 k 码最小 0；对 20 码开奖号同式（k=20） | 标准 AC 定义（算术复杂度）；8.md「衡量号码间距的离散度」即差集势减线性项 | `morphology.ac_value`；`tests/test_morphology.py::test_ac_value_handcalc`（另有 `tests/test_qa_numerics.py::test_ac_value_contract_example`；原 `test_morphology.py::test_ac_value` 不存在，v1.3.1 校正） |
 | **A5** | L155「金胆池（如 3~5 码）」未给选取规则 | `n_gold = clip(round(0.30 × len(main)), 3, 5)`（`main=12` → **4**）；候选顺序：先取 `V_i ≥ 3` 的号码按 FinalScore 降序，不足再用 FinalScore 降序补；**硬约束 `gold ⊂ main`** | 大小随复式池自适应且落在 3~5 区间；优先共振票高的号码符合"核心金胆"语义。**※ 契约自定声明**：`0.3` 系数、`V_i ≥ 3` 优先序与 `gold ⊂ main` 均为**契约自定**，8.md L155 仅给示例区间「如 3~5 码」，**非原文要求** | `filter.select_gold`；`tests/test_filter.py::test_gold_and_main_sizes` |
 | **A6** | L155「10~15 码」 vs L202「10~12 码」 冲突 | **同属一个复用对象**：`main` 池默认 **12**，合法区间 10~15；L202 的 10~12 是"日常下发玩法变体"（选五取 12、选七取 10），不是第二个池 | 消除两处规模表述冲突；默认 12 同时落在两个区间内，兼容两处原文 | `PoolConfig.main_default/main_min/main_max`；`filter.build_pool` |
-| **A7** | L161–166 覆盖参数 `m`：原文为"**预期**候选池 v 中能够实际命中的开奖号码个数"，未给取值 | **m 定性（必读）**：`m` 是**用户/玩法假设参数**（8.md L164 的"预期"），**非算法推导值、非预测值**；报告与文案必须写「m 为假设参数」。**取值规则（v1.1.0 修正）**：① `t ≥ k` → `m = min(v, t)`（全保底场景）；② `t < k` → `m = min(v, t + cfg.covering.m_margin)`，`m_margin` 默认 **1**、范围 **[1,3]**；③ 合理性校验：`abs(m - (ceil(0.25·v)+2)) > 2` → 写 warning（提示 m 假设与池内期望命中数偏离，报告须注明）。玩法默认：选五 `C(v,5,4,m)`（`v=12 → m=5 = C(12,5,4,5)`）、选七 `C(v,7,5,m)`（`v=12 → m=6 = C(12,7,5,6)`）；强制 `t ≤ k`、`t ≤ m ≤ v` | 精确复现 8.md L169 全部命名参数组（验算见 §5.0）；`0.25v+2` 只作合理性校验而非定义 —— 原式与 k/t 无关，会把 pick7 算成 m=5，与原文 `C(12,7,5,6)` 冲突 | `covering.m_target`；`tests/test_covering.py::test_m_target` |
+| **A7** | L161–166 覆盖参数 `m`：原文为"**预期**候选池 v 中能够实际命中的开奖号码个数"，未给取值 | **m 定性（必读）**：`m` 是**用户/玩法假设参数**（8.md L164 的"预期"），**非算法推导值、非预测值**；报告与文案必须写「m 为假设参数」。**取值规则（v1.1.0 修正）**：① `t ≥ k` → `m = min(v, t)`（全保底场景）；② `t < k` → `m = min(v, t + cfg.covering.m_margin)`，`m_margin` 默认 **1**、范围 **[1,3]**；③ 合理性校验：`abs(m - (ceil(0.25·v)+2)) > 2` → 写 warning（提示 m 假设与池内期望命中数偏离，报告须注明）。玩法默认：选五 `C(v,5,4,m)`（`v=12 → m=5 = C(12,5,4,5)`）、选七 `C(v,7,5,m)`（`v=12 → m=6 = C(12,7,5,6)`）；强制 `t ≤ k`、`t ≤ m ≤ v` | 精确复现 8.md L169 全部命名参数组（验算见 §5.0）；`0.25v+2` 只作合理性校验而非定义 —— 原式与 k/t 无关，会把 pick7 算成 m=5，与原文 `C(12,7,5,6)` 冲突 | `covering.m_target`；`tests/test_qa_release.py::test_m_target_contract_parameter_groups`（原 `test_covering.py::test_m_target` 不存在，v1.3.1 校正） |
 | **A8** | L170「固定只买 20 注」示例，无默认预算 | 默认预算：**选五 20 注（40 元）、选七 10 注（20 元）**；`--budget` 覆盖；硬上限 `max_budget=200` 注（400 元），超出抛 `ConfigError` | 沿用旧系统 20 注精选版习惯；选七单注成本高故 10 注；上限防误配。**※ 契约自定声明**：选七 **10 注**为契约自定（8.md L170 仅给"固定只买 20 注"示例），**非原文要求** | `CoveringConfig.budget_by_play/max_budget`；`main.py --budget` |
 | **A9** | L148「M=5 或 10」未定 | 自适应回看期 **M=8**；`min_periods=3`（不足回均匀先验 `0.2/规则`）；Laplace `α=1.0`；temperature `1.0`；权重下限 `0.05`；**回测强制纯内存**（`in_memory=True`），日跑按 period 幂等 upsert | M=8 取两档中值，兼顾风格切换灵敏度与样本量（8 期×每规则约 3 码 ≈ 24 观测）；下限防单规则归零。**※ 契约自定声明**：8.md L148 仅示例「如 M=5 或 10」，**8 不在原文示例集合内**，为经 Lead 批准的契约裁决值，**非原文要求** | `AdaptiveConfig`；`tests/test_adaptive.py` |
 | **A10** | L193–194「结合官方固定设奖规则」未给奖金表 | **只启用已确认奖级**：选五 `{中5:1000 元, 中4:21 元, 中3:3 元}`，单注 2 元；选三、选七奖金表为 `None` → 其高奖级只报**触发频次与超几何理论概率**，不出金额；ROI/回撤/连挂**仅对选五出具** | 未核实的奖级进金额计算会产出误导性 ROI；8.md 自身只给"选五全中理论概率 0.155%（约 645 期一遇）"这一确定值（**该数值为 8.md L190 笔误，精确值 0.0645% ≈ 1/1550 期，以 §7.4 errata 为准**）。**报告硬性措辞**：选三/选七段落必须输出 `ROI: N/A（官方奖级未确认）`，**禁止任何金额结论或暗示性收益表述** | `AppConfig.prize_table`；`metrics.bankroll/high_tier_rate`；`tests/test_metrics.py` |
@@ -1186,7 +1186,7 @@ def main(argv: Sequence[str] | None = None) -> int: ...   # 0 成功 / 1 参数�
 | `C(15,7,5,6)` | 15 | 7 | 5 | `t<k` → `min(15, 5+1)` | **6** | ✓ |
 | `C(10,5,5,5)` | 10 | 5 | 5 | `t≥k` → `min(10, 5)` | **5** | ✓ |
 
-> 验算用例写入 `tests/test_covering.py::test_m_target`：上表 5 组逐一断言 `m_target(v,k,t)==m`，外加上界 `m ≤ v`、`m ≥ t`、`m ≤ k+?` 无强制（只要求 `t ≤ m ≤ v`）。
+> 验算用例写入 `tests/test_qa_release.py::test_m_target_contract_parameter_groups`（5 组逐一断言 `m_target(v,k,t)==m`）+ `tests/test_qa_release.py::test_m_target_bounds_t_le_m_le_v`（`t ≤ m ≤ v`）；`m_margin` 越界由 `test_m_margin_zero_rejected` / `test_m_margin_four_rejected` 覆盖，`margin` 效应由 `tests/test_qa_covering.py::test_auto_margin_effect` 覆盖。
 
 ### §5.1 补充口径（B 类：8.md 未提及但落地必须统一，非裁决表 10 条）
 
@@ -1377,6 +1377,7 @@ R1,A 数据表征层,layer1 BinaryStateMatrix,L30;L47-L50,kl8/layer1_representat
 | **v1.2.0 机检** | 2026-11-02 | `Import-Csv` 断言：`rows=48; ids_in_order=True; empty_fields_rows=0; PASS=True`（ID 严格 R1..R48 顺序）；§1.2 主表 48 行 × 5 列齐整；`default_config()` 实测默认值与 §3.3 / config-schema.md 逐字段一致（102 叶子字段，含 `ml.enabled=False`、`covering.m_margin=1`、`backtest.lift_signal=1.05`、七维权重 Σ=1.00） |
 | **v1.3.0** | 2026-11-02 | **吸收 P8 体检卡（6 High / 15 Medium）暴露的 5 条契约级缺口**：① **§7.4 新增 Errata**：8.md L190「选五全中概率 0.155%、约 645 期」为笔误，精确值 `C(20,5)/C(80,5)=15504/24040016=**0.0645%（≈1/1550 期）**」→ 契约与报告一律按精确值披露，8.md 原文保留不改；全文 3 处引用（§6.2 手算行、§5 A10、旧版 §6.2 行）已同步。② **§5 A2 口径冻结**：`C̄o=mean(R(Co25),R(Co50),R(CoALL))` 等权先秩后均、不含 10G，**实现与测试均不得改为加权式**（历史事故 0.20/0.20/0.60 被写进测试当"裁决 A2"），本口径自 v1.0.0 未变更。③ **新增 §3.14.1 复盘状态契约** `output/state/prev_prediction.json`（修 P8-H5）：`schema_version`、按 period 幂等 upsert、原子写 `os.replace`、字段 `{period,target_date,gold,main,plans,created_at}`、缺失输出「首期无复盘基线」、**禁止当期预测冒充上期**。④ **R43/R44 显著性硬规则**（修 P8-M4）：`n<500` → `is_signal` 恒 False 且报告标注「样本量不足（n<500），结论仅供参考」；`K∈ks` 5 次检验 Bonferroni → `alpha_adj=0.01`；新增配置 `backtest.min_n_signal=500`、`backtest.bonferroni=True`，`LiftStat` 增 `n`/`alpha_adj`。⑤ **新增 §6.6 报告禁止项（可 grep 验收）**（修 P8-H6/M5）：禁占位符、禁渲染层硬编码常量（25.00%/6.01%/150~250/5 码/20/80）、禁未标注 ROI 的金额结论。**附带勘误**：§6.1-4 数据保真条目 `draws[0]/draws[-1]` 期号写反，已按实现改正（`draws[0]=2020001`、`draws[-1]=2026291`）。 |
 | **v1.3.0 机检** | 2026-11-02 | `Import-Csv`：`rows=48; ids_in_order=True; empty_fields_rows=0; PASS=True`；两文件全部 Markdown 表格块 `bad_rows=0`；全文无残留 `0.155%`（除 A10/§7.4 的"笔误留痕"引用外）；config-schema.md 同步 `min_n_signal/bonferroni` 与 §17 状态契约 |
+| **v1.3.1 映射校正** | 2026-11-02 | **修 G1/发小顺 机检发现的 3 处映射文本偏差（需求条目不变）**：① **R2** CSV 实现模块仅列 `windows.py`，实际 `window_matrix`/`window_sum` 是 `state.py::BinaryStateMatrix` 的方法 → 实现模块补 `kl8/layer1_representation/state.py`，符号改为 `resolve_windows+BinaryStateMatrix.window_matrix+BinaryStateMatrix.window_sum`，§1.2 R2 行同步精确到 `state.py::…`；② **R46** CSV/§1.2 用例名 `test_bankroll_roi_drawdown`（**不存在**）→ **`tests/test_metrics.py::test_bankroll_integer_yuan`**（实测 `test_metrics.py:98`，覆盖 ROI=1.5、max_drawdown=20、best_round=100 整数元断言）；③ **R48** CSV/§1.2/§1.3 R48-a 用例名 `test_config_validation`（**不存在**）→ **`tests/test_config.py::test_weights_sum_violation_rejected`**（实测 `test_config.py:107`，断言 `ConfigError` + 中文「权重之和」；R48-a 深合并另由 `test_deep_merge_keeps_siblings` 覆盖，已在行内注明）。**全表复验方法**：脚本逐行 `importlib` 解析「实现模块::符号」+ 正则 `def <用例名>` 校验「测试文件::用例名」 → **48/48 行通过**（校验脚本见回报；`Import-Csv` 仍 48 行、ID 顺序 R1..R48、8 列不变）。 |
 
 ### §7.4 Errata（8.md 原文勘误留痕，**原文不改**）
 

@@ -1,6 +1,6 @@
 需求ID,分组,需求摘要,8md行号,实现模块,实现符号,测试文件,测试用例名
 R1,A 数据表征层,"二值化状态矩阵 X∈{0,1}^(T×80) 行和恒为 20",L30;L47-L50,kl8/layer1_representation/state.py,BinaryStateMatrix.from_dataset,tests/test_state.py,test_binary_matrix_shape_and_row_sum
-R2,A 数据表征层,"四尺度窗口 W={10G,25G,50G,ALL} 定义与切片",L34-L35;L52-L57,kl8/layer1_representation/windows.py,resolve_windows+state.window_matrix,tests/test_windows.py,test_four_scale_windows
+R2,A 数据表征层,"四尺度窗口 W={10G,25G,50G,ALL} 定义与切片",L34-L35;L52-L57,kl8/layer1_representation/windows.py;kl8/layer1_representation/state.py,resolve_windows+BinaryStateMatrix.window_matrix+BinaryStateMatrix.window_sum,tests/test_windows.py,test_four_scale_windows
 R3,A 数据表征层,"冷启动窗口回退 w_eff=min(w,T)",L57;L201,kl8/layer1_representation/windows.py,effective_window,tests/test_windows.py,test_cold_start_fallback
 R4,A 数据表征层,原始开奖数据清洗校验标准化(20码/1..80/升序/去重期号/降序文件自检),L30-L31,kl8/history.py,parse_line+load_dataset+save_dataset,tests/test_history.py,test_parse_validate_and_sort
 R5,B 随机性基准层,单球单期理论先验 p0=K/N=0.25,L66;L97,kl8/layer2_baseline/priors.py,p0,tests/test_priors.py,test_p0_value
@@ -44,6 +44,6 @@ R42,F 回测与工程,Walk-Forward 滚动回测(T0=300 逐期推进 禁随机K-F
 R43,F 回测与工程,Top-K 平均命中率与 Lift@K + 单侧t检验,L185-L188,kl8/evaluation/metrics.py,lift_at_k+t_test_one_sided,tests/test_metrics.py,test_lift_at_k_handcalc
 R44,F 回测与工程,高奖级触发率 vs 超几何理论概率,L189-L190,kl8/evaluation/metrics.py,high_tier_rate,tests/test_metrics.py,test_high_tier_vs_hypergeometric
 R45,F 回测与工程,规则正交性与归因分析(R1-R5独立胜率 V>=3 vs 低票),L191-L192,kl8/evaluation/metrics.py,rule_attribution,tests/test_metrics.py,test_rule_attribution
-R46,F 回测与工程,资金曲线 ROI/最大回撤/最长连挂(整数元),L193-L194,kl8/evaluation/metrics.py,bankroll,tests/test_metrics.py,test_bankroll_roi_drawdown
+R46,F 回测与工程,资金曲线 ROI/最大回撤/最长连挂(整数元),L193-L194,kl8/evaluation/metrics.py,bankroll,tests/test_metrics.py,test_bankroll_integer_yuan
 R47,F 回测与工程,严格防穿越审计(唯一截断入口+max_accessed_t+未来投毒不变性),L28;L200,kl8/evaluation/leakage.py,assert_no_lookahead+poison_future+fingerprint_snapshot,tests/test_leakage.py,test_poison_future_invariance
-R48,F 回测与工程,工程落地(配置校验/CLI/同步/三类交付件/幂等/性能),L30-L39;L198-L202,kl8/pipeline.py;kl8/reporting;kl8/config.py;kl8/sync.py;main.py,run_daily+run_backtest+run_audit,tests/test_pipeline.py;tests/test_config.py,test_end_to_end_daily_and_backtest|test_config_validation
+R48,F 回测与工程,工程落地(配置校验/CLI/同步/三类交付件/幂等/性能),L30-L39;L198-L202,kl8/pipeline.py;kl8/reporting;kl8/config.py;kl8/sync.py;main.py,run_daily+run_backtest+run_audit,tests/test_pipeline.py;tests/test_config.py,test_end_to_end_daily_and_backtest|test_weights_sum_violation_rejected
