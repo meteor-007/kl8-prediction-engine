@@ -1,7 +1,7 @@
 # 快乐8 五层重构 · 配置契约（config-schema.md）
 
 > 配套文档：[contract.md](./contract.md)（§3.3 为 `AppConfig` 签名冻结源）
-> 版本：v1.0.0 ｜ 2026-11-02 ｜ 作者：req-architect（智小研）
+> 版本：**v1.1.0**（同步 contract.md v1.1.0：`m_margin` 语义修正、新增 `lift_signal`、叶子字段计数修正）｜ 2026-11-02 ｜ 作者：req-architect（智小研）
 > 定位：本项目**不含数据库/ACL**，G2 的「ACL + DB 脚本伴随物」以**本配置契约**替代 —— 即"所有可调参数有 schema、有默认值、有合法范围、有校验规则、有 CLI 覆盖路径、有可审计的报错文案"。审大关可用本文件逐条核对"零魔法数字"红线。
 
 ---
@@ -148,7 +148,7 @@ AppConfig
 | `t` | `int` | `4` | `[2, k]` | 保底命中数；`t ≤ m` | R37 |
 | `m_mode` | `str` | `"auto"` | `{"auto","fixed"}` | `fixed` 时 `m_fixed` 必填 | R37 |
 | `m_fixed` | `int \| None` | `None` | `[t, v]` | 仅 `m_mode="fixed"` 使用 | R37 |
-| `m_margin` | `int` | `2` | `[0, 6]` | 裁决 A7：`m = min(v, ceil(0.25v)+margin)` | R37 |
+| `m_margin` | `int` | `1` | `[1, 3]` | 裁决 A7（v1.1.0 修正）：`t<k` 时 `m = min(v, t + m_margin)`；`t≥k` 时 `m = min(v, t)`（margin 不生效）；与 `ceil(0.25v)+2` 偏差 >2 时写 warning | R37 |
 | `budget` | `int` | `20` | `[1, max_budget]` | 裁决 A8 | R41 |
 | `budget_by_play` | `Mapping[str,int]` | `{"pick5":20,"pick7":10}` | 值 `[1, max_budget]` | CLI `--budget` 只覆盖当前 `play` | R41、R48-b |
 | `max_budget` | `int` | `200` | `[20, 1000]` | 硬上限（400 元级） | R41 |
@@ -211,6 +211,7 @@ AppConfig
 | `t0_min` | `int` | `60` | `[20, 300]` | `T - warmup < t0_min` → `InsufficientDataError` | R42 |
 | `include_tickets` | `bool` | `True` | `{True, False}` | 回测是否生成注单（关掉可提速） | R42、R46 |
 | `alpha_sig` | `float` | `0.05` | `(0, 0.2]` | 单侧 t 检验显著性水平 | R43 |
+| `lift_signal` | `float` | `1.05` | `[1.0, 1.2]` | **v1.1.0 新增**：8.md L188「Lift@K > 1.05」判据阈值；`LiftStat.is_signal = lift > 本值 且 p_value < alpha_sig`；实现内**禁止写死 1.05** | R43 |
 
 ---
 
@@ -315,7 +316,7 @@ AppConfig
 ## §16 机检清单（P7/P8 可直接照此核验）
 
 1. **零魔法数字**：`grep -rnE "(0\.(65|24|75|45|70|60|08|25|35)|\[\[?10|25|50)" --include=*.py kl8/` 命中处必须来自 `config.py`/`constants.py` 的字段读取，而非字面量直用。
-2. **schema 完整性**：`python -c "from kl8.config import default_config, to_dict; print(len(to_dict(default_config())))"` 得到的键集合必须覆盖 §2–§11 全部字段（本文件共 **104** 个可配置叶子字段：WindowConfig 5 + MarkovConfig 3 + ScoreWeights 12 + RuleConfig 12 + AdaptiveConfig 9 + PoolConfig 12 + CoveringConfig 23 + MLConfig 14 + BacktestConfig 6 + AppConfig 6 = 102，另加 2 个复合键 `budget_by_play`/`prize_table` 的子键按 1 键计 = 104）。
+2. **schema 完整性**：`python -c "from kl8.config import default_config, to_dict; print(len(to_dict(default_config())))"` 得到的键集合必须覆盖 §2–§11 全部字段（v1.1.0 实数 **102** 个可配置叶子字段：WindowConfig 5 + MarkovConfig 3 + ScoreWeights 12 + RuleConfig 12 + AdaptiveConfig 9 + PoolConfig 12 + CoveringConfig 22 + MLConfig 14 + BacktestConfig 7（含 `lift_signal`）+ AppConfig 6；`budget_by_play`/`prize_table` 两个映射键已含在上述 22/6 内，不重复计数。v1.0.0 曾误写 104，已修正）。
 3. **校验可触发**：对每个 `V*` 约束构造非法配置，必须抛 `ConfigError` 且消息符合 §14 模板（`tests/test_config.py` 逐条覆盖）。
 4. **CLI 覆盖可审计**：`python main.py --no-sync --k 7 --budget 5 --pool-size 12 --seed 7 --backtest 5 --full-print` 输出的配置摘要（不止阈值）必须与本文件 §12 一致。
 5. **默认值可复现**：`config_hash(default_config())` 在所有机器上一致（不含时间戳/路径）。

@@ -2,7 +2,7 @@
 
 > **本契约需求点编号 R1–R48，共 48 项；项目文档与后续任务中的「43 点」为早期笔误，以本表 48 项为准。**
 >
-> - 版本：v1.0.0 ｜ 冻结日：2026-11-02 ｜ 作者：req-architect（智小研）
+> - 版本：**v1.1.0**（2026-11-02，A7 覆盖参数修正 + A5/A8/A9 自定标注 + A10 N/A 措辞 + `lift_signal` 字段 + B4 说明；详见 §7.3）｜ 冻结日：2026-11-02 ｜ 作者：req-architect（智小研）
 > - 适用阶段：P2（基础层）→ P3（layer2/3）→ P4（layer4）→ P5（layer5）→ P6（evaluation/reporting/pipeline/main）
 > - 权威优先级：**docs/8.md（业务需求，唯一权威）> 本契约（工程落地口径与签名冻结）> 旧实现 `calc_*.py`（仅语义参考，P9 删除）**
 > - 冻结效力：**§3 模块签名与 §4 数据结构字段名/顺序为冻结项，下游开发禁止改签名、禁止改字段名、禁止改返回顺序**；确需变更必须由 Lead 发起契约版本升级（v1.x）并同步 P2–P9。
@@ -302,7 +302,7 @@ class PoolConfig:
 class CoveringConfig:
     play: str = "pick5"            # pick5 | pick7
     k: int = 5; t: int = 4
-    m_mode: str = "auto"; m_fixed: int | None = None; m_margin: int = 2   # 裁决 A7
+    m_mode: str = "auto"; m_fixed: int | None = None; m_margin: int = 1   # 裁决 A7（v1.1.0：默认 1，范围 [1,3]）
     budget: int = 20; budget_by_play: Mapping[str, int] = {"pick5": 20, "pick7": 10}  # 裁决 A8
     max_budget: int = 200
     max_pool_v: int = 20; max_m_subsets: int = 200_000
@@ -332,6 +332,7 @@ class BacktestConfig:
     t0_min: int = 60
     include_tickets: bool = True
     alpha_sig: float = 0.05
+    lift_signal: float = 1.05      # 8.md L188「Lift@K > 1.05」判据阈值 ∈[1.0, 1.2]（v1.1.0 新增，禁止字面量）
 
 @dataclass(frozen=True)
 class AppConfig:
@@ -747,8 +748,10 @@ def score_round(snapshot: FeatureSnapshot, cfg: AppConfig, *,
 class GuaranteeResult:
     passed: bool; achieved_t: int; n_subsets: int
     failed_example: tuple[int, ...] | None      # 未达保底的 m 子集（0-based 位置）
-def m_target(v: int, k: int, m_mode: str = "auto", m_fixed: int | None = None,
-             margin: int = 2) -> int: ...       # 裁决 A7
+def m_target(v: int, k: int, t: int, m_mode: str = "auto", m_fixed: int | None = None,
+             margin: int = 1) -> int: ...
+    # 裁决 A7（v1.1.0 修正）：t >= k → m = min(v, t)；t < k → m = min(v, t + margin)
+    # margin 默认 ≥1（cfg.covering.m_margin），保证 m ≥ t+1；|m-(ceil(0.25v)+2)|>2 时由 solve() 写 warning
 def verify_guarantee(tickets: Sequence[Sequence[int]], v: int, k: int, t: int, m: int
                      ) -> GuaranteeResult: ...  # 位掩码穷举；tickets 为 0-based 位置（0..v-1）
 def lookup_table(v: int, k: int, t: int, m: int, *, path: str | Path) -> tuple[tuple[int, ...], ...] | None: ...
@@ -796,6 +799,7 @@ def run_walkforward(ds: Dataset, cfg: AppConfig, *, n_test: int | None = None,
 class LiftStat:
     k: int; mean_hit: float; expected: float; lift: float
     sd: float; t_stat: float; p_value: float; ci95: tuple[float, float]
+    is_signal: bool   # v1.1.0：lift > cfg.backtest.lift_signal 且 p_value < cfg.backtest.alpha_sig
 @dataclass(frozen=True)
 class TierStat:
     play: str; tier: str; n_rounds: int
@@ -813,7 +817,9 @@ class BankrollStat:
     n_rounds: int; total_cost_yuan: int; total_prize_yuan: int
     net_yuan: int; roi: float
     max_drawdown_yuan: int; max_losing_streak: int; best_round_yuan: int
-def lift_at_k(rows: Sequence[BacktestRow], ks: Sequence[int]) -> dict[int, LiftStat]: ...
+def lift_at_k(rows: Sequence[BacktestRow], ks: Sequence[int],
+              cfg: BacktestConfig) -> dict[int, LiftStat]: ...
+    # v1.1.0：新增 cfg 入参（读 lift_signal/alpha_sig 生成 is_signal），禁止在实现内写死 1.05
 def high_tier_rate(rows: Sequence[BacktestRow], play: str,
                    prize_table: Mapping[str, Mapping[int, int] | None]) -> dict[str, TierStat]: ...
 def rule_attribution(rows: Sequence[BacktestRow]) -> AttributionReport: ...
@@ -1091,12 +1097,26 @@ def main(argv: Sequence[str] | None = None) -> int: ...   # 0 成功 / 1 参数�
 | **A2** | L143 `R(C̄o_i)` 的 C̄o 聚合方式未定义 | `C̄o_i = mean(R(Co_25G), R(Co_50G), R(Co_ALL))`，**先秩后均**，**不含 10G** | 10G 共现样本仅 10 期，`CoScore` 方差最大，纳入会主导排序；25/50/ALL 覆盖中短中长期，与 R4 的窗口选择一致 | `hybrid.co_aggregate`；`FeatureSnapshot.co_centered_mean` 只作报告展示原始值，**禁止**替代 `R(C̄o)` |
 | **A3** | L117「大中小比」未给分界 | 小 `01-27`、中 `28-54`、大 `55-80`（27/27/26）；「大小比」保留老口径 `01-40 / 41-80` 作为报告附加字段，**不参与均衡硬约束** | 8.md 未定义，等分最稳；老系统 1–40/41–80 用于兼容报告阅读习惯，但不作为过滤条件 | `constants.SIZE_BOUNDS`、`size_class_of`；`tests/test_morphology.py` |
 | **A4** | L118「AC 值」未给公式 | `AC = \|{ \|a-b\| : a<b, a,b ∈ 注单 }\| - (k-1)`；单注 k 码最小 0；对 20 码开奖号同式（k=20） | 标准 AC 定义（算术复杂度）；8.md「衡量号码间距的离散度」即差集势减线性项 | `morphology.ac_value`；`tests/test_morphology.py::test_ac_value` |
-| **A5** | L155「金胆池（如 3~5 码）」未给选取规则 | `n_gold = clip(round(0.30 × len(main)), 3, 5)`（`main=12` → **4**）；候选顺序：先取 `V_i ≥ 3` 的号码按 FinalScore 降序，不足再用 FinalScore 降序补；**硬约束 `gold ⊂ main`** | 大小随复式池自适应且落在 3~5 区间；优先共振票高的号码符合"核心金胆"语义 | `filter.select_gold`；`tests/test_filter.py::test_gold_and_main_sizes` |
+| **A5** | L155「金胆池（如 3~5 码）」未给选取规则 | `n_gold = clip(round(0.30 × len(main)), 3, 5)`（`main=12` → **4**）；候选顺序：先取 `V_i ≥ 3` 的号码按 FinalScore 降序，不足再用 FinalScore 降序补；**硬约束 `gold ⊂ main`** | 大小随复式池自适应且落在 3~5 区间；优先共振票高的号码符合"核心金胆"语义。**※ 契约自定声明**：`0.3` 系数、`V_i ≥ 3` 优先序与 `gold ⊂ main` 均为**契约自定**，8.md L155 仅给示例区间「如 3~5 码」，**非原文要求** | `filter.select_gold`；`tests/test_filter.py::test_gold_and_main_sizes` |
 | **A6** | L155「10~15 码」 vs L202「10~12 码」 冲突 | **同属一个复用对象**：`main` 池默认 **12**，合法区间 10~15；L202 的 10~12 是"日常下发玩法变体"（选五取 12、选七取 10），不是第二个池 | 消除两处规模表述冲突；默认 12 同时落在两个区间内，兼容两处原文 | `PoolConfig.main_default/main_min/main_max`；`filter.build_pool` |
-| **A7** | L161–166 覆盖参数 `m` 是"假设值"，未给取值 | `m = min(v, ceil(0.25·v) + 2)`（`v=10→5`、`v=12→5`、`v=15→6`）；玩法默认：选五 `C(v,5,4,m)`、选七 `C(v,7,5,m)`；强制 `t ≤ k`、`t ≤ m ≤ v` | 0.25 是每码期望出号率 `p0`，"池内期望命中数 + 2 码安全余量"是最保守的可验证假设；`m_margin` 可配 | `covering.m_target`；`tests/test_covering.py::test_m_target` |
-| **A8** | L170「固定只买 20 注」示例，无默认预算 | 默认预算：**选五 20 注（40 元）、选七 10 注（20 元）**；`--budget` 覆盖；硬上限 `max_budget=200` 注（400 元），超出抛 `ConfigError` | 沿用旧系统 20 注精选版习惯；选七单注成本高故 10 注；上限防误配 | `CoveringConfig.budget_by_play/max_budget`；`main.py --budget` |
-| **A9** | L148「M=5 或 10」未定 | 自适应回看期 **M=8**；`min_periods=3`（不足回均匀先验 `0.2/规则`）；Laplace `α=1.0`；temperature `1.0`；权重下限 `0.05`；**回测强制纯内存**（`in_memory=True`），日跑按 period 幂等 upsert | M=8 取两档中值，兼顾风格切换灵敏度与样本量（8 期×每规则约 3 码 ≈ 24 观测）；下限防单规则归零 | `AdaptiveConfig`；`tests/test_adaptive.py` |
-| **A10** | L193–194「结合官方固定设奖规则」未给奖金表 | **只启用已确认奖级**：选五 `{中5:1000 元, 中4:21 元, 中3:3 元}`，单注 2 元；选三、选七奖金表为 `None` → 其高奖级只报**触发频次与超几何理论概率**，不出金额；ROI/回撤/连挂**仅对选五出具** | 未核实的奖级进金额计算会产出误导性 ROI；8.md 自身只给"选五全中理论概率 0.155%（约 645 期一遇）"这一确定值 | `AppConfig.prize_table`；`metrics.bankroll/high_tier_rate`；`tests/test_metrics.py` |
+| **A7** | L161–166 覆盖参数 `m`：原文为"**预期**候选池 v 中能够实际命中的开奖号码个数"，未给取值 | **m 定性（必读）**：`m` 是**用户/玩法假设参数**（8.md L164 的"预期"），**非算法推导值、非预测值**；报告与文案必须写「m 为假设参数」。
+**取值规则（v1.1.0 修正）**：① `t ≥ k` → `m = min(v, t)`（全保底场景）；② `t < k` → `m = min(v, t + cfg.covering.m_margin)`，`m_margin` 默认 **1**、范围 **[1,3]**；③ 合理性校验：`abs(m - (ceil(0.25·v)+2)) > 2` → 写 warning（提示 m 假设与池内期望命中数偏离，报告须注明）。
+玩法默认：选五 `C(v,5,4,m)`（`v=12 → m=5 = C(12,5,4,5)`）、选七 `C(v,7,5,m)`（`v=12 → m=6 = C(12,7,5,6)`）；强制 `t ≤ k`、`t ≤ m ≤ v` | 精确复现 8.md L169 全部命名参数组（验算见 §5.0）；`0.25v+2` 只作合理性校验而非定义 —— 原式与 k/t 无关，会把 pick7 算成 m=5，与原文 `C(12,7,5,6)` 冲突 | `covering.m_target`；`tests/test_covering.py::test_m_target` |
+| **A8** | L170「固定只买 20 注」示例，无默认预算 | 默认预算：**选五 20 注（40 元）、选七 10 注（20 元）**；`--budget` 覆盖；硬上限 `max_budget=200` 注（400 元），超出抛 `ConfigError` | 沿用旧系统 20 注精选版习惯；选七单注成本高故 10 注；上限防误配。**※ 契约自定声明**：选七 **10 注**为契约自定（8.md L170 仅给"固定只买 20 注"示例），**非原文要求** | `CoveringConfig.budget_by_play/max_budget`；`main.py --budget` |
+| **A9** | L148「M=5 或 10」未定 | 自适应回看期 **M=8**；`min_periods=3`（不足回均匀先验 `0.2/规则`）；Laplace `α=1.0`；temperature `1.0`；权重下限 `0.05`；**回测强制纯内存**（`in_memory=True`），日跑按 period 幂等 upsert | M=8 取两档中值，兼顾风格切换灵敏度与样本量（8 期×每规则约 3 码 ≈ 24 观测）；下限防单规则归零。**※ 契约自定声明**：8.md L148 仅示例「如 M=5 或 10」，**8 不在原文示例集合内**，为经 Lead 批准的契约裁决值，**非原文要求** | `AdaptiveConfig`；`tests/test_adaptive.py` |
+| **A10** | L193–194「结合官方固定设奖规则」未给奖金表 | **只启用已确认奖级**：选五 `{中5:1000 元, 中4:21 元, 中3:3 元}`，单注 2 元；选三、选七奖金表为 `None` → 其高奖级只报**触发频次与超几何理论概率**，不出金额；ROI/回撤/连挂**仅对选五出具** | 未核实的奖级进金额计算会产出误导性 ROI；8.md 自身只给"选五全中理论概率 0.155%（约 645 期一遇）"这一确定值。**报告硬性措辞**：选三/选七段落必须输出 `ROI: N/A（官方奖级未确认）`，**禁止任何金额结论或暗示性收益表述** | `AppConfig.prize_table`；`metrics.bankroll/high_tier_rate`；`tests/test_metrics.py` |
+
+### §5.0 A7 参数组验算（v1.1.0 修正后，必须逐条复现）
+
+| 8.md L169 参数组 | v | k | t | 修正后规则 | m | 结论 |
+| :--- | ---: | ---: | ---: | :--- | ---: | :--- |
+| `C(12,5,4,5)` | 12 | 5 | 4 | `t<k` → `min(12, 4+1)` | **5** | ✓ 与原文一致 |
+| `C(12,7,5,6)` | 12 | 7 | 5 | `t<k` → `min(12, 5+1)` | **6** | ✓ 与原文一致（旧式会算成 5，已修正） |
+| `C(15,5,4,5)` | 15 | 5 | 4 | `t<k` → `min(15, 4+1)` | **5** | ✓ |
+| `C(15,7,5,6)` | 15 | 7 | 5 | `t<k` → `min(15, 5+1)` | **6** | ✓ |
+| `C(10,5,5,5)` | 10 | 5 | 5 | `t≥k` → `min(10, 5)` | **5** | ✓ |
+
+> 验算用例写入 `tests/test_covering.py::test_m_target`：上表 5 组逐一断言 `m_target(v,k,t)==m`，外加上界 `m ≤ v`、`m ≥ t`、`m ≤ k+?` 无强制（只要求 `t ≤ m ≤ v`）。
 
 ### §5.1 补充口径（B 类：8.md 未提及但落地必须统一，非裁决表 10 条）
 
@@ -1105,7 +1125,7 @@ def main(argv: Sequence[str] | None = None) -> int: ...   # 0 成功 / 1 参数�
 | B1 | 窗口键名全仓唯一写法：`"10G"`、`"25G"`、`"50G"`、`"ALL"`（大小写敏感，`Mapping` 键即此四字符串；`ALL` 无 `G` 后缀） |
 | B2 | 五条规则阈值**一律从 `cfg.rules` 读取**；单测通过构造自定义 `RuleConfig` 造边界，禁止改源码常量（裁决阈值：`0.65 / 0.649`、`0.24` 边界等） |
 | B3 | 社区检测：`networkx` 可用走 `louvain_communities(seed=cfg.seed)`；不可用/异常 → 降级 `numpy` 幂迭代 PageRank + 连通分量社区，`GraphResult.backend` 记录 `"networkx"/"numpy_power"` 并写 warning；无图时 `community_id=-1` |
-| B4 | ML 默认 **`ml.weight=0`（只诊断，不进 FinalScore）**；开启需显式配置。`ml_prob` 必须 ∈[0,1]，不强制均值归一（PAV 校准后允许偏离 0.25，报告需注明） |
+| B4 | ML 默认 **`ml.weight=0`（只诊断，不进 FinalScore）**；开启需显式配置。`ml_prob` 必须 ∈[0,1]，不强制均值归一（PAV 校准后允许偏离 0.25，报告需注明）。**8.md L37 对齐说明（v1.1.0）**：L37 的「机器学习概率校准模型」以**可配置项交付** —— 默认 `ml.weight=0` 仅作诊断通道；启用后 ML 概率进入 `BaseScore` 并触发其余权重再归一化（保持 `Σω=1`），即"能力具备、默认关闭" |
 | B5 | 自适应"规则权重"作用于票数加成：`FinalScore = Base + λ·Σ_r (w_r / w̄)·pass_r`，其中 `Σ_r w_r = 1`、`w̄ = 1/5`；**`w_r` 全均匀时恒等于 8.md 原式 `Base + λ·V_i`**。为此 §3.10 `hybrid.score_all` 签名追加 keyword-only 参数 `rule_weights: Mapping[str, float] | None = None`（v1.0.1 补充，向后兼容；`final_score()` 保持原式不变） |
 | B6 | 重号配比：`repeat_target = clip(round(cfg.pool.repeat_ratio × size), ceil(0.25×size), floor(0.35×size))`；`size=12` → 目标 4（区间 [3,4]）；先按 FinalScore 取足上期重号，再补新号 |
 | B7 | 约束放宽顺序固定 `same_tail → parity → zone4 → repeat_ratio`，每次放宽必须在 `PoolResult.relaxed` 留痕并写中文 `warnings`；全部放宽仍不达标 → `InfeasibleConstraintError` |
@@ -1159,6 +1179,7 @@ def main(argv: Sequence[str] | None = None) -> int: ...   # 0 成功 / 1 参数�
 | `Trend` | `0.5*R(F10)+0.3*R(Mom10-25)+0.2*R(Mom25-50)` | 手算（裁决 A1） |
 | `AC` | `|{差}| - (k-1)`；例 `{1,4,6,9,11}` 的差集 `{2,3,5,7,8,10}`（6 个）→ `AC = 6-(5-1) = 2` | 手算（裁决 A4） |
 | `Lift@K` | `mean_hit_K / (0.25*K)` | 手算 |
+| `is_signal`（v1.1.0） | `lift > cfg.backtest.lift_signal(1.05) 且 p_value < cfg.backtest.alpha_sig(0.05)` | 手算（8.md L188 判据；实现禁止写死 1.05 / 0.05） |
 | 选五全中概率 | `C(5,5)*C(75,15)/C(80,20)` | `≈0.00155`（0.155%，约 645 期一遇，8.md L190） |
 | ROI | `(奖金 - 成本) / 成本`，金额整数元 | 手算 |
 | 覆盖保底 | `v=6..10` 时穷举全部 `C(v,m)` 子集 | `achieved_t ≥ t` 且 `n_tickets ≤ budget` |
@@ -1240,6 +1261,8 @@ R1,A 数据表征层,layer1 BinaryStateMatrix,L30;L47-L50,kl8/layer1_representat
 | :--- | :--- | :--- |
 | v1.0.0 | 2026-11-02 | 首版：48 项需求映射（含 8.md 行号列）、五层签名冻结、数据结构字段冻结、A1–A10 裁决、DoD 与验证命令 |
 | v1.0.1 | 2026-11-02 | B5：`hybrid.score_all` 追加 keyword-only `rule_weights`（自适应规则权重落点，向后兼容） |
+| **v1.1.0** | 2026-11-02 | **5 类修改（Lead 批准）**：① **A7 修正**（`t≥k → m=min(v,t)`；`t<k → m=min(v,t+m_margin)`，`m_margin` 默认 1/范围 [1,3]；`0.25v+2` 降级为合理性 warning；`m` 定性为"用户/玩法假设参数，非预测"；新增 §5.0 五组参数验算表；`m_target` 签名追加 `t` 与 `margin=1`）；② **A5/A8/A9 自定标注**（0.3 系数与 `V≥3` 优先序、选七 10 注、M=8 均注明"契约自定，非 8.md 原文要求"）；③ **A10 N/A 措辞**（选三/选七报告必须输出 `ROI: N/A（官方奖级未确认）`，禁止金额结论）；④ **新增 `BacktestConfig.lift_signal: float = 1.05`**（范围 [1.0,1.2]）+ `LiftStat.is_signal` + `metrics.lift_at_k(rows, ks, cfg)`（消除字面量 1.05，报告措辞由该位驱动）；⑤ **B4 对齐说明**（8.md L37 的 ML 能力以可配置项交付，默认 `weight=0` 诊断通道，启用后进 BaseScore 并触发权重再归一化）。**附带修正**：v1.0.0 的"104 个叶子字段"计数有误（重复计入 2 个映射键），v1.1.0 实数 **102** 个叶子字段（Window 5 + Markov 3 + ScoreWeights 12 + Rule 12 + Adaptive 9 + Pool 12 + Covering 22 + ML 14 + Backtest 7 + AppConfig 6），已同步 config-schema.md §16 |
+| **v1.0.0 之后机检** | 2026-11-02 | `Import-Csv` 断言：`rows=48; ids_in_order=True; empty_fields_rows=0; PASS=True`（ID 严格 R1..R48 顺序，无空字段）；`contract.md` 48 行主表列数 5 列齐整 |
 
 ---
 
