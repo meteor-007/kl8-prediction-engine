@@ -40,6 +40,9 @@ from kl8_engine.points import PointsError, parse_points
 POINT_LINE_RE = re.compile(r"^\s*\[点位\]\s*(.+?)\s*$", re.MULTILINE)
 
 GITHUB_FALLBACK_IPS = (
+    "20.87.245.0",
+    "4.228.31.150",
+    "20.29.134.23",
     "140.82.112.3",
     "140.82.113.3",
     "140.82.114.3",
