@@ -57,7 +57,47 @@ python main.py --no-compare --full-print
 python main.py --full-print --budget 20 --epochs 25 --seq-len 10
 ```
 
-Windows 下也可直接双击 `运行微积分预测.bat`。
+Windows 下也可直接双击 `运行微积分预测.bat`（仅手动预测，不自动提交）。
+
+## 全自动每日执行
+
+每天只需修改 `每日预测指令.txt` 开头的 `[点位]` 行，然后运行：
+
+```bash
+python scripts/daily_run.py
+```
+
+或双击 `每日自动执行.bat`。执行器会：
+
+1. 读取 `[点位]` 行并校验；
+2. 同步最新开奖、复盘、运行双融合预测；
+3. `git add -A`、提交、推送当前分支（默认 `main`）；
+4. 流水线失败时不提交；无变更时跳过；日志写入 `output/logs/`（已被 git 忽略）。
+
+常用选项：
+
+```bash
+python scripts/daily_run.py --dry-run      # 只解析点位
+python scripts/daily_run.py --no-push      # 只提交不推送
+python scripts/daily_run.py --no-commit    # 只预测不提交
+python scripts/daily_run.py --skip-run     # 只提交/推送现有变更
+```
+
+**Windows 定时任务**（每天 18:00 自动执行，错过会在下次可用时补跑）：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\install_daily_task.ps1 -Time 18:00
+```
+
+卸载：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\uninstall_daily_task.ps1
+```
+
+注意：定时任务使用当前登录用户运行，机器需开机且用户已登录；若在 21:30 开奖后补跑，预测目标会自动顺延到下一期。文件锁 `output/.daily_run.lock` 会阻止手动运行与定时任务并发。
+
+若所在网络把 `github.com` 解析到不可达 IP，执行器在直连推送失败后会自动尝试常见 GitHub 入口 IP（设置环境变量 `KL8_GITHUB_IP` 可指定首选 IP），无需修改系统 DNS 或 hosts。
 
 ## 数据源
 
@@ -91,10 +131,14 @@ scripts/
   ablation_gold.py        # 金胆池多选择器消融
   analyze_ablation.py     # 粘滞性/配对检验/分半稳定性
   analyze_cross_window.py # 跨窗口合并与全排序验证
+  daily_run.py            # 每日全自动执行 + 自动提交/推送
+  install_daily_task.ps1  # Windows 计划任务安装
+  uninstall_daily_task.ps1
 tests/                    # 40 个单元测试
 legacy_archive/           # 旧五层架构归档（不参与运行）
 kl8_history.txt           # 历史开奖数据
-每日预测指令.txt           # 每日执行指令书
+每日预测指令.txt           # 每日执行指令书（含当日点位）
+每日自动执行.bat           # 一键预测 + 提交 + 推送
 ```
 
 ## 输出

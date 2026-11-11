@@ -45,3 +45,7 @@ Thumbs.db
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+
+# Daily runner logs and lock
+output/logs/
+output/.daily_run.lock
