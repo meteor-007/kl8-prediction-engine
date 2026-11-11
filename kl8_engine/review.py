@@ -206,13 +206,21 @@ def parse_report_text(text: str, source_path: str = "") -> Optional[PublishedRec
     )
 
 
+def _display_path(path: Path) -> str:
+    """尽量以项目相对路径展示文件来源，保证报告可复现。"""
+    try:
+        return str(Path(path).resolve().relative_to(Path.cwd().resolve()))
+    except (ValueError, OSError):
+        return str(path)
+
+
 def parse_report_file(filepath: Path) -> Optional[PublishedRecommendation]:
     """解析单个精要报告文件。"""
     try:
         text = filepath.read_text(encoding="utf-8")
     except OSError:
         return None
-    return parse_report_text(text, source_path=str(filepath))
+    return parse_report_text(text, source_path=_display_path(filepath))
 
 
 def find_published_for_period(reports_dir: Path, period: int) -> Optional[PublishedRecommendation]:
@@ -445,7 +453,7 @@ def collect_published_recommendations(output_dir: Path) -> Dict[int, PublishedRe
                 top20=rec.top20,
                 pool30=rec.pool30,
                 tickets=rec.tickets,
-                source_path=str(_journal_path(output_dir)),
+                source_path=_display_path(_journal_path(output_dir)),
                 full_order=rec.full_order,
             )
             collected[period] = rec
