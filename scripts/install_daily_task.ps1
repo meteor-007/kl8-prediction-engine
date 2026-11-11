@@ -1,4 +1,4 @@
-param(
+﻿param(
     [string]$Time = "18:00",
     [string]$TaskName = "KL8-Daily-Prediction"
 )
