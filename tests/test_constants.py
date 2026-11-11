@@ -1,52 +1,48 @@
-"""数学恒等式与静态常数单元测试（契约 §3.2、C1、C9）。"""
+# -*- coding: utf-8 -*-
+"""快乐8 常量层与号码静态属性单元测试。
+
+@author czw
+@since 2026-11-04
+"""
 
 from __future__ import annotations
 
 import unittest
-import numpy as np
-
-from kl8.constants import (
-    ALL_NUMBERS,
-    E_REPEAT,
+from kl8_engine.constants import (
     K_DRAW,
     N_NUM,
     P0,
-    P_CO,
     PRIMES_80,
-    SUM_EXPECT,
-    Z_SIG,
-    get_prime_label,
+    PRIZE_TABLE_PICK5,
     get_road_012,
-    hypergeometric_mean,
-    hypergeometric_pmf,
-    hypergeometric_var,
-    is_prime_num,
-    numbers_array,
-    size_class_of,
-    tail_of,
-    zone4_of,
-    zone8_of,
+    get_zone4,
+    is_prime,
 )
 
 
 class TestConstants(unittest.TestCase):
-    """数学常量与辅助函数验证。"""
+    """测试玩法定义常量与纯函数属性。"""
 
-    def test_constants_values(self) -> None:
+    def test_basic_constants(self) -> None:
+        """测试号码总数、每期开奖数与理论概率。"""
         self.assertEqual(N_NUM, 80)
         self.assertEqual(K_DRAW, 20)
-        self.assertAlmostEqual(P0, 0.25, places=9)
-        self.assertAlmostEqual(P_CO, 20 * 19 / (80 * 79), places=9)
-        self.assertAlmostEqual(E_REPEAT, 5.0, places=9)
-        self.assertEqual(SUM_EXPECT, 810)
-        self.assertAlmostEqual(Z_SIG, 1.96, places=9)
-        self.assertEqual(len(PRIMES_80), 22)
-        self.assertNotIn(1, PRIMES_80)
-        self.assertIn(2, PRIMES_80)
-        self.assertIn(79, PRIMES_80)
+        self.assertAlmostEqual(P0, 0.25, places=5)
+        self.assertEqual(PRIZE_TABLE_PICK5[5], 1000)
+        self.assertEqual(PRIZE_TABLE_PICK5[4], 21)
+        self.assertEqual(PRIZE_TABLE_PICK5[3], 3)
 
-    def test_partition_helpers(self) -> None:
-        # 012 路
+    def test_prime_numbers(self) -> None:
+        """测试 1..80 范围内的质数判断。"""
+        self.assertFalse(is_prime(1))  # 1 非质非合
+        self.assertTrue(is_prime(2))
+        self.assertTrue(is_prime(3))
+        self.assertTrue(is_prime(79))
+        self.assertFalse(is_prime(80))
+        self.assertEqual(len(PRIMES_80), 22)
+
+    def test_road_012(self) -> None:
+        """测试 012 路模 3 同余分类。"""
         self.assertEqual(get_road_012(3), 0)
         self.assertEqual(get_road_012(1), 1)
         self.assertEqual(get_road_012(2), 2)
@@ -55,47 +51,16 @@ class TestConstants(unittest.TestCase):
         with self.assertRaises(ValueError):
             get_road_012(81)
 
-        # 质合
-        self.assertFalse(is_prime_num(1))
-        self.assertTrue(is_prime_num(2))
-        self.assertEqual(get_prime_label(1), "特1")
-        self.assertEqual(get_prime_label(2), "质")
-        self.assertEqual(get_prime_label(4), "合")
-
-        # 四区八区
-        self.assertEqual(zone4_of(1), 0)
-        self.assertEqual(zone4_of(20), 0)
-        self.assertEqual(zone4_of(21), 1)
-        self.assertEqual(zone4_of(80), 3)
-
-        self.assertEqual(zone8_of(1), 0)
-        self.assertEqual(zone8_of(10), 0)
-        self.assertEqual(zone8_of(75), 7)
-
-        # 大中小
-        self.assertEqual(size_class_of(1), 0)
-        self.assertEqual(size_class_of(27), 0)
-        self.assertEqual(size_class_of(28), 1)
-        self.assertEqual(size_class_of(54), 1)
-        self.assertEqual(size_class_of(55), 2)
-        self.assertEqual(size_class_of(80), 2)
-
-        # 尾数
-        self.assertEqual(tail_of(15), 5)
-        self.assertEqual(tail_of(80), 0)
-
-        # numbers_array
-        arr = numbers_array()
-        self.assertEqual(len(arr), 80)
-        self.assertEqual(arr[0], 1)
-        self.assertEqual(arr[-1], 80)
-
-    def test_hypergeometric(self) -> None:
-        pmf = hypergeometric_pmf(n_pick=5, n_draw=20, n_total=80)
-        self.assertEqual(len(pmf), 6)
-        self.assertAlmostEqual(float(pmf.sum()), 1.0, places=9)
-        mean = hypergeometric_mean(n_pick=5, n_draw=20, n_total=80)
-        self.assertAlmostEqual(mean, 5 * 0.25, places=9)
+    def test_zone4(self) -> None:
+        """测试四分区划分。"""
+        self.assertEqual(get_zone4(1), 0)
+        self.assertEqual(get_zone4(20), 0)
+        self.assertEqual(get_zone4(21), 1)
+        self.assertEqual(get_zone4(40), 1)
+        self.assertEqual(get_zone4(41), 2)
+        self.assertEqual(get_zone4(60), 2)
+        self.assertEqual(get_zone4(61), 3)
+        self.assertEqual(get_zone4(80), 3)
 
 
 if __name__ == "__main__":

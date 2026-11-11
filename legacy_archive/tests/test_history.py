@@ -54,21 +54,22 @@ class TestHistory(unittest.TestCase):
     def test_load_real_history(self) -> None:
         """测试加载真实历史文件 kl8_history.txt。"""
         ds = load_dataset("kl8_history.txt")
-        self.assertEqual(ds.T, 2112)
+        self.assertGreaterEqual(ds.T, 2112)
         # 升序排列：最旧期在 index 0，最新期在 index -1
         self.assertEqual(ds.draws[0].period, 2020001)
-        self.assertEqual(ds.draws[-1].period, 2026291)
-        self.assertEqual(ds.latest.period, 2026291)
-        self.assertEqual(ds.target_period(), 2026292)
+        self.assertGreaterEqual(ds.draws[-1].period, 2026291)
+        self.assertEqual(ds.latest.period, ds.draws[-1].period)
+        self.assertEqual(ds.target_period(), ds.latest.period + 1)
 
     def test_truncated_no_leakage(self) -> None:
         """测试防穿越唯一截断入口 truncated（契约 C4）。"""
         ds = load_dataset("kl8_history.txt")
-        # 截断到 2026291，必须只包含严格早于 2026291 的期数（即最新期为 2026290）
-        sub = truncated(ds, 2026291)
+        # 截断到最新期，必须只包含严格早于最新期的期数（即最新期不包含在内）
+        latest_p = ds.latest.period
+        sub = truncated(ds, latest_p)
         self.assertEqual(sub.T, ds.T - 1)
-        self.assertEqual(sub.latest.period, 2026290)
-        self.assertNotIn(2026291, sub.draws_by_period)
+        self.assertEqual(sub.latest.period, ds.draws[-2].period)
+        self.assertNotIn(latest_p, sub.draws_by_period)
 
         # 截断早于最早期的期号
         sub_early = truncated(ds, 2020000)

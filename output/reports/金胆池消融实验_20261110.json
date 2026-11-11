@@ -1,0 +1,10133 @@
+{
+  "config": {
+    "periods": 60,
+    "epochs": 25,
+    "seq_len": 10,
+    "dl_weight": 0.55,
+    "k": 4,
+    "expected_gold_hits": 1.0,
+    "p_ge2_expected": 0.25894674945307855,
+    "elapsed_seconds": 443.6331274999975,
+    "bonferroni_alpha": 0.0029411764705882353
+  },
+  "records": [
+    {
+      "period": 2026240,
+      "date": "2026-09-07",
+      "actual_numbers": [
+        2,
+        6,
+        9,
+        10,
+        16,
+        21,
+        27,
+        28,
+        32,
+        33,
+        38,
+        39,
+        55,
+        63,
+        64,
+        66,
+        67,
+        70,
+        75,
+        78
+      ],
+      "selectors": {
+        "fused_top4": [
+          21,
+          37,
+          51,
+          55
+        ],
+        "dl_top4": [
+          12,
+          60,
+          69,
+          79
+        ],
+        "dirichlet_top4": [
+          21,
+          28,
+          47,
+          51
+        ],
+        "cooc_top4": [
+          17,
+          21,
+          37,
+          51
+        ],
+        "momentum_top4": [
+          55,
+          61,
+          68,
+          75
+        ],
+        "spectral_top4": [
+          17,
+          21,
+          37,
+          51
+        ],
+        "borda4_top4": [
+          38,
+          39,
+          40,
+          70
+        ],
+        "borda3_top4": [
+          39,
+          40,
+          49,
+          70
+        ],
+        "borda_dl_spectral_top4": [
+          31,
+          40,
+          58,
+          66
+        ],
+        "hot50_top4": [
+          17,
+          21,
+          37,
+          51
+        ],
+        "cold50_top4": [
+          1,
+          38,
+          57,
+          63
+        ],
+        "norepeat_fused_top4": [
+          12,
+          15,
+          51,
+          60
+        ],
+        "repeatonly_fused_top4": [
+          17,
+          21,
+          37,
+          55
+        ],
+        "zone1_fused_top4": [
+          17,
+          21,
+          51,
+          61
+        ],
+        "zone2_fused_top4": [
+          21,
+          37,
+          51,
+          55
+        ],
+        "balanced_fused_top4": [
+          12,
+          14,
+          21,
+          51
+        ],
+        "random_top4": [
+          3,
+          11,
+          32,
+          44
+        ]
+      },
+      "hits": {
+        "fused_top4": 2,
+        "dl_top4": 0,
+        "dirichlet_top4": 2,
+        "cooc_top4": 1,
+        "momentum_top4": 2,
+        "spectral_top4": 1,
+        "borda4_top4": 3,
+        "borda3_top4": 2,
+        "borda_dl_spectral_top4": 1,
+        "hot50_top4": 1,
+        "cold50_top4": 2,
+        "norepeat_fused_top4": 0,
+        "repeatonly_fused_top4": 2,
+        "zone1_fused_top4": 1,
+        "zone2_fused_top4": 2,
+        "balanced_fused_top4": 1,
+        "random_top4": 1
+      },
+      "auc": {
+        "fused": 0.4191666666666667,
+        "dl": 0.45916666666666667,
+        "dirichlet": 0.4116666666666667,
+        "cooccurrence": 0.4533333333333333,
+        "momentum": 0.4266666666666667,
+        "hot50": 0.4666666666666667
+      },
+      "diagnostics": {
+        "fused_repeat_count": 3,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 4,
+        "fused_mean_omission": 0.25,
+        "dl_loss": 0.5458832042557853
+      }
+    },
+    {
+      "period": 2026241,
+      "date": "2026-09-08",
+      "actual_numbers": [
+        7,
+        9,
+        15,
+        16,
+        18,
+        19,
+        32,
+        33,
+        36,
+        37,
+        40,
+        52,
+        53,
+        60,
+        62,
+        63,
+        66,
+        68,
+        69,
+        73
+      ],
+      "selectors": {
+        "fused_top4": [
+          21,
+          37,
+          51,
+          55
+        ],
+        "dl_top4": [
+          27,
+          50,
+          60,
+          73
+        ],
+        "dirichlet_top4": [
+          21,
+          28,
+          47,
+          51
+        ],
+        "cooc_top4": [
+          17,
+          21,
+          51,
+          55
+        ],
+        "momentum_top4": [
+          55,
+          62,
+          68,
+          75
+        ],
+        "spectral_top4": [
+          17,
+          21,
+          51,
+          55
+        ],
+        "borda4_top4": [
+          22,
+          38,
+          40,
+          70
+        ],
+        "borda3_top4": [
+          40,
+          43,
+          49,
+          58
+        ],
+        "borda_dl_spectral_top4": [
+          30,
+          38,
+          40,
+          70
+        ],
+        "hot50_top4": [
+          17,
+          21,
+          37,
+          51
+        ],
+        "cold50_top4": [
+          1,
+          30,
+          38,
+          57
+        ],
+        "norepeat_fused_top4": [
+          17,
+          37,
+          45,
+          51
+        ],
+        "repeatonly_fused_top4": [
+          21,
+          28,
+          55,
+          75
+        ],
+        "zone1_fused_top4": [
+          17,
+          21,
+          51,
+          75
+        ],
+        "zone2_fused_top4": [
+          21,
+          37,
+          51,
+          55
+        ],
+        "balanced_fused_top4": [
+          21,
+          28,
+          51,
+          60
+        ],
+        "random_top4": [
+          15,
+          26,
+          62,
+          75
+        ]
+      },
+      "hits": {
+        "fused_top4": 1,
+        "dl_top4": 2,
+        "dirichlet_top4": 0,
+        "cooc_top4": 0,
+        "momentum_top4": 2,
+        "spectral_top4": 0,
+        "borda4_top4": 1,
+        "borda3_top4": 1,
+        "borda_dl_spectral_top4": 1,
+        "hot50_top4": 1,
+        "cold50_top4": 0,
+        "norepeat_fused_top4": 1,
+        "repeatonly_fused_top4": 0,
+        "zone1_fused_top4": 0,
+        "zone2_fused_top4": 1,
+        "balanced_fused_top4": 1,
+        "random_top4": 2
+      },
+      "auc": {
+        "fused": 0.5341666666666667,
+        "dl": 0.5616666666666666,
+        "dirichlet": 0.4633333333333333,
+        "cooccurrence": 0.4875,
+        "momentum": 0.6191666666666666,
+        "hot50": 0.4891666666666667
+      },
+      "diagnostics": {
+        "fused_repeat_count": 2,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 4,
+        "fused_mean_omission": 0.75,
+        "dl_loss": 0.5451090037822723
+      }
+    },
+    {
+      "period": 2026242,
+      "date": "2026-09-09",
+      "actual_numbers": [
+        4,
+        20,
+        28,
+        32,
+        35,
+        37,
+        39,
+        44,
+        48,
+        50,
+        52,
+        53,
+        55,
+        56,
+        57,
+        63,
+        71,
+        72,
+        76,
+        77
+      ],
+      "selectors": {
+        "fused_top4": [
+          15,
+          21,
+          37,
+          55
+        ],
+        "dl_top4": [
+          15,
+          21,
+          27,
+          62
+        ],
+        "dirichlet_top4": [
+          21,
+          28,
+          37,
+          51
+        ],
+        "cooc_top4": [
+          17,
+          21,
+          37,
+          51
+        ],
+        "momentum_top4": [
+          55,
+          63,
+          68,
+          75
+        ],
+        "spectral_top4": [
+          21,
+          37,
+          51,
+          55
+        ],
+        "borda4_top4": [
+          22,
+          38,
+          40,
+          70
+        ],
+        "borda3_top4": [
+          22,
+          43,
+          49,
+          70
+        ],
+        "borda_dl_spectral_top4": [
+          38,
+          40,
+          70,
+          76
+        ],
+        "hot50_top4": [
+          17,
+          21,
+          37,
+          51
+        ],
+        "cold50_top4": [
+          1,
+          30,
+          38,
+          57
+        ],
+        "norepeat_fused_top4": [
+          17,
+          21,
+          51,
+          55
+        ],
+        "repeatonly_fused_top4": [
+          15,
+          19,
+          36,
+          37
+        ],
+        "zone1_fused_top4": [
+          15,
+          21,
+          55,
+          61
+        ],
+        "zone2_fused_top4": [
+          15,
+          21,
+          37,
+          55
+        ],
+        "balanced_fused_top4": [
+          14,
+          20,
+          21,
+          37
+        ],
+        "random_top4": [
+          28,
+          43,
+          79,
+          80
+        ]
+      },
+      "hits": {
+        "fused_top4": 2,
+        "dl_top4": 0,
+        "dirichlet_top4": 2,
+        "cooc_top4": 1,
+        "momentum_top4": 2,
+        "spectral_top4": 2,
+        "borda4_top4": 0,
+        "borda3_top4": 0,
+        "borda_dl_spectral_top4": 1,
+        "hot50_top4": 1,
+        "cold50_top4": 1,
+        "norepeat_fused_top4": 1,
+        "repeatonly_fused_top4": 1,
+        "zone1_fused_top4": 1,
+        "zone2_fused_top4": 2,
+        "balanced_fused_top4": 2,
+        "random_top4": 1
+      },
+      "auc": {
+        "fused": 0.4866666666666667,
+        "dl": 0.49166666666666664,
+        "dirichlet": 0.4925,
+        "cooccurrence": 0.5141666666666667,
+        "momentum": 0.5758333333333333,
+        "hot50": 0.5033333333333333
+      },
+      "diagnostics": {
+        "fused_repeat_count": 2,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 4,
+        "fused_mean_omission": 0.5,
+        "dl_loss": 0.5402384655816215
+      }
+    },
+    {
+      "period": 2026243,
+      "date": "2026-09-10",
+      "actual_numbers": [
+        1,
+        2,
+        3,
+        9,
+        21,
+        29,
+        31,
+        36,
+        37,
+        41,
+        43,
+        46,
+        50,
+        55,
+        64,
+        67,
+        68,
+        70,
+        74,
+        76
+      ],
+      "selectors": {
+        "fused_top4": [
+          21,
+          37,
+          51,
+          55
+        ],
+        "dl_top4": [
+          27,
+          51,
+          69,
+          80
+        ],
+        "dirichlet_top4": [
+          21,
+          28,
+          37,
+          51
+        ],
+        "cooc_top4": [
+          21,
+          37,
+          51,
+          55
+        ],
+        "momentum_top4": [
+          52,
+          55,
+          63,
+          68
+        ],
+        "spectral_top4": [
+          21,
+          37,
+          51,
+          55
+        ],
+        "borda4_top4": [
+          22,
+          38,
+          43,
+          74
+        ],
+        "borda3_top4": [
+          22,
+          38,
+          43,
+          49
+        ],
+        "borda_dl_spectral_top4": [
+          22,
+          31,
+          38,
+          43
+        ],
+        "hot50_top4": [
+          17,
+          21,
+          37,
+          51
+        ],
+        "cold50_top4": [
+          1,
+          30,
+          38,
+          57
+        ],
+        "norepeat_fused_top4": [
+          15,
+          17,
+          21,
+          51
+        ],
+        "repeatonly_fused_top4": [
+          28,
+          37,
+          44,
+          55
+        ],
+        "zone1_fused_top4": [
+          15,
+          21,
+          51,
+          75
+        ],
+        "zone2_fused_top4": [
+          21,
+          37,
+          51,
+          55
+        ],
+        "balanced_fused_top4": [
+          21,
+          28,
+          37,
+          44
+        ],
+        "random_top4": [
+          18,
+          24,
+          59,
+          61
+        ]
+      },
+      "hits": {
+        "fused_top4": 3,
+        "dl_top4": 0,
+        "dirichlet_top4": 2,
+        "cooc_top4": 3,
+        "momentum_top4": 2,
+        "spectral_top4": 3,
+        "borda4_top4": 2,
+        "borda3_top4": 1,
+        "borda_dl_spectral_top4": 2,
+        "hot50_top4": 2,
+        "cold50_top4": 1,
+        "norepeat_fused_top4": 1,
+        "repeatonly_fused_top4": 2,
+        "zone1_fused_top4": 1,
+        "zone2_fused_top4": 3,
+        "balanced_fused_top4": 2,
+        "random_top4": 0
+      },
+      "auc": {
+        "fused": 0.4558333333333333,
+        "dl": 0.3466666666666667,
+        "dirichlet": 0.4675,
+        "cooccurrence": 0.47833333333333333,
+        "momentum": 0.5641666666666667,
+        "hot50": 0.5225
+      },
+      "diagnostics": {
+        "fused_repeat_count": 2,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 4,
+        "fused_mean_omission": 1.5,
+        "dl_loss": 0.5494085422583989
+      }
+    },
+    {
+      "period": 2026244,
+      "date": "2026-09-11",
+      "actual_numbers": [
+        1,
+        4,
+        7,
+        8,
+        10,
+        12,
+        34,
+        46,
+        47,
+        53,
+        55,
+        56,
+        59,
+        61,
+        63,
+        65,
+        71,
+        73,
+        78,
+        79
+      ],
+      "selectors": {
+        "fused_top4": [
+          21,
+          37,
+          51,
+          55
+        ],
+        "dl_top4": [
+          3,
+          19,
+          25,
+          33
+        ],
+        "dirichlet_top4": [
+          21,
+          37,
+          51,
+          55
+        ],
+        "cooc_top4": [
+          21,
+          37,
+          51,
+          55
+        ],
+        "momentum_top4": [
+          37,
+          55,
+          64,
+          68
+        ],
+        "spectral_top4": [
+          21,
+          37,
+          51,
+          55
+        ],
+        "borda4_top4": [
+          5,
+          49,
+          58,
+          70
+        ],
+        "borda3_top4": [
+          34,
+          38,
+          49,
+          58
+        ],
+        "borda_dl_spectral_top4": [
+          5,
+          31,
+          58,
+          70
+        ],
+        "hot50_top4": [
+          17,
+          21,
+          37,
+          51
+        ],
+        "cold50_top4": [
+          1,
+          30,
+          38,
+          57
+        ],
+        "norepeat_fused_top4": [
+          15,
+          20,
+          28,
+          51
+        ],
+        "repeatonly_fused_top4": [
+          21,
+          37,
+          55,
+          68
+        ],
+        "zone1_fused_top4": [
+          20,
+          21,
+          55,
+          68
+        ],
+        "zone2_fused_top4": [
+          21,
+          37,
+          51,
+          55
+        ],
+        "balanced_fused_top4": [
+          20,
+          21,
+          37,
+          68
+        ],
+        "random_top4": [
+          4,
+          16,
+          51,
+          66
+        ]
+      },
+      "hits": {
+        "fused_top4": 1,
+        "dl_top4": 0,
+        "dirichlet_top4": 1,
+        "cooc_top4": 1,
+        "momentum_top4": 1,
+        "spectral_top4": 1,
+        "borda4_top4": 0,
+        "borda3_top4": 1,
+        "borda_dl_spectral_top4": 0,
+        "hot50_top4": 0,
+        "cold50_top4": 1,
+        "norepeat_fused_top4": 0,
+        "repeatonly_fused_top4": 1,
+        "zone1_fused_top4": 1,
+        "zone2_fused_top4": 1,
+        "balanced_fused_top4": 0,
+        "random_top4": 1
+      },
+      "auc": {
+        "fused": 0.4025,
+        "dl": 0.3983333333333333,
+        "dirichlet": 0.4558333333333333,
+        "cooccurrence": 0.4533333333333333,
+        "momentum": 0.37333333333333335,
+        "hot50": 0.49
+      },
+      "diagnostics": {
+        "fused_repeat_count": 3,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 4,
+        "fused_mean_omission": 1.25,
+        "dl_loss": 0.5561017351491111
+      }
+    },
+    {
+      "period": 2026245,
+      "date": "2026-09-12",
+      "actual_numbers": [
+        5,
+        6,
+        9,
+        15,
+        18,
+        25,
+        26,
+        27,
+        30,
+        31,
+        34,
+        36,
+        39,
+        43,
+        44,
+        48,
+        54,
+        63,
+        65,
+        77
+      ],
+      "selectors": {
+        "fused_top4": [
+          20,
+          21,
+          37,
+          55
+        ],
+        "dl_top4": [
+          21,
+          27,
+          33,
+          62
+        ],
+        "dirichlet_top4": [
+          3,
+          21,
+          37,
+          55
+        ],
+        "cooc_top4": [
+          21,
+          37,
+          51,
+          55
+        ],
+        "momentum_top4": [
+          37,
+          55,
+          63,
+          64
+        ],
+        "spectral_top4": [
+          21,
+          37,
+          51,
+          55
+        ],
+        "borda4_top4": [
+          5,
+          23,
+          49,
+          58
+        ],
+        "borda3_top4": [
+          25,
+          38,
+          49,
+          58
+        ],
+        "borda_dl_spectral_top4": [
+          5,
+          23,
+          58,
+          70
+        ],
+        "hot50_top4": [
+          17,
+          21,
+          37,
+          51
+        ],
+        "cold50_top4": [
+          30,
+          38,
+          49,
+          54
+        ],
+        "norepeat_fused_top4": [
+          20,
+          21,
+          37,
+          51
+        ],
+        "repeatonly_fused_top4": [
+          47,
+          53,
+          55,
+          61
+        ],
+        "zone1_fused_top4": [
+          20,
+          21,
+          55,
+          61
+        ],
+        "zone2_fused_top4": [
+          20,
+          21,
+          37,
+          55
+        ],
+        "balanced_fused_top4": [
+          20,
+          21,
+          28,
+          55
+        ],
+        "random_top4": [
+          21,
+          33,
+          46,
+          76
+        ]
+      },
+      "hits": {
+        "fused_top4": 0,
+        "dl_top4": 1,
+        "dirichlet_top4": 0,
+        "cooc_top4": 0,
+        "momentum_top4": 1,
+        "spectral_top4": 0,
+        "borda4_top4": 1,
+        "borda3_top4": 1,
+        "borda_dl_spectral_top4": 1,
+        "hot50_top4": 0,
+        "cold50_top4": 2,
+        "norepeat_fused_top4": 0,
+        "repeatonly_fused_top4": 0,
+        "zone1_fused_top4": 0,
+        "zone2_fused_top4": 0,
+        "balanced_fused_top4": 0,
+        "random_top4": 0
+      },
+      "auc": {
+        "fused": 0.3641666666666667,
+        "dl": 0.4216666666666667,
+        "dirichlet": 0.37916666666666665,
+        "cooccurrence": 0.3591666666666667,
+        "momentum": 0.5083333333333333,
+        "hot50": 0.3358333333333333
+      },
+      "diagnostics": {
+        "fused_repeat_count": 1,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 3,
+        "fused_mean_omission": 1.0,
+        "dl_loss": 0.559215464762279
+      }
+    },
+    {
+      "period": 2026246,
+      "date": "2026-09-13",
+      "actual_numbers": [
+        3,
+        8,
+        10,
+        16,
+        18,
+        20,
+        23,
+        29,
+        31,
+        35,
+        51,
+        53,
+        54,
+        56,
+        58,
+        69,
+        70,
+        75,
+        78,
+        80
+      ],
+      "selectors": {
+        "fused_top4": [
+          21,
+          37,
+          55,
+          63
+        ],
+        "dl_top4": [
+          14,
+          27,
+          33,
+          41
+        ],
+        "dirichlet_top4": [
+          21,
+          36,
+          37,
+          55
+        ],
+        "cooc_top4": [
+          21,
+          37,
+          44,
+          55
+        ],
+        "momentum_top4": [
+          9,
+          37,
+          55,
+          63
+        ],
+        "spectral_top4": [
+          21,
+          36,
+          37,
+          55
+        ],
+        "borda4_top4": [
+          22,
+          23,
+          38,
+          49
+        ],
+        "borda3_top4": [
+          23,
+          38,
+          49,
+          58
+        ],
+        "borda_dl_spectral_top4": [
+          5,
+          22,
+          23,
+          31
+        ],
+        "hot50_top4": [
+          17,
+          21,
+          37,
+          51
+        ],
+        "cold50_top4": [
+          23,
+          30,
+          38,
+          49
+        ],
+        "norepeat_fused_top4": [
+          20,
+          21,
+          37,
+          55
+        ],
+        "repeatonly_fused_top4": [
+          15,
+          36,
+          44,
+          63
+        ],
+        "zone1_fused_top4": [
+          20,
+          37,
+          55,
+          63
+        ],
+        "zone2_fused_top4": [
+          21,
+          37,
+          55,
+          63
+        ],
+        "balanced_fused_top4": [
+          20,
+          36,
+          37,
+          55
+        ],
+        "random_top4": [
+          9,
+          14,
+          27,
+          41
+        ]
+      },
+      "hits": {
+        "fused_top4": 0,
+        "dl_top4": 0,
+        "dirichlet_top4": 0,
+        "cooc_top4": 0,
+        "momentum_top4": 0,
+        "spectral_top4": 0,
+        "borda4_top4": 1,
+        "borda3_top4": 2,
+        "borda_dl_spectral_top4": 2,
+        "hot50_top4": 1,
+        "cold50_top4": 1,
+        "norepeat_fused_top4": 1,
+        "repeatonly_fused_top4": 0,
+        "zone1_fused_top4": 1,
+        "zone2_fused_top4": 0,
+        "balanced_fused_top4": 1,
+        "random_top4": 0
+      },
+      "auc": {
+        "fused": 0.42083333333333334,
+        "dl": 0.5,
+        "dirichlet": 0.44333333333333336,
+        "cooccurrence": 0.4266666666666667,
+        "momentum": 0.455,
+        "hot50": 0.4816666666666667
+      },
+      "diagnostics": {
+        "fused_repeat_count": 1,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 4,
+        "fused_mean_omission": 1.25,
+        "dl_loss": 0.5557991734572819
+      }
+    },
+    {
+      "period": 2026247,
+      "date": "2026-09-14",
+      "actual_numbers": [
+        5,
+        7,
+        19,
+        22,
+        28,
+        29,
+        38,
+        39,
+        41,
+        42,
+        43,
+        44,
+        55,
+        58,
+        61,
+        65,
+        66,
+        71,
+        72,
+        73
+      ],
+      "selectors": {
+        "fused_top4": [
+          20,
+          21,
+          37,
+          55
+        ],
+        "dl_top4": [
+          21,
+          37,
+          60,
+          62
+        ],
+        "dirichlet_top4": [
+          3,
+          21,
+          36,
+          55
+        ],
+        "cooc_top4": [
+          21,
+          37,
+          51,
+          55
+        ],
+        "momentum_top4": [
+          9,
+          53,
+          55,
+          63
+        ],
+        "spectral_top4": [
+          20,
+          21,
+          37,
+          55
+        ],
+        "borda4_top4": [
+          22,
+          23,
+          38,
+          40
+        ],
+        "borda3_top4": [
+          22,
+          23,
+          38,
+          49
+        ],
+        "borda_dl_spectral_top4": [
+          23,
+          40,
+          58,
+          70
+        ],
+        "hot50_top4": [
+          17,
+          21,
+          37,
+          51
+        ],
+        "cold50_top4": [
+          30,
+          40,
+          49,
+          57
+        ],
+        "norepeat_fused_top4": [
+          21,
+          36,
+          37,
+          55
+        ],
+        "repeatonly_fused_top4": [
+          18,
+          20,
+          51,
+          53
+        ],
+        "zone1_fused_top4": [
+          20,
+          21,
+          55,
+          63
+        ],
+        "zone2_fused_top4": [
+          20,
+          21,
+          37,
+          55
+        ],
+        "balanced_fused_top4": [
+          20,
+          21,
+          36,
+          55
+        ],
+        "random_top4": [
+          5,
+          8,
+          34,
+          70
+        ]
+      },
+      "hits": {
+        "fused_top4": 1,
+        "dl_top4": 0,
+        "dirichlet_top4": 1,
+        "cooc_top4": 1,
+        "momentum_top4": 1,
+        "spectral_top4": 1,
+        "borda4_top4": 2,
+        "borda3_top4": 2,
+        "borda_dl_spectral_top4": 1,
+        "hot50_top4": 0,
+        "cold50_top4": 0,
+        "norepeat_fused_top4": 1,
+        "repeatonly_fused_top4": 0,
+        "zone1_fused_top4": 1,
+        "zone2_fused_top4": 1,
+        "balanced_fused_top4": 1,
+        "random_top4": 1
+      },
+      "auc": {
+        "fused": 0.45666666666666667,
+        "dl": 0.4175,
+        "dirichlet": 0.5208333333333334,
+        "cooccurrence": 0.4525,
+        "momentum": 0.3958333333333333,
+        "hot50": 0.44
+      },
+      "diagnostics": {
+        "fused_repeat_count": 1,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 3,
+        "fused_mean_omission": 2.0,
+        "dl_loss": 0.5564818126814706
+      }
+    },
+    {
+      "period": 2026248,
+      "date": "2026-09-15",
+      "actual_numbers": [
+        3,
+        5,
+        9,
+        15,
+        23,
+        28,
+        31,
+        33,
+        34,
+        35,
+        39,
+        42,
+        48,
+        50,
+        53,
+        70,
+        73,
+        74,
+        76,
+        78
+      ],
+      "selectors": {
+        "fused_top4": [
+          21,
+          44,
+          51,
+          55
+        ],
+        "dl_top4": [
+          30,
+          46,
+          50,
+          56
+        ],
+        "dirichlet_top4": [
+          21,
+          28,
+          36,
+          55
+        ],
+        "cooc_top4": [
+          21,
+          37,
+          44,
+          55
+        ],
+        "momentum_top4": [
+          16,
+          39,
+          55,
+          63
+        ],
+        "spectral_top4": [
+          21,
+          28,
+          44,
+          55
+        ],
+        "borda4_top4": [
+          11,
+          23,
+          57,
+          74
+        ],
+        "borda3_top4": [
+          13,
+          23,
+          40,
+          49
+        ],
+        "borda_dl_spectral_top4": [
+          11,
+          52,
+          57,
+          74
+        ],
+        "hot50_top4": [
+          21,
+          28,
+          51,
+          55
+        ],
+        "cold50_top4": [
+          30,
+          40,
+          49,
+          57
+        ],
+        "norepeat_fused_top4": [
+          21,
+          36,
+          37,
+          51
+        ],
+        "repeatonly_fused_top4": [
+          28,
+          44,
+          55,
+          61
+        ],
+        "zone1_fused_top4": [
+          20,
+          21,
+          55,
+          68
+        ],
+        "zone2_fused_top4": [
+          21,
+          28,
+          51,
+          55
+        ],
+        "balanced_fused_top4": [
+          21,
+          28,
+          44,
+          55
+        ],
+        "random_top4": [
+          26,
+          35,
+          40,
+          46
+        ]
+      },
+      "hits": {
+        "fused_top4": 0,
+        "dl_top4": 1,
+        "dirichlet_top4": 1,
+        "cooc_top4": 0,
+        "momentum_top4": 1,
+        "spectral_top4": 1,
+        "borda4_top4": 2,
+        "borda3_top4": 1,
+        "borda_dl_spectral_top4": 1,
+        "hot50_top4": 1,
+        "cold50_top4": 0,
+        "norepeat_fused_top4": 0,
+        "repeatonly_fused_top4": 1,
+        "zone1_fused_top4": 0,
+        "zone2_fused_top4": 1,
+        "balanced_fused_top4": 1,
+        "random_top4": 1
+      },
+      "auc": {
+        "fused": 0.5483333333333333,
+        "dl": 0.54,
+        "dirichlet": 0.5583333333333333,
+        "cooccurrence": 0.5558333333333333,
+        "momentum": 0.43333333333333335,
+        "hot50": 0.5175
+      },
+      "diagnostics": {
+        "fused_repeat_count": 2,
+        "fused_max_zone_count": 3,
+        "fused_odd_count": 3,
+        "fused_mean_omission": 1.25,
+        "dl_loss": 0.5426250611032758
+      }
+    },
+    {
+      "period": 2026249,
+      "date": "2026-09-16",
+      "actual_numbers": [
+        4,
+        8,
+        10,
+        11,
+        13,
+        26,
+        29,
+        34,
+        41,
+        50,
+        51,
+        52,
+        53,
+        57,
+        59,
+        65,
+        66,
+        73,
+        74,
+        77
+      ],
+      "selectors": {
+        "fused_top4": [
+          21,
+          28,
+          44,
+          55
+        ],
+        "dl_top4": [
+          2,
+          38,
+          46,
+          71
+        ],
+        "dirichlet_top4": [
+          3,
+          21,
+          28,
+          55
+        ],
+        "cooc_top4": [
+          21,
+          28,
+          37,
+          55
+        ],
+        "momentum_top4": [
+          39,
+          55,
+          63,
+          70
+        ],
+        "spectral_top4": [
+          3,
+          21,
+          28,
+          55
+        ],
+        "borda4_top4": [
+          22,
+          25,
+          57,
+          74
+        ],
+        "borda3_top4": [
+          11,
+          13,
+          49,
+          57
+        ],
+        "borda_dl_spectral_top4": [
+          1,
+          22,
+          52,
+          74
+        ],
+        "hot50_top4": [
+          21,
+          28,
+          37,
+          51
+        ],
+        "cold50_top4": [
+          30,
+          40,
+          49,
+          54
+        ],
+        "norepeat_fused_top4": [
+          21,
+          44,
+          51,
+          55
+        ],
+        "repeatonly_fused_top4": [
+          3,
+          28,
+          35,
+          53
+        ],
+        "zone1_fused_top4": [
+          3,
+          28,
+          55,
+          61
+        ],
+        "zone2_fused_top4": [
+          21,
+          28,
+          44,
+          55
+        ],
+        "balanced_fused_top4": [
+          21,
+          28,
+          44,
+          55
+        ],
+        "random_top4": [
+          1,
+          11,
+          28,
+          59
+        ]
+      },
+      "hits": {
+        "fused_top4": 0,
+        "dl_top4": 0,
+        "dirichlet_top4": 0,
+        "cooc_top4": 0,
+        "momentum_top4": 0,
+        "spectral_top4": 0,
+        "borda4_top4": 2,
+        "borda3_top4": 3,
+        "borda_dl_spectral_top4": 2,
+        "hot50_top4": 1,
+        "cold50_top4": 0,
+        "norepeat_fused_top4": 1,
+        "repeatonly_fused_top4": 1,
+        "zone1_fused_top4": 0,
+        "zone2_fused_top4": 0,
+        "balanced_fused_top4": 0,
+        "random_top4": 2
+      },
+      "auc": {
+        "fused": 0.4025,
+        "dl": 0.5166666666666667,
+        "dirichlet": 0.3958333333333333,
+        "cooccurrence": 0.4033333333333333,
+        "momentum": 0.51,
+        "hot50": 0.44583333333333336
+      },
+      "diagnostics": {
+        "fused_repeat_count": 1,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 2,
+        "fused_mean_omission": 1.75,
+        "dl_loss": 0.55537006684712
+      }
+    },
+    {
+      "period": 2026250,
+      "date": "2026-09-17",
+      "actual_numbers": [
+        4,
+        5,
+        6,
+        8,
+        17,
+        22,
+        23,
+        31,
+        35,
+        47,
+        49,
+        51,
+        59,
+        60,
+        62,
+        65,
+        67,
+        68,
+        76,
+        78
+      ],
+      "selectors": {
+        "fused_top4": [
+          21,
+          28,
+          53,
+          55
+        ],
+        "dl_top4": [
+          33,
+          46,
+          50,
+          71
+        ],
+        "dirichlet_top4": [
+          21,
+          28,
+          41,
+          55
+        ],
+        "cooc_top4": [
+          28,
+          51,
+          53,
+          55
+        ],
+        "momentum_top4": [
+          39,
+          53,
+          63,
+          70
+        ],
+        "spectral_top4": [
+          3,
+          28,
+          53,
+          55
+        ],
+        "borda4_top4": [
+          22,
+          45,
+          49,
+          60
+        ],
+        "borda3_top4": [
+          25,
+          30,
+          40,
+          49
+        ],
+        "borda_dl_spectral_top4": [
+          22,
+          23,
+          26,
+          45
+        ],
+        "hot50_top4": [
+          21,
+          28,
+          37,
+          51
+        ],
+        "cold50_top4": [
+          30,
+          40,
+          49,
+          54
+        ],
+        "norepeat_fused_top4": [
+          3,
+          21,
+          28,
+          55
+        ],
+        "repeatonly_fused_top4": [
+          50,
+          51,
+          53,
+          73
+        ],
+        "zone1_fused_top4": [
+          3,
+          28,
+          55,
+          73
+        ],
+        "zone2_fused_top4": [
+          21,
+          28,
+          53,
+          55
+        ],
+        "balanced_fused_top4": [
+          28,
+          50,
+          53,
+          55
+        ],
+        "random_top4": [
+          1,
+          40,
+          41,
+          60
+        ]
+      },
+      "hits": {
+        "fused_top4": 0,
+        "dl_top4": 0,
+        "dirichlet_top4": 0,
+        "cooc_top4": 1,
+        "momentum_top4": 0,
+        "spectral_top4": 0,
+        "borda4_top4": 3,
+        "borda3_top4": 1,
+        "borda_dl_spectral_top4": 2,
+        "hot50_top4": 1,
+        "cold50_top4": 1,
+        "norepeat_fused_top4": 0,
+        "repeatonly_fused_top4": 1,
+        "zone1_fused_top4": 0,
+        "zone2_fused_top4": 0,
+        "balanced_fused_top4": 0,
+        "random_top4": 1
+      },
+      "auc": {
+        "fused": 0.43166666666666664,
+        "dl": 0.365,
+        "dirichlet": 0.4766666666666667,
+        "cooccurrence": 0.4508333333333333,
+        "momentum": 0.4166666666666667,
+        "hot50": 0.5083333333333333
+      },
+      "diagnostics": {
+        "fused_repeat_count": 1,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 3,
+        "fused_mean_omission": 2.25,
+        "dl_loss": 0.5518140409673963
+      }
+    },
+    {
+      "period": 2026251,
+      "date": "2026-09-18",
+      "actual_numbers": [
+        1,
+        4,
+        8,
+        9,
+        10,
+        11,
+        18,
+        26,
+        28,
+        29,
+        43,
+        49,
+        51,
+        52,
+        53,
+        54,
+        62,
+        66,
+        70,
+        76
+      ],
+      "selectors": {
+        "fused_top4": [
+          28,
+          35,
+          55,
+          65
+        ],
+        "dl_top4": [
+          10,
+          14,
+          33,
+          35
+        ],
+        "dirichlet_top4": [
+          3,
+          21,
+          28,
+          55
+        ],
+        "cooc_top4": [
+          35,
+          51,
+          53,
+          55
+        ],
+        "momentum_top4": [
+          31,
+          39,
+          53,
+          73
+        ],
+        "spectral_top4": [
+          28,
+          51,
+          53,
+          55
+        ],
+        "borda4_top4": [
+          13,
+          25,
+          38,
+          49
+        ],
+        "borda3_top4": [
+          25,
+          30,
+          38,
+          45
+        ],
+        "borda_dl_spectral_top4": [
+          13,
+          22,
+          24,
+          49
+        ],
+        "hot50_top4": [
+          3,
+          21,
+          28,
+          51
+        ],
+        "cold50_top4": [
+          30,
+          40,
+          49,
+          54
+        ],
+        "norepeat_fused_top4": [
+          3,
+          28,
+          53,
+          55
+        ],
+        "repeatonly_fused_top4": [
+          35,
+          51,
+          65,
+          78
+        ],
+        "zone1_fused_top4": [
+          3,
+          35,
+          55,
+          65
+        ],
+        "zone2_fused_top4": [
+          28,
+          35,
+          55,
+          65
+        ],
+        "balanced_fused_top4": [
+          28,
+          35,
+          55,
+          78
+        ],
+        "random_top4": [
+          22,
+          26,
+          36,
+          58
+        ]
+      },
+      "hits": {
+        "fused_top4": 1,
+        "dl_top4": 1,
+        "dirichlet_top4": 1,
+        "cooc_top4": 2,
+        "momentum_top4": 1,
+        "spectral_top4": 3,
+        "borda4_top4": 1,
+        "borda3_top4": 0,
+        "borda_dl_spectral_top4": 1,
+        "hot50_top4": 2,
+        "cold50_top4": 2,
+        "norepeat_fused_top4": 2,
+        "repeatonly_fused_top4": 1,
+        "zone1_fused_top4": 0,
+        "zone2_fused_top4": 1,
+        "balanced_fused_top4": 1,
+        "random_top4": 1
+      },
+      "auc": {
+        "fused": 0.5066666666666667,
+        "dl": 0.43916666666666665,
+        "dirichlet": 0.4666666666666667,
+        "cooccurrence": 0.4816666666666667,
+        "momentum": 0.7191666666666666,
+        "hot50": 0.42083333333333334
+      },
+      "diagnostics": {
+        "fused_repeat_count": 2,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 3,
+        "fused_mean_omission": 1.25,
+        "dl_loss": 0.5512065419128963
+      }
+    },
+    {
+      "period": 2026252,
+      "date": "2026-09-19",
+      "actual_numbers": [
+        2,
+        3,
+        4,
+        8,
+        36,
+        38,
+        40,
+        41,
+        46,
+        49,
+        50,
+        52,
+        53,
+        56,
+        57,
+        62,
+        63,
+        65,
+        68,
+        72
+      ],
+      "selectors": {
+        "fused_top4": [
+          28,
+          51,
+          53,
+          55
+        ],
+        "dl_top4": [
+          11,
+          21,
+          41,
+          78
+        ],
+        "dirichlet_top4": [
+          28,
+          51,
+          53,
+          55
+        ],
+        "cooc_top4": [
+          28,
+          51,
+          53,
+          55
+        ],
+        "momentum_top4": [
+          4,
+          31,
+          53,
+          70
+        ],
+        "spectral_top4": [
+          28,
+          51,
+          53,
+          55
+        ],
+        "borda4_top4": [
+          45,
+          58,
+          79,
+          80
+        ],
+        "borda3_top4": [
+          14,
+          25,
+          40,
+          45
+        ],
+        "borda_dl_spectral_top4": [
+          45,
+          58,
+          79,
+          80
+        ],
+        "hot50_top4": [
+          10,
+          21,
+          28,
+          51
+        ],
+        "cold50_top4": [
+          30,
+          40,
+          49,
+          57
+        ],
+        "norepeat_fused_top4": [
+          35,
+          55,
+          65,
+          78
+        ],
+        "repeatonly_fused_top4": [
+          28,
+          29,
+          51,
+          53
+        ],
+        "zone1_fused_top4": [
+          5,
+          28,
+          53,
+          65
+        ],
+        "zone2_fused_top4": [
+          28,
+          51,
+          53,
+          65
+        ],
+        "balanced_fused_top4": [
+          28,
+          51,
+          53,
+          78
+        ],
+        "random_top4": [
+          13,
+          58,
+          61,
+          63
+        ]
+      },
+      "hits": {
+        "fused_top4": 1,
+        "dl_top4": 1,
+        "dirichlet_top4": 1,
+        "cooc_top4": 1,
+        "momentum_top4": 2,
+        "spectral_top4": 1,
+        "borda4_top4": 0,
+        "borda3_top4": 1,
+        "borda_dl_spectral_top4": 0,
+        "hot50_top4": 0,
+        "cold50_top4": 3,
+        "norepeat_fused_top4": 1,
+        "repeatonly_fused_top4": 1,
+        "zone1_fused_top4": 2,
+        "zone2_fused_top4": 2,
+        "balanced_fused_top4": 1,
+        "random_top4": 1
+      },
+      "auc": {
+        "fused": 0.5225,
+        "dl": 0.5433333333333333,
+        "dirichlet": 0.5316666666666666,
+        "cooccurrence": 0.4558333333333333,
+        "momentum": 0.5891666666666666,
+        "hot50": 0.43416666666666665
+      },
+      "diagnostics": {
+        "fused_repeat_count": 3,
+        "fused_max_zone_count": 3,
+        "fused_odd_count": 3,
+        "fused_mean_omission": 1.0,
+        "dl_loss": 0.5534230726105827
+      }
+    },
+    {
+      "period": 2026253,
+      "date": "2026-09-20",
+      "actual_numbers": [
+        1,
+        2,
+        8,
+        17,
+        23,
+        24,
+        29,
+        31,
+        40,
+        41,
+        46,
+        47,
+        51,
+        54,
+        59,
+        62,
+        65,
+        72,
+        74,
+        79
+      ],
+      "selectors": {
+        "fused_top4": [
+          28,
+          51,
+          53,
+          65
+        ],
+        "dl_top4": [
+          28,
+          34,
+          48,
+          53
+        ],
+        "dirichlet_top4": [
+          3,
+          28,
+          51,
+          53
+        ],
+        "cooc_top4": [
+          28,
+          51,
+          53,
+          55
+        ],
+        "momentum_top4": [
+          8,
+          31,
+          53,
+          65
+        ],
+        "spectral_top4": [
+          3,
+          51,
+          53,
+          65
+        ],
+        "borda4_top4": [
+          24,
+          45,
+          60,
+          80
+        ],
+        "borda3_top4": [
+          14,
+          25,
+          40,
+          45
+        ],
+        "borda_dl_spectral_top4": [
+          24,
+          45,
+          58,
+          60
+        ],
+        "hot50_top4": [
+          21,
+          28,
+          51,
+          53
+        ],
+        "cold50_top4": [
+          30,
+          40,
+          49,
+          69
+        ],
+        "norepeat_fused_top4": [
+          28,
+          35,
+          51,
+          55
+        ],
+        "repeatonly_fused_top4": [
+          3,
+          41,
+          53,
+          65
+        ],
+        "zone1_fused_top4": [
+          3,
+          28,
+          53,
+          65
+        ],
+        "zone2_fused_top4": [
+          28,
+          51,
+          53,
+          65
+        ],
+        "balanced_fused_top4": [
+          28,
+          50,
+          53,
+          65
+        ],
+        "random_top4": [
+          7,
+          26,
+          37,
+          57
+        ]
+      },
+      "hits": {
+        "fused_top4": 2,
+        "dl_top4": 0,
+        "dirichlet_top4": 1,
+        "cooc_top4": 1,
+        "momentum_top4": 3,
+        "spectral_top4": 2,
+        "borda4_top4": 1,
+        "borda3_top4": 1,
+        "borda_dl_spectral_top4": 1,
+        "hot50_top4": 1,
+        "cold50_top4": 1,
+        "norepeat_fused_top4": 1,
+        "repeatonly_fused_top4": 2,
+        "zone1_fused_top4": 1,
+        "zone2_fused_top4": 2,
+        "balanced_fused_top4": 1,
+        "random_top4": 0
+      },
+      "auc": {
+        "fused": 0.5175,
+        "dl": 0.37583333333333335,
+        "dirichlet": 0.5108333333333334,
+        "cooccurrence": 0.5316666666666666,
+        "momentum": 0.6333333333333333,
+        "hot50": 0.5116666666666667
+      },
+      "diagnostics": {
+        "fused_repeat_count": 2,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 3,
+        "fused_mean_omission": 0.5,
+        "dl_loss": 0.5445276285920825
+      }
+    },
+    {
+      "period": 2026254,
+      "date": "2026-09-21",
+      "actual_numbers": [
+        2,
+        4,
+        10,
+        13,
+        18,
+        20,
+        21,
+        26,
+        32,
+        37,
+        43,
+        49,
+        50,
+        57,
+        62,
+        66,
+        69,
+        73,
+        78,
+        80
+      ],
+      "selectors": {
+        "fused_top4": [
+          8,
+          51,
+          53,
+          65
+        ],
+        "dl_top4": [
+          26,
+          33,
+          61,
+          62
+        ],
+        "dirichlet_top4": [
+          28,
+          51,
+          53,
+          65
+        ],
+        "cooc_top4": [
+          29,
+          51,
+          53,
+          65
+        ],
+        "momentum_top4": [
+          4,
+          8,
+          53,
+          65
+        ],
+        "spectral_top4": [
+          8,
+          51,
+          53,
+          65
+        ],
+        "borda4_top4": [
+          40,
+          45,
+          64,
+          80
+        ],
+        "borda3_top4": [
+          14,
+          25,
+          45,
+          80
+        ],
+        "borda_dl_spectral_top4": [
+          40,
+          45,
+          60,
+          70
+        ],
+        "hot50_top4": [
+          21,
+          28,
+          47,
+          51
+        ],
+        "cold50_top4": [
+          30,
+          40,
+          49,
+          69
+        ],
+        "norepeat_fused_top4": [
+          3,
+          28,
+          53,
+          55
+        ],
+        "repeatonly_fused_top4": [
+          8,
+          41,
+          51,
+          65
+        ],
+        "zone1_fused_top4": [
+          8,
+          28,
+          53,
+          65
+        ],
+        "zone2_fused_top4": [
+          8,
+          51,
+          53,
+          65
+        ],
+        "balanced_fused_top4": [
+          8,
+          28,
+          53,
+          65
+        ],
+        "random_top4": [
+          22,
+          47,
+          63,
+          77
+        ]
+      },
+      "hits": {
+        "fused_top4": 0,
+        "dl_top4": 2,
+        "dirichlet_top4": 0,
+        "cooc_top4": 0,
+        "momentum_top4": 1,
+        "spectral_top4": 0,
+        "borda4_top4": 1,
+        "borda3_top4": 1,
+        "borda_dl_spectral_top4": 0,
+        "hot50_top4": 1,
+        "cold50_top4": 2,
+        "norepeat_fused_top4": 0,
+        "repeatonly_fused_top4": 0,
+        "zone1_fused_top4": 0,
+        "zone2_fused_top4": 0,
+        "balanced_fused_top4": 0,
+        "random_top4": 0
+      },
+      "auc": {
+        "fused": 0.5108333333333334,
+        "dl": 0.6308333333333334,
+        "dirichlet": 0.46,
+        "cooccurrence": 0.5233333333333333,
+        "momentum": 0.5025,
+        "hot50": 0.49416666666666664
+      },
+      "diagnostics": {
+        "fused_repeat_count": 3,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 3,
+        "fused_mean_omission": 0.25,
+        "dl_loss": 0.5574728974274227
+      }
+    },
+    {
+      "period": 2026255,
+      "date": "2026-09-22",
+      "actual_numbers": [
+        2,
+        9,
+        12,
+        16,
+        18,
+        23,
+        26,
+        31,
+        36,
+        44,
+        47,
+        52,
+        54,
+        55,
+        59,
+        60,
+        61,
+        66,
+        72,
+        77
+      ],
+      "selectors": {
+        "fused_top4": [
+          41,
+          51,
+          53,
+          62
+        ],
+        "dl_top4": [
+          4,
+          21,
+          41,
+          53
+        ],
+        "dirichlet_top4": [
+          28,
+          51,
+          53,
+          65
+        ],
+        "cooc_top4": [
+          51,
+          53,
+          62,
+          65
+        ],
+        "momentum_top4": [
+          4,
+          8,
+          31,
+          65
+        ],
+        "spectral_top4": [
+          8,
+          51,
+          53,
+          65
+        ],
+        "borda4_top4": [
+          12,
+          14,
+          24,
+          45
+        ],
+        "borda3_top4": [
+          14,
+          25,
+          30,
+          45
+        ],
+        "borda_dl_spectral_top4": [
+          12,
+          45,
+          58,
+          80
+        ],
+        "hot50_top4": [
+          21,
+          28,
+          47,
+          51
+        ],
+        "cold50_top4": [
+          30,
+          38,
+          40,
+          54
+        ],
+        "norepeat_fused_top4": [
+          41,
+          51,
+          53,
+          65
+        ],
+        "repeatonly_fused_top4": [
+          4,
+          21,
+          50,
+          62
+        ],
+        "zone1_fused_top4": [
+          4,
+          21,
+          53,
+          62
+        ],
+        "zone2_fused_top4": [
+          51,
+          53,
+          62,
+          65
+        ],
+        "balanced_fused_top4": [
+          4,
+          51,
+          53,
+          62
+        ],
+        "random_top4": [
+          35,
+          69,
+          72,
+          73
+        ]
+      },
+      "hits": {
+        "fused_top4": 0,
+        "dl_top4": 0,
+        "dirichlet_top4": 0,
+        "cooc_top4": 0,
+        "momentum_top4": 1,
+        "spectral_top4": 0,
+        "borda4_top4": 1,
+        "borda3_top4": 0,
+        "borda_dl_spectral_top4": 1,
+        "hot50_top4": 1,
+        "cold50_top4": 1,
+        "norepeat_fused_top4": 0,
+        "repeatonly_fused_top4": 0,
+        "zone1_fused_top4": 0,
+        "zone2_fused_top4": 0,
+        "balanced_fused_top4": 0,
+        "random_top4": 1
+      },
+      "auc": {
+        "fused": 0.5866666666666667,
+        "dl": 0.5433333333333333,
+        "dirichlet": 0.58,
+        "cooccurrence": 0.5925,
+        "momentum": 0.535,
+        "hot50": 0.5308333333333334
+      },
+      "diagnostics": {
+        "fused_repeat_count": 1,
+        "fused_max_zone_count": 3,
+        "fused_odd_count": 3,
+        "fused_mean_omission": 1.0,
+        "dl_loss": 0.5387976297310421
+      }
+    },
+    {
+      "period": 2026256,
+      "date": "2026-09-23",
+      "actual_numbers": [
+        1,
+        2,
+        6,
+        11,
+        12,
+        14,
+        15,
+        22,
+        24,
+        32,
+        33,
+        35,
+        38,
+        46,
+        67,
+        68,
+        71,
+        73,
+        74,
+        76
+      ],
+      "selectors": {
+        "fused_top4": [
+          51,
+          53,
+          55,
+          62
+        ],
+        "dl_top4": [
+          11,
+          21,
+          26,
+          62
+        ],
+        "dirichlet_top4": [
+          28,
+          51,
+          53,
+          55
+        ],
+        "cooc_top4": [
+          2,
+          51,
+          53,
+          55
+        ],
+        "momentum_top4": [
+          4,
+          8,
+          23,
+          31
+        ],
+        "spectral_top4": [
+          51,
+          53,
+          55,
+          65
+        ],
+        "borda4_top4": [
+          25,
+          45,
+          64,
+          67
+        ],
+        "borda3_top4": [
+          14,
+          25,
+          30,
+          45
+        ],
+        "borda_dl_spectral_top4": [
+          24,
+          25,
+          64,
+          67
+        ],
+        "hot50_top4": [
+          21,
+          28,
+          47,
+          51
+        ],
+        "cold50_top4": [
+          30,
+          38,
+          40,
+          70
+        ],
+        "norepeat_fused_top4": [
+          51,
+          53,
+          62,
+          65
+        ],
+        "repeatonly_fused_top4": [
+          2,
+          9,
+          55,
+          66
+        ],
+        "zone1_fused_top4": [
+          8,
+          28,
+          53,
+          62
+        ],
+        "zone2_fused_top4": [
+          51,
+          53,
+          62,
+          65
+        ],
+        "balanced_fused_top4": [
+          8,
+          51,
+          53,
+          62
+        ],
+        "random_top4": [
+          4,
+          21,
+          23,
+          25
+        ]
+      },
+      "hits": {
+        "fused_top4": 0,
+        "dl_top4": 1,
+        "dirichlet_top4": 0,
+        "cooc_top4": 1,
+        "momentum_top4": 0,
+        "spectral_top4": 0,
+        "borda4_top4": 1,
+        "borda3_top4": 1,
+        "borda_dl_spectral_top4": 2,
+        "hot50_top4": 0,
+        "cold50_top4": 1,
+        "norepeat_fused_top4": 0,
+        "repeatonly_fused_top4": 1,
+        "zone1_fused_top4": 0,
+        "zone2_fused_top4": 0,
+        "balanced_fused_top4": 0,
+        "random_top4": 0
+      },
+      "auc": {
+        "fused": 0.3275,
+        "dl": 0.6058333333333333,
+        "dirichlet": 0.3075,
+        "cooccurrence": 0.35583333333333333,
+        "momentum": 0.385,
+        "hot50": 0.4175
+      },
+      "diagnostics": {
+        "fused_repeat_count": 1,
+        "fused_max_zone_count": 3,
+        "fused_odd_count": 3,
+        "fused_mean_omission": 1.5,
+        "dl_loss": 0.5586025970322746
+      }
+    },
+    {
+      "period": 2026257,
+      "date": "2026-09-24",
+      "actual_numbers": [
+        1,
+        4,
+        7,
+        8,
+        10,
+        13,
+        23,
+        24,
+        31,
+        33,
+        39,
+        40,
+        47,
+        48,
+        58,
+        61,
+        65,
+        74,
+        76,
+        79
+      ],
+      "selectors": {
+        "fused_top4": [
+          2,
+          51,
+          53,
+          65
+        ],
+        "dl_top4": [
+          2,
+          30,
+          46,
+          68
+        ],
+        "dirichlet_top4": [
+          53,
+          55,
+          65,
+          68
+        ],
+        "cooc_top4": [
+          2,
+          51,
+          53,
+          55
+        ],
+        "momentum_top4": [
+          4,
+          8,
+          49,
+          66
+        ],
+        "spectral_top4": [
+          2,
+          51,
+          53,
+          65
+        ],
+        "borda4_top4": [
+          27,
+          58,
+          64,
+          79
+        ],
+        "borda3_top4": [
+          25,
+          30,
+          45,
+          58
+        ],
+        "borda_dl_spectral_top4": [
+          58,
+          69,
+          70,
+          75
+        ],
+        "hot50_top4": [
+          2,
+          21,
+          28,
+          51
+        ],
+        "cold50_top4": [
+          30,
+          40,
+          64,
+          70
+        ],
+        "norepeat_fused_top4": [
+          51,
+          53,
+          62,
+          65
+        ],
+        "repeatonly_fused_top4": [
+          2,
+          46,
+          68,
+          73
+        ],
+        "zone1_fused_top4": [
+          2,
+          28,
+          53,
+          65
+        ],
+        "zone2_fused_top4": [
+          2,
+          51,
+          53,
+          65
+        ],
+        "balanced_fused_top4": [
+          2,
+          51,
+          53,
+          62
+        ],
+        "random_top4": [
+          10,
+          48,
+          52,
+          63
+        ]
+      },
+      "hits": {
+        "fused_top4": 1,
+        "dl_top4": 0,
+        "dirichlet_top4": 1,
+        "cooc_top4": 0,
+        "momentum_top4": 2,
+        "spectral_top4": 1,
+        "borda4_top4": 2,
+        "borda3_top4": 1,
+        "borda_dl_spectral_top4": 1,
+        "hot50_top4": 0,
+        "cold50_top4": 1,
+        "norepeat_fused_top4": 1,
+        "repeatonly_fused_top4": 0,
+        "zone1_fused_top4": 1,
+        "zone2_fused_top4": 1,
+        "balanced_fused_top4": 0,
+        "random_top4": 2
+      },
+      "auc": {
+        "fused": 0.4716666666666667,
+        "dl": 0.395,
+        "dirichlet": 0.425,
+        "cooccurrence": 0.49333333333333335,
+        "momentum": 0.5925,
+        "hot50": 0.495
+      },
+      "diagnostics": {
+        "fused_repeat_count": 1,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 3,
+        "fused_mean_omission": 2.5,
+        "dl_loss": 0.5474805746759687
+      }
+    },
+    {
+      "period": 2026258,
+      "date": "2026-09-25",
+      "actual_numbers": [
+        7,
+        13,
+        14,
+        15,
+        17,
+        19,
+        20,
+        24,
+        28,
+        30,
+        35,
+        44,
+        50,
+        51,
+        54,
+        57,
+        60,
+        64,
+        75,
+        78
+      ],
+      "selectors": {
+        "fused_top4": [
+          4,
+          8,
+          53,
+          65
+        ],
+        "dl_top4": [
+          10,
+          14,
+          32,
+          37
+        ],
+        "dirichlet_top4": [
+          53,
+          55,
+          65,
+          68
+        ],
+        "cooc_top4": [
+          2,
+          51,
+          53,
+          65
+        ],
+        "momentum_top4": [
+          4,
+          8,
+          23,
+          74
+        ],
+        "spectral_top4": [
+          4,
+          8,
+          53,
+          65
+        ],
+        "borda4_top4": [
+          25,
+          30,
+          58,
+          64
+        ],
+        "borda3_top4": [
+          25,
+          30,
+          45,
+          58
+        ],
+        "borda_dl_spectral_top4": [
+          58,
+          64,
+          70,
+          75
+        ],
+        "hot50_top4": [
+          8,
+          21,
+          47,
+          51
+        ],
+        "cold50_top4": [
+          30,
+          40,
+          49,
+          64
+        ],
+        "norepeat_fused_top4": [
+          51,
+          53,
+          55,
+          62
+        ],
+        "repeatonly_fused_top4": [
+          4,
+          8,
+          47,
+          65
+        ],
+        "zone1_fused_top4": [
+          4,
+          31,
+          53,
+          65
+        ],
+        "zone2_fused_top4": [
+          4,
+          8,
+          53,
+          65
+        ],
+        "balanced_fused_top4": [
+          4,
+          8,
+          53,
+          65
+        ],
+        "random_top4": [
+          5,
+          13,
+          34,
+          42
+        ]
+      },
+      "hits": {
+        "fused_top4": 0,
+        "dl_top4": 1,
+        "dirichlet_top4": 0,
+        "cooc_top4": 1,
+        "momentum_top4": 0,
+        "spectral_top4": 0,
+        "borda4_top4": 2,
+        "borda3_top4": 1,
+        "borda_dl_spectral_top4": 2,
+        "hot50_top4": 1,
+        "cold50_top4": 2,
+        "norepeat_fused_top4": 1,
+        "repeatonly_fused_top4": 0,
+        "zone1_fused_top4": 0,
+        "zone2_fused_top4": 0,
+        "balanced_fused_top4": 0,
+        "random_top4": 1
+      },
+      "auc": {
+        "fused": 0.425,
+        "dl": 0.56,
+        "dirichlet": 0.4791666666666667,
+        "cooccurrence": 0.4325,
+        "momentum": 0.33,
+        "hot50": 0.515
+      },
+      "diagnostics": {
+        "fused_repeat_count": 3,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 2,
+        "fused_mean_omission": 1.25,
+        "dl_loss": 0.5525802629334586
+      }
+    },
+    {
+      "period": 2026259,
+      "date": "2026-09-26",
+      "actual_numbers": [
+        5,
+        6,
+        13,
+        26,
+        29,
+        30,
+        34,
+        36,
+        44,
+        50,
+        54,
+        56,
+        61,
+        62,
+        66,
+        73,
+        74,
+        76,
+        79,
+        80
+      ],
+      "selectors": {
+        "fused_top4": [
+          8,
+          47,
+          51,
+          65
+        ],
+        "dl_top4": [
+          8,
+          18,
+          24,
+          60
+        ],
+        "dirichlet_top4": [
+          50,
+          53,
+          55,
+          65
+        ],
+        "cooc_top4": [
+          2,
+          51,
+          53,
+          65
+        ],
+        "momentum_top4": [
+          4,
+          8,
+          49,
+          62
+        ],
+        "spectral_top4": [
+          4,
+          8,
+          51,
+          65
+        ],
+        "borda4_top4": [
+          25,
+          27,
+          45,
+          70
+        ],
+        "borda3_top4": [
+          25,
+          27,
+          45,
+          58
+        ],
+        "borda_dl_spectral_top4": [
+          22,
+          25,
+          70,
+          79
+        ],
+        "hot50_top4": [
+          21,
+          35,
+          47,
+          51
+        ],
+        "cold50_top4": [
+          16,
+          30,
+          38,
+          70
+        ],
+        "norepeat_fused_top4": [
+          8,
+          47,
+          62,
+          65
+        ],
+        "repeatonly_fused_top4": [
+          24,
+          50,
+          51,
+          78
+        ],
+        "zone1_fused_top4": [
+          8,
+          24,
+          51,
+          65
+        ],
+        "zone2_fused_top4": [
+          8,
+          47,
+          51,
+          65
+        ],
+        "balanced_fused_top4": [
+          8,
+          51,
+          62,
+          65
+        ],
+        "random_top4": [
+          39,
+          44,
+          57,
+          61
+        ]
+      },
+      "hits": {
+        "fused_top4": 0,
+        "dl_top4": 0,
+        "dirichlet_top4": 1,
+        "cooc_top4": 0,
+        "momentum_top4": 1,
+        "spectral_top4": 0,
+        "borda4_top4": 0,
+        "borda3_top4": 0,
+        "borda_dl_spectral_top4": 1,
+        "hot50_top4": 0,
+        "cold50_top4": 1,
+        "norepeat_fused_top4": 1,
+        "repeatonly_fused_top4": 1,
+        "zone1_fused_top4": 0,
+        "zone2_fused_top4": 0,
+        "balanced_fused_top4": 1,
+        "random_top4": 2
+      },
+      "auc": {
+        "fused": 0.5516666666666666,
+        "dl": 0.47,
+        "dirichlet": 0.5883333333333334,
+        "cooccurrence": 0.5075,
+        "momentum": 0.545,
+        "hot50": 0.465
+      },
+      "diagnostics": {
+        "fused_repeat_count": 1,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 3,
+        "fused_mean_omission": 0.75,
+        "dl_loss": 0.5449324165071759
+      }
+    },
+    {
+      "period": 2026260,
+      "date": "2026-09-27",
+      "actual_numbers": [
+        2,
+        7,
+        16,
+        19,
+        21,
+        25,
+        30,
+        31,
+        33,
+        35,
+        42,
+        45,
+        50,
+        52,
+        53,
+        55,
+        56,
+        60,
+        63,
+        72
+      ],
+      "selectors": {
+        "fused_top4": [
+          8,
+          44,
+          50,
+          62
+        ],
+        "dl_top4": [
+          8,
+          21,
+          37,
+          62
+        ],
+        "dirichlet_top4": [
+          44,
+          50,
+          53,
+          65
+        ],
+        "cooc_top4": [
+          2,
+          44,
+          50,
+          51
+        ],
+        "momentum_top4": [
+          2,
+          4,
+          49,
+          62
+        ],
+        "spectral_top4": [
+          8,
+          50,
+          62,
+          65
+        ],
+        "borda4_top4": [
+          42,
+          45,
+          58,
+          70
+        ],
+        "borda3_top4": [
+          25,
+          27,
+          45,
+          58
+        ],
+        "borda_dl_spectral_top4": [
+          42,
+          58,
+          67,
+          70
+        ],
+        "hot50_top4": [
+          8,
+          21,
+          24,
+          51
+        ],
+        "cold50_top4": [
+          16,
+          30,
+          38,
+          70
+        ],
+        "norepeat_fused_top4": [
+          8,
+          51,
+          53,
+          65
+        ],
+        "repeatonly_fused_top4": [
+          44,
+          50,
+          62,
+          66
+        ],
+        "zone1_fused_top4": [
+          8,
+          26,
+          44,
+          62
+        ],
+        "zone2_fused_top4": [
+          8,
+          44,
+          50,
+          62
+        ],
+        "balanced_fused_top4": [
+          8,
+          51,
+          62,
+          65
+        ],
+        "random_top4": [
+          12,
+          35,
+          53,
+          69
+        ]
+      },
+      "hits": {
+        "fused_top4": 1,
+        "dl_top4": 1,
+        "dirichlet_top4": 2,
+        "cooc_top4": 2,
+        "momentum_top4": 1,
+        "spectral_top4": 1,
+        "borda4_top4": 2,
+        "borda3_top4": 2,
+        "borda_dl_spectral_top4": 1,
+        "hot50_top4": 1,
+        "cold50_top4": 2,
+        "norepeat_fused_top4": 1,
+        "repeatonly_fused_top4": 1,
+        "zone1_fused_top4": 0,
+        "zone2_fused_top4": 1,
+        "balanced_fused_top4": 0,
+        "random_top4": 2
+      },
+      "auc": {
+        "fused": 0.4708333333333333,
+        "dl": 0.5466666666666666,
+        "dirichlet": 0.5083333333333333,
+        "cooccurrence": 0.4633333333333333,
+        "momentum": 0.3475,
+        "hot50": 0.47583333333333333
+      },
+      "diagnostics": {
+        "fused_repeat_count": 3,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 0,
+        "fused_mean_omission": 0.5,
+        "dl_loss": 0.5566839533192771
+      }
+    },
+    {
+      "period": 2026261,
+      "date": "2026-09-28",
+      "actual_numbers": [
+        1,
+        11,
+        17,
+        21,
+        23,
+        27,
+        28,
+        35,
+        37,
+        42,
+        45,
+        46,
+        48,
+        61,
+        72,
+        73,
+        75,
+        78,
+        79,
+        80
+      ],
+      "selectors": {
+        "fused_top4": [
+          2,
+          50,
+          53,
+          62
+        ],
+        "dl_top4": [
+          8,
+          11,
+          21,
+          41
+        ],
+        "dirichlet_top4": [
+          50,
+          53,
+          55,
+          65
+        ],
+        "cooc_top4": [
+          2,
+          50,
+          51,
+          53
+        ],
+        "momentum_top4": [
+          1,
+          2,
+          54,
+          62
+        ],
+        "spectral_top4": [
+          2,
+          50,
+          53,
+          62
+        ],
+        "borda4_top4": [
+          22,
+          58,
+          67,
+          70
+        ],
+        "borda3_top4": [
+          22,
+          25,
+          27,
+          58
+        ],
+        "borda_dl_spectral_top4": [
+          58,
+          64,
+          67,
+          70
+        ],
+        "hot50_top4": [
+          21,
+          35,
+          51,
+          55
+        ],
+        "cold50_top4": [
+          16,
+          27,
+          38,
+          70
+        ],
+        "norepeat_fused_top4": [
+          8,
+          44,
+          51,
+          62
+        ],
+        "repeatonly_fused_top4": [
+          2,
+          50,
+          53,
+          55
+        ],
+        "zone1_fused_top4": [
+          2,
+          31,
+          50,
+          62
+        ],
+        "zone2_fused_top4": [
+          2,
+          50,
+          53,
+          62
+        ],
+        "balanced_fused_top4": [
+          2,
+          50,
+          51,
+          53
+        ],
+        "random_top4": [
+          13,
+          27,
+          60,
+          73
+        ]
+      },
+      "hits": {
+        "fused_top4": 0,
+        "dl_top4": 2,
+        "dirichlet_top4": 0,
+        "cooc_top4": 0,
+        "momentum_top4": 1,
+        "spectral_top4": 0,
+        "borda4_top4": 0,
+        "borda3_top4": 1,
+        "borda_dl_spectral_top4": 0,
+        "hot50_top4": 2,
+        "cold50_top4": 1,
+        "norepeat_fused_top4": 0,
+        "repeatonly_fused_top4": 0,
+        "zone1_fused_top4": 0,
+        "zone2_fused_top4": 0,
+        "balanced_fused_top4": 0,
+        "random_top4": 2
+      },
+      "auc": {
+        "fused": 0.49083333333333334,
+        "dl": 0.575,
+        "dirichlet": 0.4791666666666667,
+        "cooccurrence": 0.49416666666666664,
+        "momentum": 0.38166666666666665,
+        "hot50": 0.5241666666666667
+      },
+      "diagnostics": {
+        "fused_repeat_count": 3,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 1,
+        "fused_mean_omission": 0.25,
+        "dl_loss": 0.5525269508361816
+      }
+    },
+    {
+      "period": 2026262,
+      "date": "2026-09-29",
+      "actual_numbers": [
+        4,
+        6,
+        9,
+        12,
+        15,
+        17,
+        20,
+        33,
+        42,
+        44,
+        49,
+        54,
+        55,
+        59,
+        61,
+        65,
+        72,
+        73,
+        78,
+        80
+      ],
+      "selectors": {
+        "fused_top4": [
+          2,
+          50,
+          61,
+          73
+        ],
+        "dl_top4": [
+          25,
+          27,
+          28,
+          33
+        ],
+        "dirichlet_top4": [
+          50,
+          53,
+          55,
+          61
+        ],
+        "cooc_top4": [
+          2,
+          35,
+          50,
+          51
+        ],
+        "momentum_top4": [
+          1,
+          2,
+          13,
+          72
+        ],
+        "spectral_top4": [
+          2,
+          50,
+          61,
+          73
+        ],
+        "borda4_top4": [
+          5,
+          43,
+          58,
+          70
+        ],
+        "borda3_top4": [
+          22,
+          25,
+          43,
+          70
+        ],
+        "borda_dl_spectral_top4": [
+          5,
+          40,
+          43,
+          58
+        ],
+        "hot50_top4": [
+          21,
+          28,
+          35,
+          61
+        ],
+        "cold50_top4": [
+          16,
+          30,
+          38,
+          70
+        ],
+        "norepeat_fused_top4": [
+          2,
+          50,
+          55,
+          62
+        ],
+        "repeatonly_fused_top4": [
+          35,
+          61,
+          72,
+          73
+        ],
+        "zone1_fused_top4": [
+          2,
+          35,
+          50,
+          61
+        ],
+        "zone2_fused_top4": [
+          2,
+          50,
+          61,
+          73
+        ],
+        "balanced_fused_top4": [
+          2,
+          50,
+          61,
+          73
+        ],
+        "random_top4": [
+          2,
+          5,
+          41,
+          44
+        ]
+      },
+      "hits": {
+        "fused_top4": 2,
+        "dl_top4": 1,
+        "dirichlet_top4": 2,
+        "cooc_top4": 0,
+        "momentum_top4": 1,
+        "spectral_top4": 2,
+        "borda4_top4": 0,
+        "borda3_top4": 0,
+        "borda_dl_spectral_top4": 0,
+        "hot50_top4": 1,
+        "cold50_top4": 0,
+        "norepeat_fused_top4": 1,
+        "repeatonly_fused_top4": 3,
+        "zone1_fused_top4": 1,
+        "zone2_fused_top4": 2,
+        "balanced_fused_top4": 2,
+        "random_top4": 1
+      },
+      "auc": {
+        "fused": 0.66,
+        "dl": 0.5716666666666667,
+        "dirichlet": 0.6375,
+        "cooccurrence": 0.6575,
+        "momentum": 0.5483333333333333,
+        "hot50": 0.6083333333333333
+      },
+      "diagnostics": {
+        "fused_repeat_count": 2,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 2,
+        "fused_mean_omission": 0.5,
+        "dl_loss": 0.5505068983350482
+      }
+    },
+    {
+      "period": 2026263,
+      "date": "2026-09-30",
+      "actual_numbers": [
+        7,
+        8,
+        9,
+        10,
+        11,
+        13,
+        22,
+        24,
+        25,
+        26,
+        31,
+        33,
+        37,
+        45,
+        50,
+        51,
+        62,
+        67,
+        70,
+        80
+      ],
+      "selectors": {
+        "fused_top4": [
+          2,
+          55,
+          61,
+          73
+        ],
+        "dl_top4": [
+          2,
+          11,
+          41,
+          62
+        ],
+        "dirichlet_top4": [
+          50,
+          55,
+          61,
+          65
+        ],
+        "cooc_top4": [
+          55,
+          61,
+          73,
+          78
+        ],
+        "momentum_top4": [
+          2,
+          13,
+          54,
+          72
+        ],
+        "spectral_top4": [
+          55,
+          61,
+          72,
+          73
+        ],
+        "borda4_top4": [
+          22,
+          58,
+          64,
+          70
+        ],
+        "borda3_top4": [
+          22,
+          38,
+          64,
+          70
+        ],
+        "borda_dl_spectral_top4": [
+          22,
+          58,
+          64,
+          70
+        ],
+        "hot50_top4": [
+          21,
+          28,
+          35,
+          55
+        ],
+        "cold50_top4": [
+          16,
+          30,
+          38,
+          70
+        ],
+        "norepeat_fused_top4": [
+          2,
+          31,
+          35,
+          50
+        ],
+        "repeatonly_fused_top4": [
+          55,
+          61,
+          72,
+          73
+        ],
+        "zone1_fused_top4": [
+          2,
+          35,
+          55,
+          61
+        ],
+        "zone2_fused_top4": [
+          2,
+          55,
+          61,
+          73
+        ],
+        "balanced_fused_top4": [
+          2,
+          61,
+          72,
+          73
+        ],
+        "random_top4": [
+          20,
+          25,
+          38,
+          79
+        ]
+      },
+      "hits": {
+        "fused_top4": 0,
+        "dl_top4": 2,
+        "dirichlet_top4": 1,
+        "cooc_top4": 0,
+        "momentum_top4": 1,
+        "spectral_top4": 0,
+        "borda4_top4": 2,
+        "borda3_top4": 2,
+        "borda_dl_spectral_top4": 2,
+        "hot50_top4": 0,
+        "cold50_top4": 1,
+        "norepeat_fused_top4": 2,
+        "repeatonly_fused_top4": 0,
+        "zone1_fused_top4": 0,
+        "zone2_fused_top4": 0,
+        "balanced_fused_top4": 0,
+        "random_top4": 1
+      },
+      "auc": {
+        "fused": 0.49583333333333335,
+        "dl": 0.49083333333333334,
+        "dirichlet": 0.4675,
+        "cooccurrence": 0.48833333333333334,
+        "momentum": 0.5291666666666667,
+        "hot50": 0.4975
+      },
+      "diagnostics": {
+        "fused_repeat_count": 3,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 3,
+        "fused_mean_omission": 0.5,
+        "dl_loss": 0.556969233921596
+      }
+    },
+    {
+      "period": 2026264,
+      "date": "2026-10-05",
+      "actual_numbers": [
+        5,
+        15,
+        16,
+        21,
+        24,
+        30,
+        34,
+        37,
+        42,
+        47,
+        54,
+        60,
+        62,
+        63,
+        64,
+        66,
+        73,
+        77,
+        79,
+        80
+      ],
+      "selectors": {
+        "fused_top4": [
+          50,
+          55,
+          61,
+          73
+        ],
+        "dl_top4": [
+          10,
+          11,
+          14,
+          69
+        ],
+        "dirichlet_top4": [
+          50,
+          55,
+          61,
+          65
+        ],
+        "cooc_top4": [
+          50,
+          51,
+          61,
+          73
+        ],
+        "momentum_top4": [
+          7,
+          13,
+          33,
+          80
+        ],
+        "spectral_top4": [
+          50,
+          55,
+          61,
+          73
+        ],
+        "borda4_top4": [
+          38,
+          43,
+          58,
+          64
+        ],
+        "borda3_top4": [
+          38,
+          40,
+          43,
+          69
+        ],
+        "borda_dl_spectral_top4": [
+          22,
+          38,
+          58,
+          64
+        ],
+        "hot50_top4": [
+          21,
+          28,
+          51,
+          55
+        ],
+        "cold50_top4": [
+          16,
+          30,
+          40,
+          58
+        ],
+        "norepeat_fused_top4": [
+          55,
+          61,
+          73,
+          78
+        ],
+        "repeatonly_fused_top4": [
+          31,
+          33,
+          50,
+          62
+        ],
+        "zone1_fused_top4": [
+          2,
+          33,
+          50,
+          61
+        ],
+        "zone2_fused_top4": [
+          50,
+          55,
+          61,
+          73
+        ],
+        "balanced_fused_top4": [
+          50,
+          55,
+          61,
+          78
+        ],
+        "random_top4": [
+          15,
+          33,
+          64,
+          71
+        ]
+      },
+      "hits": {
+        "fused_top4": 1,
+        "dl_top4": 0,
+        "dirichlet_top4": 0,
+        "cooc_top4": 1,
+        "momentum_top4": 1,
+        "spectral_top4": 1,
+        "borda4_top4": 1,
+        "borda3_top4": 0,
+        "borda_dl_spectral_top4": 1,
+        "hot50_top4": 1,
+        "cold50_top4": 2,
+        "norepeat_fused_top4": 1,
+        "repeatonly_fused_top4": 1,
+        "zone1_fused_top4": 0,
+        "zone2_fused_top4": 1,
+        "balanced_fused_top4": 0,
+        "random_top4": 2
+      },
+      "auc": {
+        "fused": 0.5275,
+        "dl": 0.5191666666666667,
+        "dirichlet": 0.5325,
+        "cooccurrence": 0.51,
+        "momentum": 0.5433333333333333,
+        "hot50": 0.4925
+      },
+      "diagnostics": {
+        "fused_repeat_count": 1,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 3,
+        "fused_mean_omission": 0.75,
+        "dl_loss": 0.5555823871067592
+      }
+    },
+    {
+      "period": 2026265,
+      "date": "2026-10-06",
+      "actual_numbers": [
+        2,
+        7,
+        9,
+        12,
+        13,
+        20,
+        23,
+        25,
+        31,
+        34,
+        35,
+        36,
+        39,
+        50,
+        51,
+        56,
+        59,
+        73,
+        77,
+        78
+      ],
+      "selectors": {
+        "fused_top4": [
+          55,
+          61,
+          62,
+          73
+        ],
+        "dl_top4": [
+          26,
+          35,
+          47,
+          48
+        ],
+        "dirichlet_top4": [
+          50,
+          55,
+          62,
+          73
+        ],
+        "cooc_top4": [
+          50,
+          51,
+          62,
+          73
+        ],
+        "momentum_top4": [
+          24,
+          33,
+          54,
+          80
+        ],
+        "spectral_top4": [
+          50,
+          55,
+          61,
+          73
+        ],
+        "borda4_top4": [
+          40,
+          69,
+          70,
+          71
+        ],
+        "borda3_top4": [
+          38,
+          40,
+          43,
+          69
+        ],
+        "borda_dl_spectral_top4": [
+          40,
+          58,
+          70,
+          71
+        ],
+        "hot50_top4": [
+          21,
+          28,
+          51,
+          55
+        ],
+        "cold50_top4": [
+          38,
+          40,
+          58,
+          71
+        ],
+        "norepeat_fused_top4": [
+          35,
+          50,
+          55,
+          61
+        ],
+        "repeatonly_fused_top4": [
+          37,
+          54,
+          62,
+          73
+        ],
+        "zone1_fused_top4": [
+          2,
+          37,
+          55,
+          61
+        ],
+        "zone2_fused_top4": [
+          37,
+          55,
+          61,
+          73
+        ],
+        "balanced_fused_top4": [
+          54,
+          61,
+          62,
+          73
+        ],
+        "random_top4": [
+          16,
+          39,
+          56,
+          76
+        ]
+      },
+      "hits": {
+        "fused_top4": 1,
+        "dl_top4": 1,
+        "dirichlet_top4": 2,
+        "cooc_top4": 3,
+        "momentum_top4": 0,
+        "spectral_top4": 2,
+        "borda4_top4": 0,
+        "borda3_top4": 0,
+        "borda_dl_spectral_top4": 0,
+        "hot50_top4": 1,
+        "cold50_top4": 0,
+        "norepeat_fused_top4": 2,
+        "repeatonly_fused_top4": 1,
+        "zone1_fused_top4": 1,
+        "zone2_fused_top4": 1,
+        "balanced_fused_top4": 1,
+        "random_top4": 2
+      },
+      "auc": {
+        "fused": 0.5983333333333334,
+        "dl": 0.51,
+        "dirichlet": 0.5916666666666667,
+        "cooccurrence": 0.6316666666666667,
+        "momentum": 0.5941666666666666,
+        "hot50": 0.5825
+      },
+      "diagnostics": {
+        "fused_repeat_count": 2,
+        "fused_max_zone_count": 3,
+        "fused_odd_count": 3,
+        "fused_mean_omission": 1.0,
+        "dl_loss": 0.5381245527948652
+      }
+    },
+    {
+      "period": 2026266,
+      "date": "2026-10-07",
+      "actual_numbers": [
+        2,
+        4,
+        8,
+        9,
+        14,
+        32,
+        36,
+        45,
+        48,
+        51,
+        52,
+        54,
+        56,
+        57,
+        64,
+        65,
+        66,
+        72,
+        73,
+        77
+      ],
+      "selectors": {
+        "fused_top4": [
+          35,
+          50,
+          51,
+          73
+        ],
+        "dl_top4": [
+          18,
+          35,
+          60,
+          73
+        ],
+        "dirichlet_top4": [
+          31,
+          50,
+          55,
+          73
+        ],
+        "cooc_top4": [
+          35,
+          50,
+          51,
+          73
+        ],
+        "momentum_top4": [
+          7,
+          13,
+          24,
+          73
+        ],
+        "spectral_top4": [
+          31,
+          50,
+          51,
+          73
+        ],
+        "borda4_top4": [
+          3,
+          40,
+          69,
+          70
+        ],
+        "borda3_top4": [
+          38,
+          40,
+          43,
+          69
+        ],
+        "borda_dl_spectral_top4": [
+          3,
+          40,
+          58,
+          70
+        ],
+        "hot50_top4": [
+          28,
+          35,
+          50,
+          51
+        ],
+        "cold50_top4": [
+          14,
+          40,
+          58,
+          71
+        ],
+        "norepeat_fused_top4": [
+          37,
+          55,
+          61,
+          62
+        ],
+        "repeatonly_fused_top4": [
+          35,
+          50,
+          51,
+          73
+        ],
+        "zone1_fused_top4": [
+          2,
+          35,
+          50,
+          73
+        ],
+        "zone2_fused_top4": [
+          35,
+          50,
+          51,
+          73
+        ],
+        "balanced_fused_top4": [
+          35,
+          50,
+          62,
+          73
+        ],
+        "random_top4": [
+          18,
+          58,
+          62,
+          76
+        ]
+      },
+      "hits": {
+        "fused_top4": 2,
+        "dl_top4": 1,
+        "dirichlet_top4": 1,
+        "cooc_top4": 2,
+        "momentum_top4": 1,
+        "spectral_top4": 2,
+        "borda4_top4": 0,
+        "borda3_top4": 0,
+        "borda_dl_spectral_top4": 0,
+        "hot50_top4": 1,
+        "cold50_top4": 1,
+        "norepeat_fused_top4": 0,
+        "repeatonly_fused_top4": 2,
+        "zone1_fused_top4": 2,
+        "zone2_fused_top4": 2,
+        "balanced_fused_top4": 1,
+        "random_top4": 0
+      },
+      "auc": {
+        "fused": 0.5316666666666666,
+        "dl": 0.38083333333333336,
+        "dirichlet": 0.6391666666666667,
+        "cooccurrence": 0.5566666666666666,
+        "momentum": 0.3858333333333333,
+        "hot50": 0.52
+      },
+      "diagnostics": {
+        "fused_repeat_count": 4,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 3,
+        "fused_mean_omission": 0.0,
+        "dl_loss": 0.5494112755571093
+      }
+    },
+    {
+      "period": 2026267,
+      "date": "2026-10-08",
+      "actual_numbers": [
+        3,
+        16,
+        20,
+        26,
+        29,
+        35,
+        41,
+        42,
+        43,
+        44,
+        45,
+        49,
+        50,
+        54,
+        59,
+        60,
+        61,
+        68,
+        74,
+        79
+      ],
+      "selectors": {
+        "fused_top4": [
+          50,
+          51,
+          54,
+          73
+        ],
+        "dl_top4": [
+          11,
+          27,
+          28,
+          33
+        ],
+        "dirichlet_top4": [
+          9,
+          50,
+          55,
+          73
+        ],
+        "cooc_top4": [
+          2,
+          50,
+          51,
+          73
+        ],
+        "momentum_top4": [
+          7,
+          13,
+          45,
+          80
+        ],
+        "spectral_top4": [
+          9,
+          50,
+          51,
+          73
+        ],
+        "borda4_top4": [
+          22,
+          40,
+          43,
+          67
+        ],
+        "borda3_top4": [
+          38,
+          43,
+          69,
+          71
+        ],
+        "borda_dl_spectral_top4": [
+          22,
+          40,
+          67,
+          68
+        ],
+        "hot50_top4": [
+          35,
+          50,
+          51,
+          73
+        ],
+        "cold50_top4": [
+          40,
+          58,
+          70,
+          71
+        ],
+        "norepeat_fused_top4": [
+          31,
+          35,
+          50,
+          55
+        ],
+        "repeatonly_fused_top4": [
+          2,
+          51,
+          54,
+          73
+        ],
+        "zone1_fused_top4": [
+          2,
+          31,
+          50,
+          73
+        ],
+        "zone2_fused_top4": [
+          2,
+          50,
+          51,
+          73
+        ],
+        "balanced_fused_top4": [
+          50,
+          51,
+          54,
+          73
+        ],
+        "random_top4": [
+          36,
+          61,
+          69,
+          76
+        ]
+      },
+      "hits": {
+        "fused_top4": 2,
+        "dl_top4": 0,
+        "dirichlet_top4": 1,
+        "cooc_top4": 1,
+        "momentum_top4": 1,
+        "spectral_top4": 1,
+        "borda4_top4": 1,
+        "borda3_top4": 1,
+        "borda_dl_spectral_top4": 1,
+        "hot50_top4": 2,
+        "cold50_top4": 0,
+        "norepeat_fused_top4": 2,
+        "repeatonly_fused_top4": 1,
+        "zone1_fused_top4": 1,
+        "zone2_fused_top4": 1,
+        "balanced_fused_top4": 2,
+        "random_top4": 1
+      },
+      "auc": {
+        "fused": 0.45416666666666666,
+        "dl": 0.5041666666666667,
+        "dirichlet": 0.4525,
+        "cooccurrence": 0.49,
+        "momentum": 0.5016666666666667,
+        "hot50": 0.5366666666666666
+      },
+      "diagnostics": {
+        "fused_repeat_count": 3,
+        "fused_max_zone_count": 3,
+        "fused_odd_count": 2,
+        "fused_mean_omission": 0.25,
+        "dl_loss": 0.5539503651005881
+      }
+    },
+    {
+      "period": 2026268,
+      "date": "2026-10-09",
+      "actual_numbers": [
+        1,
+        2,
+        6,
+        7,
+        16,
+        19,
+        26,
+        31,
+        35,
+        40,
+        45,
+        46,
+        48,
+        49,
+        52,
+        59,
+        62,
+        68,
+        73,
+        79
+      ],
+      "selectors": {
+        "fused_top4": [
+          35,
+          50,
+          54,
+          73
+        ],
+        "dl_top4": [
+          11,
+          20,
+          21,
+          65
+        ],
+        "dirichlet_top4": [
+          50,
+          55,
+          65,
+          73
+        ],
+        "cooc_top4": [
+          35,
+          50,
+          51,
+          73
+        ],
+        "momentum_top4": [
+          42,
+          45,
+          54,
+          73
+        ],
+        "spectral_top4": [
+          50,
+          51,
+          54,
+          73
+        ],
+        "borda4_top4": [
+          38,
+          40,
+          58,
+          69
+        ],
+        "borda3_top4": [
+          38,
+          40,
+          69,
+          71
+        ],
+        "borda_dl_spectral_top4": [
+          38,
+          40,
+          43,
+          58
+        ],
+        "hot50_top4": [
+          35,
+          50,
+          51,
+          73
+        ],
+        "cold50_top4": [
+          40,
+          58,
+          70,
+          71
+        ],
+        "norepeat_fused_top4": [
+          2,
+          51,
+          65,
+          73
+        ],
+        "repeatonly_fused_top4": [
+          20,
+          35,
+          50,
+          54
+        ],
+        "zone1_fused_top4": [
+          2,
+          35,
+          50,
+          73
+        ],
+        "zone2_fused_top4": [
+          35,
+          50,
+          54,
+          73
+        ],
+        "balanced_fused_top4": [
+          35,
+          50,
+          54,
+          73
+        ],
+        "random_top4": [
+          21,
+          50,
+          54,
+          58
+        ]
+      },
+      "hits": {
+        "fused_top4": 2,
+        "dl_top4": 0,
+        "dirichlet_top4": 1,
+        "cooc_top4": 2,
+        "momentum_top4": 2,
+        "spectral_top4": 1,
+        "borda4_top4": 1,
+        "borda3_top4": 1,
+        "borda_dl_spectral_top4": 1,
+        "hot50_top4": 2,
+        "cold50_top4": 1,
+        "norepeat_fused_top4": 2,
+        "repeatonly_fused_top4": 1,
+        "zone1_fused_top4": 3,
+        "zone2_fused_top4": 2,
+        "balanced_fused_top4": 2,
+        "random_top4": 0
+      },
+      "auc": {
+        "fused": 0.5191666666666667,
+        "dl": 0.4666666666666667,
+        "dirichlet": 0.5475,
+        "cooccurrence": 0.5225,
+        "momentum": 0.5508333333333333,
+        "hot50": 0.49166666666666664
+      },
+      "diagnostics": {
+        "fused_repeat_count": 3,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 2,
+        "fused_mean_omission": 0.25,
+        "dl_loss": 0.5490661178316388
+      }
+    },
+    {
+      "period": 2026269,
+      "date": "2026-10-10",
+      "actual_numbers": [
+        1,
+        2,
+        3,
+        7,
+        11,
+        13,
+        15,
+        18,
+        25,
+        27,
+        30,
+        35,
+        44,
+        46,
+        55,
+        57,
+        60,
+        63,
+        70,
+        73
+      ],
+      "selectors": {
+        "fused_top4": [
+          50,
+          54,
+          62,
+          73
+        ],
+        "dl_top4": [
+          21,
+          27,
+          54,
+          73
+        ],
+        "dirichlet_top4": [
+          2,
+          50,
+          62,
+          73
+        ],
+        "cooc_top4": [
+          2,
+          35,
+          51,
+          73
+        ],
+        "momentum_top4": [
+          42,
+          45,
+          73,
+          80
+        ],
+        "spectral_top4": [
+          2,
+          35,
+          50,
+          73
+        ],
+        "borda4_top4": [
+          22,
+          38,
+          58,
+          71
+        ],
+        "borda3_top4": [
+          38,
+          58,
+          69,
+          71
+        ],
+        "borda_dl_spectral_top4": [
+          3,
+          22,
+          38,
+          58
+        ],
+        "hot50_top4": [
+          35,
+          50,
+          51,
+          73
+        ],
+        "cold50_top4": [
+          58,
+          69,
+          70,
+          71
+        ],
+        "norepeat_fused_top4": [
+          9,
+          50,
+          51,
+          54
+        ],
+        "repeatonly_fused_top4": [
+          2,
+          35,
+          62,
+          73
+        ],
+        "zone1_fused_top4": [
+          2,
+          35,
+          54,
+          73
+        ],
+        "zone2_fused_top4": [
+          50,
+          54,
+          62,
+          73
+        ],
+        "balanced_fused_top4": [
+          35,
+          50,
+          54,
+          73
+        ],
+        "random_top4": [
+          29,
+          46,
+          50,
+          54
+        ]
+      },
+      "hits": {
+        "fused_top4": 1,
+        "dl_top4": 2,
+        "dirichlet_top4": 2,
+        "cooc_top4": 3,
+        "momentum_top4": 1,
+        "spectral_top4": 3,
+        "borda4_top4": 0,
+        "borda3_top4": 0,
+        "borda_dl_spectral_top4": 1,
+        "hot50_top4": 2,
+        "cold50_top4": 1,
+        "norepeat_fused_top4": 0,
+        "repeatonly_fused_top4": 3,
+        "zone1_fused_top4": 3,
+        "zone2_fused_top4": 1,
+        "balanced_fused_top4": 2,
+        "random_top4": 1
+      },
+      "auc": {
+        "fused": 0.4866666666666667,
+        "dl": 0.5733333333333334,
+        "dirichlet": 0.47833333333333333,
+        "cooccurrence": 0.44166666666666665,
+        "momentum": 0.5425,
+        "hot50": 0.43833333333333335
+      },
+      "diagnostics": {
+        "fused_repeat_count": 2,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 1,
+        "fused_mean_omission": 0.5,
+        "dl_loss": 0.5444346070289612
+      }
+    },
+    {
+      "period": 2026270,
+      "date": "2026-10-11",
+      "actual_numbers": [
+        3,
+        6,
+        7,
+        8,
+        9,
+        16,
+        21,
+        22,
+        23,
+        27,
+        39,
+        40,
+        41,
+        44,
+        48,
+        54,
+        60,
+        65,
+        68,
+        75
+      ],
+      "selectors": {
+        "fused_top4": [
+          2,
+          35,
+          50,
+          73
+        ],
+        "dl_top4": [
+          17,
+          50,
+          53,
+          55
+        ],
+        "dirichlet_top4": [
+          2,
+          50,
+          62,
+          73
+        ],
+        "cooc_top4": [
+          2,
+          35,
+          51,
+          73
+        ],
+        "momentum_top4": [
+          25,
+          35,
+          45,
+          73
+        ],
+        "spectral_top4": [
+          2,
+          35,
+          50,
+          73
+        ],
+        "borda4_top4": [
+          5,
+          22,
+          58,
+          69
+        ],
+        "borda3_top4": [
+          38,
+          58,
+          69,
+          71
+        ],
+        "borda_dl_spectral_top4": [
+          5,
+          22,
+          58,
+          69
+        ],
+        "hot50_top4": [
+          35,
+          50,
+          55,
+          73
+        ],
+        "cold50_top4": [
+          14,
+          58,
+          69,
+          71
+        ],
+        "norepeat_fused_top4": [
+          31,
+          50,
+          54,
+          62
+        ],
+        "repeatonly_fused_top4": [
+          2,
+          35,
+          55,
+          73
+        ],
+        "zone1_fused_top4": [
+          2,
+          35,
+          50,
+          73
+        ],
+        "zone2_fused_top4": [
+          2,
+          35,
+          50,
+          73
+        ],
+        "balanced_fused_top4": [
+          2,
+          35,
+          50,
+          73
+        ],
+        "random_top4": [
+          12,
+          16,
+          43,
+          62
+        ]
+      },
+      "hits": {
+        "fused_top4": 0,
+        "dl_top4": 0,
+        "dirichlet_top4": 0,
+        "cooc_top4": 0,
+        "momentum_top4": 0,
+        "spectral_top4": 0,
+        "borda4_top4": 1,
+        "borda3_top4": 0,
+        "borda_dl_spectral_top4": 1,
+        "hot50_top4": 0,
+        "cold50_top4": 0,
+        "norepeat_fused_top4": 1,
+        "repeatonly_fused_top4": 0,
+        "zone1_fused_top4": 0,
+        "zone2_fused_top4": 0,
+        "balanced_fused_top4": 0,
+        "random_top4": 1
+      },
+      "auc": {
+        "fused": 0.4683333333333333,
+        "dl": 0.4508333333333333,
+        "dirichlet": 0.5008333333333334,
+        "cooccurrence": 0.455,
+        "momentum": 0.49916666666666665,
+        "hot50": 0.5458333333333333
+      },
+      "diagnostics": {
+        "fused_repeat_count": 3,
+        "fused_max_zone_count": 1,
+        "fused_odd_count": 2,
+        "fused_mean_omission": 0.5,
+        "dl_loss": 0.5544280665261405
+      }
+    },
+    {
+      "period": 2026271,
+      "date": "2026-10-12",
+      "actual_numbers": [
+        10,
+        17,
+        20,
+        22,
+        30,
+        31,
+        37,
+        40,
+        41,
+        43,
+        44,
+        45,
+        50,
+        52,
+        56,
+        58,
+        59,
+        63,
+        71,
+        76
+      ],
+      "selectors": {
+        "fused_top4": [
+          2,
+          35,
+          54,
+          73
+        ],
+        "dl_top4": [
+          11,
+          26,
+          55,
+          62
+        ],
+        "dirichlet_top4": [
+          2,
+          9,
+          54,
+          73
+        ],
+        "cooc_top4": [
+          2,
+          35,
+          44,
+          73
+        ],
+        "momentum_top4": [
+          7,
+          35,
+          45,
+          73
+        ],
+        "spectral_top4": [
+          2,
+          35,
+          54,
+          73
+        ],
+        "borda4_top4": [
+          5,
+          58,
+          67,
+          71
+        ],
+        "borda3_top4": [
+          38,
+          58,
+          69,
+          71
+        ],
+        "borda_dl_spectral_top4": [
+          5,
+          64,
+          67,
+          70
+        ],
+        "hot50_top4": [
+          9,
+          35,
+          50,
+          73
+        ],
+        "cold50_top4": [
+          38,
+          58,
+          69,
+          71
+        ],
+        "norepeat_fused_top4": [
+          2,
+          35,
+          62,
+          73
+        ],
+        "repeatonly_fused_top4": [
+          7,
+          9,
+          44,
+          54
+        ],
+        "zone1_fused_top4": [
+          2,
+          35,
+          54,
+          73
+        ],
+        "zone2_fused_top4": [
+          2,
+          35,
+          54,
+          73
+        ],
+        "balanced_fused_top4": [
+          2,
+          35,
+          54,
+          73
+        ],
+        "random_top4": [
+          35,
+          49,
+          74,
+          80
+        ]
+      },
+      "hits": {
+        "fused_top4": 0,
+        "dl_top4": 0,
+        "dirichlet_top4": 0,
+        "cooc_top4": 1,
+        "momentum_top4": 1,
+        "spectral_top4": 0,
+        "borda4_top4": 2,
+        "borda3_top4": 2,
+        "borda_dl_spectral_top4": 0,
+        "hot50_top4": 1,
+        "cold50_top4": 2,
+        "norepeat_fused_top4": 0,
+        "repeatonly_fused_top4": 1,
+        "zone1_fused_top4": 0,
+        "zone2_fused_top4": 0,
+        "balanced_fused_top4": 0,
+        "random_top4": 0
+      },
+      "auc": {
+        "fused": 0.46,
+        "dl": 0.5516666666666666,
+        "dirichlet": 0.4775,
+        "cooccurrence": 0.41833333333333333,
+        "momentum": 0.3925,
+        "hot50": 0.4241666666666667
+      },
+      "diagnostics": {
+        "fused_repeat_count": 1,
+        "fused_max_zone_count": 1,
+        "fused_odd_count": 2,
+        "fused_mean_omission": 0.75,
+        "dl_loss": 0.5580170410020011
+      }
+    },
+    {
+      "period": 2026272,
+      "date": "2026-10-13",
+      "actual_numbers": [
+        11,
+        14,
+        19,
+        20,
+        39,
+        40,
+        41,
+        43,
+        47,
+        51,
+        57,
+        62,
+        64,
+        66,
+        67,
+        68,
+        72,
+        76,
+        77,
+        80
+      ],
+      "selectors": {
+        "fused_top4": [
+          2,
+          9,
+          54,
+          73
+        ],
+        "dl_top4": [
+          3,
+          10,
+          11,
+          16
+        ],
+        "dirichlet_top4": [
+          2,
+          9,
+          54,
+          73
+        ],
+        "cooc_top4": [
+          2,
+          35,
+          44,
+          73
+        ],
+        "momentum_top4": [
+          7,
+          45,
+          59,
+          73
+        ],
+        "spectral_top4": [
+          2,
+          44,
+          54,
+          73
+        ],
+        "borda4_top4": [
+          5,
+          19,
+          38,
+          71
+        ],
+        "borda3_top4": [
+          38,
+          67,
+          69,
+          75
+        ],
+        "borda_dl_spectral_top4": [
+          5,
+          24,
+          64,
+          71
+        ],
+        "hot50_top4": [
+          9,
+          44,
+          50,
+          73
+        ],
+        "cold50_top4": [
+          38,
+          58,
+          69,
+          71
+        ],
+        "norepeat_fused_top4": [
+          2,
+          9,
+          54,
+          73
+        ],
+        "repeatonly_fused_top4": [
+          31,
+          44,
+          50,
+          59
+        ],
+        "zone1_fused_top4": [
+          2,
+          35,
+          54,
+          73
+        ],
+        "zone2_fused_top4": [
+          2,
+          9,
+          54,
+          73
+        ],
+        "balanced_fused_top4": [
+          2,
+          9,
+          54,
+          73
+        ],
+        "random_top4": [
+          42,
+          49,
+          54,
+          66
+        ]
+      },
+      "hits": {
+        "fused_top4": 0,
+        "dl_top4": 1,
+        "dirichlet_top4": 0,
+        "cooc_top4": 0,
+        "momentum_top4": 0,
+        "spectral_top4": 0,
+        "borda4_top4": 1,
+        "borda3_top4": 1,
+        "borda_dl_spectral_top4": 1,
+        "hot50_top4": 0,
+        "cold50_top4": 0,
+        "norepeat_fused_top4": 0,
+        "repeatonly_fused_top4": 0,
+        "zone1_fused_top4": 0,
+        "zone2_fused_top4": 0,
+        "balanced_fused_top4": 0,
+        "random_top4": 1
+      },
+      "auc": {
+        "fused": 0.42916666666666664,
+        "dl": 0.5391666666666667,
+        "dirichlet": 0.41333333333333333,
+        "cooccurrence": 0.3725,
+        "momentum": 0.43666666666666665,
+        "hot50": 0.4033333333333333
+      },
+      "diagnostics": {
+        "fused_repeat_count": 0,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 2,
+        "fused_mean_omission": 1.5,
+        "dl_loss": 0.5416395834514073
+      }
+    },
+    {
+      "period": 2026273,
+      "date": "2026-10-14",
+      "actual_numbers": [
+        9,
+        10,
+        12,
+        14,
+        23,
+        24,
+        27,
+        31,
+        35,
+        38,
+        49,
+        51,
+        52,
+        54,
+        55,
+        58,
+        61,
+        63,
+        65,
+        76
+      ],
+      "selectors": {
+        "fused_top4": [
+          2,
+          50,
+          62,
+          73
+        ],
+        "dl_top4": [
+          11,
+          30,
+          33,
+          62
+        ],
+        "dirichlet_top4": [
+          31,
+          50,
+          54,
+          73
+        ],
+        "cooc_top4": [
+          35,
+          44,
+          51,
+          73
+        ],
+        "momentum_top4": [
+          7,
+          16,
+          40,
+          45
+        ],
+        "spectral_top4": [
+          35,
+          50,
+          54,
+          73
+        ],
+        "borda4_top4": [
+          5,
+          58,
+          71,
+          75
+        ],
+        "borda3_top4": [
+          38,
+          58,
+          69,
+          75
+        ],
+        "borda_dl_spectral_top4": [
+          5,
+          70,
+          71,
+          75
+        ],
+        "hot50_top4": [
+          44,
+          50,
+          55,
+          73
+        ],
+        "cold50_top4": [
+          25,
+          38,
+          58,
+          71
+        ],
+        "norepeat_fused_top4": [
+          2,
+          35,
+          50,
+          73
+        ],
+        "repeatonly_fused_top4": [
+          20,
+          41,
+          51,
+          62
+        ],
+        "zone1_fused_top4": [
+          2,
+          35,
+          50,
+          73
+        ],
+        "zone2_fused_top4": [
+          2,
+          50,
+          62,
+          73
+        ],
+        "balanced_fused_top4": [
+          2,
+          35,
+          50,
+          73
+        ],
+        "random_top4": [
+          44,
+          51,
+          58,
+          60
+        ]
+      },
+      "hits": {
+        "fused_top4": 0,
+        "dl_top4": 0,
+        "dirichlet_top4": 2,
+        "cooc_top4": 2,
+        "momentum_top4": 0,
+        "spectral_top4": 2,
+        "borda4_top4": 1,
+        "borda3_top4": 2,
+        "borda_dl_spectral_top4": 0,
+        "hot50_top4": 1,
+        "cold50_top4": 2,
+        "norepeat_fused_top4": 1,
+        "repeatonly_fused_top4": 1,
+        "zone1_fused_top4": 1,
+        "zone2_fused_top4": 0,
+        "balanced_fused_top4": 1,
+        "random_top4": 2
+      },
+      "auc": {
+        "fused": 0.5333333333333333,
+        "dl": 0.5733333333333334,
+        "dirichlet": 0.5616666666666666,
+        "cooccurrence": 0.545,
+        "momentum": 0.4091666666666667,
+        "hot50": 0.5525
+      },
+      "diagnostics": {
+        "fused_repeat_count": 1,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 1,
+        "fused_mean_omission": 1.75,
+        "dl_loss": 0.5571827292442322
+      }
+    },
+    {
+      "period": 2026274,
+      "date": "2026-10-15",
+      "actual_numbers": [
+        8,
+        9,
+        15,
+        17,
+        27,
+        29,
+        35,
+        38,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        54,
+        56,
+        63,
+        64,
+        70,
+        78
+      ],
+      "selectors": {
+        "fused_top4": [
+          31,
+          35,
+          54,
+          73
+        ],
+        "dl_top4": [
+          2,
+          11,
+          41,
+          62
+        ],
+        "dirichlet_top4": [
+          9,
+          31,
+          54,
+          73
+        ],
+        "cooc_top4": [
+          35,
+          44,
+          51,
+          73
+        ],
+        "momentum_top4": [
+          16,
+          35,
+          40,
+          45
+        ],
+        "spectral_top4": [
+          31,
+          35,
+          54,
+          73
+        ],
+        "borda4_top4": [
+          5,
+          18,
+          67,
+          75
+        ],
+        "borda3_top4": [
+          28,
+          38,
+          69,
+          75
+        ],
+        "borda_dl_spectral_top4": [
+          18,
+          22,
+          64,
+          71
+        ],
+        "hot50_top4": [
+          44,
+          50,
+          55,
+          73
+        ],
+        "cold50_top4": [
+          25,
+          38,
+          58,
+          69
+        ],
+        "norepeat_fused_top4": [
+          2,
+          44,
+          50,
+          73
+        ],
+        "repeatonly_fused_top4": [
+          9,
+          31,
+          35,
+          54
+        ],
+        "zone1_fused_top4": [
+          2,
+          35,
+          54,
+          73
+        ],
+        "zone2_fused_top4": [
+          31,
+          35,
+          54,
+          73
+        ],
+        "balanced_fused_top4": [
+          2,
+          35,
+          54,
+          73
+        ],
+        "random_top4": [
+          1,
+          28,
+          33,
+          56
+        ]
+      },
+      "hits": {
+        "fused_top4": 2,
+        "dl_top4": 0,
+        "dirichlet_top4": 2,
+        "cooc_top4": 2,
+        "momentum_top4": 2,
+        "spectral_top4": 2,
+        "borda4_top4": 0,
+        "borda3_top4": 1,
+        "borda_dl_spectral_top4": 1,
+        "hot50_top4": 1,
+        "cold50_top4": 1,
+        "norepeat_fused_top4": 1,
+        "repeatonly_fused_top4": 3,
+        "zone1_fused_top4": 2,
+        "zone2_fused_top4": 2,
+        "balanced_fused_top4": 2,
+        "random_top4": 1
+      },
+      "auc": {
+        "fused": 0.5216666666666666,
+        "dl": 0.45166666666666666,
+        "dirichlet": 0.5325,
+        "cooccurrence": 0.5108333333333334,
+        "momentum": 0.5508333333333333,
+        "hot50": 0.5733333333333334
+      },
+      "diagnostics": {
+        "fused_repeat_count": 3,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 3,
+        "fused_mean_omission": 1.0,
+        "dl_loss": 0.5507658038820539
+      }
+    },
+    {
+      "period": 2026275,
+      "date": "2026-10-16",
+      "actual_numbers": [
+        11,
+        31,
+        32,
+        33,
+        37,
+        38,
+        39,
+        48,
+        51,
+        55,
+        56,
+        60,
+        63,
+        64,
+        65,
+        67,
+        68,
+        72,
+        73,
+        78
+      ],
+      "selectors": {
+        "fused_top4": [
+          2,
+          35,
+          44,
+          73
+        ],
+        "dl_top4": [
+          2,
+          45,
+          62,
+          80
+        ],
+        "dirichlet_top4": [
+          9,
+          35,
+          54,
+          73
+        ],
+        "cooc_top4": [
+          35,
+          44,
+          51,
+          73
+        ],
+        "momentum_top4": [
+          27,
+          35,
+          40,
+          45
+        ],
+        "spectral_top4": [
+          9,
+          35,
+          54,
+          73
+        ],
+        "borda4_top4": [
+          5,
+          32,
+          67,
+          75
+        ],
+        "borda3_top4": [
+          5,
+          28,
+          69,
+          75
+        ],
+        "borda_dl_spectral_top4": [
+          32,
+          53,
+          67,
+          75
+        ],
+        "hot50_top4": [
+          9,
+          44,
+          50,
+          73
+        ],
+        "cold50_top4": [
+          25,
+          58,
+          69,
+          71
+        ],
+        "norepeat_fused_top4": [
+          2,
+          7,
+          31,
+          73
+        ],
+        "repeatonly_fused_top4": [
+          9,
+          35,
+          44,
+          54
+        ],
+        "zone1_fused_top4": [
+          2,
+          35,
+          44,
+          73
+        ],
+        "zone2_fused_top4": [
+          2,
+          35,
+          44,
+          73
+        ],
+        "balanced_fused_top4": [
+          2,
+          35,
+          44,
+          73
+        ],
+        "random_top4": [
+          8,
+          13,
+          18,
+          20
+        ]
+      },
+      "hits": {
+        "fused_top4": 1,
+        "dl_top4": 0,
+        "dirichlet_top4": 1,
+        "cooc_top4": 2,
+        "momentum_top4": 0,
+        "spectral_top4": 1,
+        "borda4_top4": 2,
+        "borda3_top4": 0,
+        "borda_dl_spectral_top4": 2,
+        "hot50_top4": 1,
+        "cold50_top4": 0,
+        "norepeat_fused_top4": 2,
+        "repeatonly_fused_top4": 0,
+        "zone1_fused_top4": 1,
+        "zone2_fused_top4": 1,
+        "balanced_fused_top4": 1,
+        "random_top4": 0
+      },
+      "auc": {
+        "fused": 0.5558333333333333,
+        "dl": 0.37416666666666665,
+        "dirichlet": 0.5966666666666667,
+        "cooccurrence": 0.5808333333333333,
+        "momentum": 0.48083333333333333,
+        "hot50": 0.6108333333333333
+      },
+      "diagnostics": {
+        "fused_repeat_count": 2,
+        "fused_max_zone_count": 1,
+        "fused_odd_count": 2,
+        "fused_mean_omission": 2.5,
+        "dl_loss": 0.5521299285548074
+      }
+    },
+    {
+      "period": 2026276,
+      "date": "2026-10-17",
+      "actual_numbers": [
+        2,
+        6,
+        7,
+        11,
+        15,
+        18,
+        22,
+        27,
+        30,
+        32,
+        37,
+        38,
+        42,
+        45,
+        51,
+        62,
+        65,
+        66,
+        67,
+        73
+      ],
+      "selectors": {
+        "fused_top4": [
+          35,
+          54,
+          63,
+          73
+        ],
+        "dl_top4": [
+          27,
+          39,
+          50,
+          63
+        ],
+        "dirichlet_top4": [
+          31,
+          35,
+          54,
+          73
+        ],
+        "cooc_top4": [
+          35,
+          44,
+          51,
+          73
+        ],
+        "momentum_top4": [
+          27,
+          40,
+          45,
+          48
+        ],
+        "spectral_top4": [
+          31,
+          35,
+          54,
+          73
+        ],
+        "borda4_top4": [
+          5,
+          18,
+          22,
+          58
+        ],
+        "borda3_top4": [
+          5,
+          25,
+          28,
+          69
+        ],
+        "borda_dl_spectral_top4": [
+          5,
+          21,
+          22,
+          58
+        ],
+        "hot50_top4": [
+          9,
+          31,
+          50,
+          73
+        ],
+        "cold50_top4": [
+          25,
+          58,
+          69,
+          71
+        ],
+        "norepeat_fused_top4": [
+          9,
+          35,
+          44,
+          54
+        ],
+        "repeatonly_fused_top4": [
+          31,
+          51,
+          63,
+          73
+        ],
+        "zone1_fused_top4": [
+          9,
+          35,
+          54,
+          73
+        ],
+        "zone2_fused_top4": [
+          35,
+          54,
+          63,
+          73
+        ],
+        "balanced_fused_top4": [
+          35,
+          44,
+          54,
+          73
+        ],
+        "random_top4": [
+          44,
+          53,
+          63,
+          66
+        ]
+      },
+      "hits": {
+        "fused_top4": 1,
+        "dl_top4": 1,
+        "dirichlet_top4": 1,
+        "cooc_top4": 2,
+        "momentum_top4": 2,
+        "spectral_top4": 1,
+        "borda4_top4": 2,
+        "borda3_top4": 0,
+        "borda_dl_spectral_top4": 1,
+        "hot50_top4": 1,
+        "cold50_top4": 0,
+        "norepeat_fused_top4": 0,
+        "repeatonly_fused_top4": 2,
+        "zone1_fused_top4": 1,
+        "zone2_fused_top4": 1,
+        "balanced_fused_top4": 1,
+        "random_top4": 1
+      },
+      "auc": {
+        "fused": 0.5041666666666667,
+        "dl": 0.4125,
+        "dirichlet": 0.4891666666666667,
+        "cooccurrence": 0.5391666666666667,
+        "momentum": 0.5291666666666667,
+        "hot50": 0.49333333333333335
+      },
+      "diagnostics": {
+        "fused_repeat_count": 2,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 3,
+        "fused_mean_omission": 0.5,
+        "dl_loss": 0.5411262597356524
+      }
+    },
+    {
+      "period": 2026277,
+      "date": "2026-10-18",
+      "actual_numbers": [
+        1,
+        9,
+        11,
+        16,
+        17,
+        23,
+        25,
+        30,
+        32,
+        37,
+        39,
+        48,
+        49,
+        53,
+        55,
+        60,
+        66,
+        67,
+        70,
+        74
+      ],
+      "selectors": {
+        "fused_top4": [
+          35,
+          51,
+          54,
+          73
+        ],
+        "dl_top4": [
+          33,
+          55,
+          59,
+          73
+        ],
+        "dirichlet_top4": [
+          31,
+          35,
+          54,
+          73
+        ],
+        "cooc_top4": [
+          35,
+          51,
+          65,
+          73
+        ],
+        "momentum_top4": [
+          27,
+          38,
+          40,
+          45
+        ],
+        "spectral_top4": [
+          31,
+          35,
+          51,
+          73
+        ],
+        "borda4_top4": [
+          5,
+          28,
+          36,
+          74
+        ],
+        "borda3_top4": [
+          5,
+          28,
+          69,
+          75
+        ],
+        "borda_dl_spectral_top4": [
+          5,
+          36,
+          58,
+          74
+        ],
+        "hot50_top4": [
+          31,
+          51,
+          55,
+          73
+        ],
+        "cold50_top4": [
+          25,
+          58,
+          69,
+          71
+        ],
+        "norepeat_fused_top4": [
+          31,
+          35,
+          44,
+          54
+        ],
+        "repeatonly_fused_top4": [
+          45,
+          51,
+          65,
+          73
+        ],
+        "zone1_fused_top4": [
+          2,
+          35,
+          51,
+          73
+        ],
+        "zone2_fused_top4": [
+          35,
+          51,
+          54,
+          73
+        ],
+        "balanced_fused_top4": [
+          35,
+          44,
+          54,
+          73
+        ],
+        "random_top4": [
+          19,
+          20,
+          38,
+          77
+        ]
+      },
+      "hits": {
+        "fused_top4": 0,
+        "dl_top4": 1,
+        "dirichlet_top4": 0,
+        "cooc_top4": 0,
+        "momentum_top4": 0,
+        "spectral_top4": 0,
+        "borda4_top4": 1,
+        "borda3_top4": 0,
+        "borda_dl_spectral_top4": 1,
+        "hot50_top4": 1,
+        "cold50_top4": 1,
+        "norepeat_fused_top4": 0,
+        "repeatonly_fused_top4": 0,
+        "zone1_fused_top4": 0,
+        "zone2_fused_top4": 0,
+        "balanced_fused_top4": 0,
+        "random_top4": 0
+      },
+      "auc": {
+        "fused": 0.46166666666666667,
+        "dl": 0.5208333333333334,
+        "dirichlet": 0.47333333333333333,
+        "cooccurrence": 0.44083333333333335,
+        "momentum": 0.5166666666666667,
+        "hot50": 0.44666666666666666
+      },
+      "diagnostics": {
+        "fused_repeat_count": 2,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 3,
+        "fused_mean_omission": 1.0,
+        "dl_loss": 0.5545204068933215
+      }
+    },
+    {
+      "period": 2026278,
+      "date": "2026-10-19",
+      "actual_numbers": [
+        1,
+        6,
+        8,
+        15,
+        17,
+        21,
+        22,
+        24,
+        29,
+        31,
+        33,
+        39,
+        41,
+        47,
+        48,
+        49,
+        60,
+        71,
+        72,
+        76
+      ],
+      "selectors": {
+        "fused_top4": [
+          35,
+          51,
+          65,
+          73
+        ],
+        "dl_top4": [
+          6,
+          14,
+          33,
+          41
+        ],
+        "dirichlet_top4": [
+          31,
+          54,
+          65,
+          73
+        ],
+        "cooc_top4": [
+          9,
+          35,
+          51,
+          73
+        ],
+        "momentum_top4": [
+          11,
+          27,
+          40,
+          48
+        ],
+        "spectral_top4": [
+          31,
+          35,
+          51,
+          73
+        ],
+        "borda4_top4": [
+          5,
+          21,
+          28,
+          34
+        ],
+        "borda3_top4": [
+          5,
+          28,
+          34,
+          69
+        ],
+        "borda_dl_spectral_top4": [
+          5,
+          21,
+          28,
+          34
+        ],
+        "hot50_top4": [
+          31,
+          51,
+          55,
+          73
+        ],
+        "cold50_top4": [
+          25,
+          58,
+          69,
+          71
+        ],
+        "norepeat_fused_top4": [
+          35,
+          51,
+          65,
+          73
+        ],
+        "repeatonly_fused_top4": [
+          9,
+          11,
+          55,
+          60
+        ],
+        "zone1_fused_top4": [
+          9,
+          35,
+          51,
+          73
+        ],
+        "zone2_fused_top4": [
+          35,
+          51,
+          65,
+          73
+        ],
+        "balanced_fused_top4": [
+          2,
+          35,
+          54,
+          73
+        ],
+        "random_top4": [
+          12,
+          25,
+          40,
+          67
+        ]
+      },
+      "hits": {
+        "fused_top4": 0,
+        "dl_top4": 3,
+        "dirichlet_top4": 1,
+        "cooc_top4": 0,
+        "momentum_top4": 1,
+        "spectral_top4": 1,
+        "borda4_top4": 1,
+        "borda3_top4": 0,
+        "borda_dl_spectral_top4": 1,
+        "hot50_top4": 1,
+        "cold50_top4": 1,
+        "norepeat_fused_top4": 0,
+        "repeatonly_fused_top4": 1,
+        "zone1_fused_top4": 0,
+        "zone2_fused_top4": 0,
+        "balanced_fused_top4": 0,
+        "random_top4": 0
+      },
+      "auc": {
+        "fused": 0.5325,
+        "dl": 0.4575,
+        "dirichlet": 0.52,
+        "cooccurrence": 0.53,
+        "momentum": 0.535,
+        "hot50": 0.5175
+      },
+      "diagnostics": {
+        "fused_repeat_count": 0,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 4,
+        "fused_mean_omission": 1.5,
+        "dl_loss": 0.5489705375262669
+      }
+    },
+    {
+      "period": 2026279,
+      "date": "2026-10-20",
+      "actual_numbers": [
+        1,
+        8,
+        9,
+        11,
+        15,
+        19,
+        23,
+        27,
+        30,
+        36,
+        38,
+        40,
+        43,
+        44,
+        52,
+        58,
+        59,
+        61,
+        70,
+        79
+      ],
+      "selectors": {
+        "fused_top4": [
+          31,
+          51,
+          65,
+          73
+        ],
+        "dl_top4": [
+          11,
+          33,
+          37,
+          62
+        ],
+        "dirichlet_top4": [
+          31,
+          54,
+          65,
+          73
+        ],
+        "cooc_top4": [
+          31,
+          35,
+          51,
+          73
+        ],
+        "momentum_top4": [
+          11,
+          22,
+          27,
+          39
+        ],
+        "spectral_top4": [
+          31,
+          51,
+          65,
+          73
+        ],
+        "borda4_top4": [
+          5,
+          36,
+          69,
+          79
+        ],
+        "borda3_top4": [
+          5,
+          28,
+          36,
+          69
+        ],
+        "borda_dl_spectral_top4": [
+          5,
+          12,
+          58,
+          79
+        ],
+        "hot50_top4": [
+          31,
+          51,
+          55,
+          73
+        ],
+        "cold50_top4": [
+          12,
+          25,
+          58,
+          69
+        ],
+        "norepeat_fused_top4": [
+          35,
+          51,
+          65,
+          73
+        ],
+        "repeatonly_fused_top4": [
+          8,
+          31,
+          48,
+          60
+        ],
+        "zone1_fused_top4": [
+          9,
+          31,
+          51,
+          73
+        ],
+        "zone2_fused_top4": [
+          31,
+          51,
+          65,
+          73
+        ],
+        "balanced_fused_top4": [
+          48,
+          51,
+          60,
+          73
+        ],
+        "random_top4": [
+          10,
+          11,
+          18,
+          67
+        ]
+      },
+      "hits": {
+        "fused_top4": 0,
+        "dl_top4": 1,
+        "dirichlet_top4": 0,
+        "cooc_top4": 0,
+        "momentum_top4": 2,
+        "spectral_top4": 0,
+        "borda4_top4": 2,
+        "borda3_top4": 1,
+        "borda_dl_spectral_top4": 2,
+        "hot50_top4": 0,
+        "cold50_top4": 1,
+        "norepeat_fused_top4": 0,
+        "repeatonly_fused_top4": 1,
+        "zone1_fused_top4": 1,
+        "zone2_fused_top4": 0,
+        "balanced_fused_top4": 0,
+        "random_top4": 1
+      },
+      "auc": {
+        "fused": 0.49083333333333334,
+        "dl": 0.38,
+        "dirichlet": 0.5033333333333333,
+        "cooccurrence": 0.43,
+        "momentum": 0.5925,
+        "hot50": 0.44583333333333336
+      },
+      "diagnostics": {
+        "fused_repeat_count": 1,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 4,
+        "fused_mean_omission": 1.5,
+        "dl_loss": 0.5598312573773521
+      }
+    },
+    {
+      "period": 2026280,
+      "date": "2026-10-21",
+      "actual_numbers": [
+        4,
+        5,
+        7,
+        9,
+        12,
+        17,
+        26,
+        27,
+        30,
+        34,
+        43,
+        53,
+        66,
+        69,
+        70,
+        71,
+        72,
+        74,
+        75,
+        80
+      ],
+      "selectors": {
+        "fused_top4": [
+          9,
+          31,
+          51,
+          73
+        ],
+        "dl_top4": [
+          55,
+          62,
+          73,
+          74
+        ],
+        "dirichlet_top4": [
+          9,
+          31,
+          54,
+          73
+        ],
+        "cooc_top4": [
+          9,
+          44,
+          51,
+          73
+        ],
+        "momentum_top4": [
+          11,
+          22,
+          27,
+          38
+        ],
+        "spectral_top4": [
+          9,
+          31,
+          51,
+          73
+        ],
+        "borda4_top4": [
+          4,
+          5,
+          28,
+          34
+        ],
+        "borda3_top4": [
+          5,
+          28,
+          34,
+          69
+        ],
+        "borda_dl_spectral_top4": [
+          5,
+          18,
+          34,
+          71
+        ],
+        "hot50_top4": [
+          31,
+          44,
+          55,
+          73
+        ],
+        "cold50_top4": [
+          25,
+          58,
+          69,
+          71
+        ],
+        "norepeat_fused_top4": [
+          31,
+          35,
+          51,
+          73
+        ],
+        "repeatonly_fused_top4": [
+          8,
+          9,
+          11,
+          15
+        ],
+        "zone1_fused_top4": [
+          9,
+          31,
+          51,
+          73
+        ],
+        "zone2_fused_top4": [
+          9,
+          31,
+          51,
+          73
+        ],
+        "balanced_fused_top4": [
+          8,
+          9,
+          54,
+          73
+        ],
+        "random_top4": [
+          3,
+          5,
+          51,
+          78
+        ]
+      },
+      "hits": {
+        "fused_top4": 1,
+        "dl_top4": 1,
+        "dirichlet_top4": 1,
+        "cooc_top4": 1,
+        "momentum_top4": 1,
+        "spectral_top4": 1,
+        "borda4_top4": 3,
+        "borda3_top4": 3,
+        "borda_dl_spectral_top4": 3,
+        "hot50_top4": 0,
+        "cold50_top4": 2,
+        "norepeat_fused_top4": 0,
+        "repeatonly_fused_top4": 1,
+        "zone1_fused_top4": 1,
+        "zone2_fused_top4": 1,
+        "balanced_fused_top4": 1,
+        "random_top4": 1
+      },
+      "auc": {
+        "fused": 0.3566666666666667,
+        "dl": 0.48083333333333333,
+        "dirichlet": 0.4033333333333333,
+        "cooccurrence": 0.31333333333333335,
+        "momentum": 0.4066666666666667,
+        "hot50": 0.3858333333333333
+      },
+      "diagnostics": {
+        "fused_repeat_count": 1,
+        "fused_max_zone_count": 1,
+        "fused_odd_count": 4,
+        "fused_mean_omission": 1.75,
+        "dl_loss": 0.547501700265067
+      }
+    },
+    {
+      "period": 2026281,
+      "date": "2026-10-22",
+      "actual_numbers": [
+        1,
+        5,
+        8,
+        11,
+        13,
+        19,
+        22,
+        26,
+        34,
+        52,
+        53,
+        55,
+        56,
+        58,
+        63,
+        66,
+        69,
+        71,
+        72,
+        75
+      ],
+      "selectors": {
+        "fused_top4": [
+          9,
+          31,
+          51,
+          73
+        ],
+        "dl_top4": [
+          2,
+          14,
+          33,
+          66
+        ],
+        "dirichlet_top4": [
+          9,
+          31,
+          54,
+          73
+        ],
+        "cooc_top4": [
+          9,
+          44,
+          51,
+          73
+        ],
+        "momentum_top4": [
+          11,
+          17,
+          27,
+          38
+        ],
+        "spectral_top4": [
+          9,
+          31,
+          51,
+          73
+        ],
+        "borda4_top4": [
+          13,
+          25,
+          28,
+          36
+        ],
+        "borda3_top4": [
+          3,
+          18,
+          25,
+          28
+        ],
+        "borda_dl_spectral_top4": [
+          16,
+          25,
+          28,
+          79
+        ],
+        "hot50_top4": [
+          9,
+          31,
+          55,
+          73
+        ],
+        "cold50_top4": [
+          14,
+          25,
+          58,
+          69
+        ],
+        "norepeat_fused_top4": [
+          11,
+          31,
+          51,
+          73
+        ],
+        "repeatonly_fused_top4": [
+          9,
+          17,
+          66,
+          72
+        ],
+        "zone1_fused_top4": [
+          9,
+          31,
+          51,
+          73
+        ],
+        "zone2_fused_top4": [
+          9,
+          31,
+          51,
+          73
+        ],
+        "balanced_fused_top4": [
+          8,
+          9,
+          51,
+          66
+        ],
+        "random_top4": [
+          27,
+          46,
+          57,
+          60
+        ]
+      },
+      "hits": {
+        "fused_top4": 0,
+        "dl_top4": 1,
+        "dirichlet_top4": 0,
+        "cooc_top4": 0,
+        "momentum_top4": 1,
+        "spectral_top4": 0,
+        "borda4_top4": 1,
+        "borda3_top4": 0,
+        "borda_dl_spectral_top4": 0,
+        "hot50_top4": 1,
+        "cold50_top4": 2,
+        "norepeat_fused_top4": 1,
+        "repeatonly_fused_top4": 2,
+        "zone1_fused_top4": 0,
+        "zone2_fused_top4": 0,
+        "balanced_fused_top4": 2,
+        "random_top4": 0
+      },
+      "auc": {
+        "fused": 0.3875,
+        "dl": 0.45166666666666666,
+        "dirichlet": 0.4175,
+        "cooccurrence": 0.37083333333333335,
+        "momentum": 0.5541666666666667,
+        "hot50": 0.47583333333333333
+      },
+      "diagnostics": {
+        "fused_repeat_count": 1,
+        "fused_max_zone_count": 1,
+        "fused_odd_count": 4,
+        "fused_mean_omission": 2.5,
+        "dl_loss": 0.5524249161992755
+      }
+    },
+    {
+      "period": 2026282,
+      "date": "2026-10-23",
+      "actual_numbers": [
+        2,
+        8,
+        9,
+        13,
+        14,
+        23,
+        24,
+        32,
+        35,
+        36,
+        40,
+        41,
+        43,
+        44,
+        59,
+        61,
+        68,
+        73,
+        78,
+        80
+      ],
+      "selectors": {
+        "fused_top4": [
+          9,
+          11,
+          66,
+          72
+        ],
+        "dl_top4": [
+          11,
+          26,
+          62,
+          76
+        ],
+        "dirichlet_top4": [
+          8,
+          9,
+          66,
+          73
+        ],
+        "cooc_top4": [
+          9,
+          51,
+          72,
+          73
+        ],
+        "momentum_top4": [
+          11,
+          27,
+          38,
+          67
+        ],
+        "spectral_top4": [
+          9,
+          66,
+          72,
+          73
+        ],
+        "borda4_top4": [
+          18,
+          20,
+          25,
+          36
+        ],
+        "borda3_top4": [
+          3,
+          18,
+          25,
+          28
+        ],
+        "borda_dl_spectral_top4": [
+          18,
+          20,
+          36,
+          79
+        ],
+        "hot50_top4": [
+          9,
+          31,
+          55,
+          73
+        ],
+        "cold50_top4": [
+          14,
+          25,
+          28,
+          69
+        ],
+        "norepeat_fused_top4": [
+          9,
+          31,
+          51,
+          73
+        ],
+        "repeatonly_fused_top4": [
+          8,
+          11,
+          66,
+          72
+        ],
+        "zone1_fused_top4": [
+          9,
+          31,
+          51,
+          66
+        ],
+        "zone2_fused_top4": [
+          9,
+          11,
+          66,
+          72
+        ],
+        "balanced_fused_top4": [
+          9,
+          11,
+          66,
+          72
+        ],
+        "random_top4": [
+          28,
+          34,
+          48,
+          75
+        ]
+      },
+      "hits": {
+        "fused_top4": 1,
+        "dl_top4": 0,
+        "dirichlet_top4": 3,
+        "cooc_top4": 2,
+        "momentum_top4": 0,
+        "spectral_top4": 2,
+        "borda4_top4": 1,
+        "borda3_top4": 0,
+        "borda_dl_spectral_top4": 1,
+        "hot50_top4": 2,
+        "cold50_top4": 1,
+        "norepeat_fused_top4": 2,
+        "repeatonly_fused_top4": 1,
+        "zone1_fused_top4": 1,
+        "zone2_fused_top4": 1,
+        "balanced_fused_top4": 1,
+        "random_top4": 0
+      },
+      "auc": {
+        "fused": 0.5425,
+        "dl": 0.405,
+        "dirichlet": 0.62,
+        "cooccurrence": 0.5841666666666666,
+        "momentum": 0.36333333333333334,
+        "hot50": 0.5616666666666666
+      },
+      "diagnostics": {
+        "fused_repeat_count": 3,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 2,
+        "fused_mean_omission": 0.25,
+        "dl_loss": 0.5542295788015638
+      }
+    },
+    {
+      "period": 2026283,
+      "date": "2026-10-24",
+      "actual_numbers": [
+        1,
+        3,
+        7,
+        15,
+        16,
+        25,
+        28,
+        34,
+        41,
+        43,
+        44,
+        60,
+        61,
+        67,
+        70,
+        71,
+        72,
+        74,
+        75,
+        80
+      ],
+      "selectors": {
+        "fused_top4": [
+          8,
+          9,
+          11,
+          73
+        ],
+        "dl_top4": [
+          11,
+          26,
+          43,
+          62
+        ],
+        "dirichlet_top4": [
+          8,
+          9,
+          35,
+          73
+        ],
+        "cooc_top4": [
+          9,
+          35,
+          44,
+          73
+        ],
+        "momentum_top4": [
+          11,
+          27,
+          32,
+          38
+        ],
+        "spectral_top4": [
+          8,
+          9,
+          35,
+          73
+        ],
+        "borda4_top4": [
+          3,
+          28,
+          57,
+          77
+        ],
+        "borda3_top4": [
+          3,
+          25,
+          28,
+          77
+        ],
+        "borda_dl_spectral_top4": [
+          3,
+          57,
+          58,
+          71
+        ],
+        "hot50_top4": [
+          9,
+          31,
+          55,
+          73
+        ],
+        "cold50_top4": [
+          14,
+          25,
+          28,
+          69
+        ],
+        "norepeat_fused_top4": [
+          11,
+          51,
+          66,
+          72
+        ],
+        "repeatonly_fused_top4": [
+          8,
+          9,
+          35,
+          73
+        ],
+        "zone1_fused_top4": [
+          9,
+          35,
+          44,
+          73
+        ],
+        "zone2_fused_top4": [
+          8,
+          9,
+          35,
+          73
+        ],
+        "balanced_fused_top4": [
+          8,
+          9,
+          11,
+          72
+        ],
+        "random_top4": [
+          10,
+          27,
+          48,
+          54
+        ]
+      },
+      "hits": {
+        "fused_top4": 0,
+        "dl_top4": 1,
+        "dirichlet_top4": 0,
+        "cooc_top4": 1,
+        "momentum_top4": 0,
+        "spectral_top4": 0,
+        "borda4_top4": 2,
+        "borda3_top4": 3,
+        "borda_dl_spectral_top4": 2,
+        "hot50_top4": 0,
+        "cold50_top4": 2,
+        "norepeat_fused_top4": 1,
+        "repeatonly_fused_top4": 0,
+        "zone1_fused_top4": 1,
+        "zone2_fused_top4": 0,
+        "balanced_fused_top4": 1,
+        "random_top4": 0
+      },
+      "auc": {
+        "fused": 0.44583333333333336,
+        "dl": 0.49583333333333335,
+        "dirichlet": 0.43666666666666665,
+        "cooccurrence": 0.44083333333333335,
+        "momentum": 0.5133333333333333,
+        "hot50": 0.42333333333333334
+      },
+      "diagnostics": {
+        "fused_repeat_count": 3,
+        "fused_max_zone_count": 3,
+        "fused_odd_count": 3,
+        "fused_mean_omission": 0.25,
+        "dl_loss": 0.5527208149433136
+      }
+    },
+    {
+      "period": 2026284,
+      "date": "2026-10-25",
+      "actual_numbers": [
+        5,
+        6,
+        7,
+        9,
+        11,
+        16,
+        18,
+        22,
+        29,
+        34,
+        36,
+        39,
+        41,
+        50,
+        52,
+        53,
+        58,
+        62,
+        69,
+        78
+      ],
+      "selectors": {
+        "fused_top4": [
+          8,
+          9,
+          72,
+          73
+        ],
+        "dl_top4": [
+          8,
+          11,
+          33,
+          62
+        ],
+        "dirichlet_top4": [
+          8,
+          9,
+          72,
+          73
+        ],
+        "cooc_top4": [
+          9,
+          44,
+          72,
+          73
+        ],
+        "momentum_top4": [
+          32,
+          38,
+          67,
+          70
+        ],
+        "spectral_top4": [
+          8,
+          9,
+          72,
+          73
+        ],
+        "borda4_top4": [
+          5,
+          18,
+          42,
+          77
+        ],
+        "borda3_top4": [
+          18,
+          28,
+          57,
+          77
+        ],
+        "borda_dl_spectral_top4": [
+          5,
+          42,
+          58,
+          64
+        ],
+        "hot50_top4": [
+          8,
+          9,
+          72,
+          73
+        ],
+        "cold50_top4": [
+          5,
+          12,
+          14,
+          69
+        ],
+        "norepeat_fused_top4": [
+          8,
+          9,
+          11,
+          73
+        ],
+        "repeatonly_fused_top4": [
+          1,
+          44,
+          60,
+          72
+        ],
+        "zone1_fused_top4": [
+          9,
+          35,
+          44,
+          72
+        ],
+        "zone2_fused_top4": [
+          8,
+          9,
+          72,
+          73
+        ],
+        "balanced_fused_top4": [
+          8,
+          9,
+          72,
+          73
+        ],
+        "random_top4": [
+          10,
+          12,
+          18,
+          68
+        ]
+      },
+      "hits": {
+        "fused_top4": 1,
+        "dl_top4": 2,
+        "dirichlet_top4": 1,
+        "cooc_top4": 1,
+        "momentum_top4": 0,
+        "spectral_top4": 1,
+        "borda4_top4": 2,
+        "borda3_top4": 1,
+        "borda_dl_spectral_top4": 2,
+        "hot50_top4": 1,
+        "cold50_top4": 2,
+        "norepeat_fused_top4": 2,
+        "repeatonly_fused_top4": 0,
+        "zone1_fused_top4": 1,
+        "zone2_fused_top4": 1,
+        "balanced_fused_top4": 1,
+        "random_top4": 1
+      },
+      "auc": {
+        "fused": 0.4025,
+        "dl": 0.38416666666666666,
+        "dirichlet": 0.44416666666666665,
+        "cooccurrence": 0.4191666666666667,
+        "momentum": 0.52,
+        "hot50": 0.465
+      },
+      "diagnostics": {
+        "fused_repeat_count": 1,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 2,
+        "fused_mean_omission": 0.75,
+        "dl_loss": 0.56188075031553
+      }
+    },
+    {
+      "period": 2026285,
+      "date": "2026-10-26",
+      "actual_numbers": [
+        3,
+        9,
+        10,
+        12,
+        14,
+        18,
+        25,
+        27,
+        29,
+        31,
+        37,
+        41,
+        44,
+        47,
+        54,
+        56,
+        61,
+        63,
+        74,
+        78
+      ],
+      "selectors": {
+        "fused_top4": [
+          9,
+          11,
+          72,
+          73
+        ],
+        "dl_top4": [
+          11,
+          39,
+          43,
+          76
+        ],
+        "dirichlet_top4": [
+          8,
+          9,
+          72,
+          73
+        ],
+        "cooc_top4": [
+          7,
+          9,
+          44,
+          73
+        ],
+        "momentum_top4": [
+          11,
+          32,
+          67,
+          71
+        ],
+        "spectral_top4": [
+          9,
+          11,
+          72,
+          73
+        ],
+        "borda4_top4": [
+          10,
+          20,
+          57,
+          77
+        ],
+        "borda3_top4": [
+          10,
+          28,
+          57,
+          77
+        ],
+        "borda_dl_spectral_top4": [
+          5,
+          20,
+          42,
+          57
+        ],
+        "hot50_top4": [
+          9,
+          31,
+          72,
+          73
+        ],
+        "cold50_top4": [
+          3,
+          12,
+          14,
+          69
+        ],
+        "norepeat_fused_top4": [
+          1,
+          8,
+          72,
+          73
+        ],
+        "repeatonly_fused_top4": [
+          7,
+          9,
+          11,
+          41
+        ],
+        "zone1_fused_top4": [
+          9,
+          35,
+          60,
+          72
+        ],
+        "zone2_fused_top4": [
+          9,
+          11,
+          72,
+          73
+        ],
+        "balanced_fused_top4": [
+          8,
+          9,
+          11,
+          72
+        ],
+        "random_top4": [
+          14,
+          40,
+          49,
+          76
+        ]
+      },
+      "hits": {
+        "fused_top4": 1,
+        "dl_top4": 0,
+        "dirichlet_top4": 1,
+        "cooc_top4": 2,
+        "momentum_top4": 0,
+        "spectral_top4": 1,
+        "borda4_top4": 1,
+        "borda3_top4": 1,
+        "borda_dl_spectral_top4": 0,
+        "hot50_top4": 2,
+        "cold50_top4": 3,
+        "norepeat_fused_top4": 0,
+        "repeatonly_fused_top4": 2,
+        "zone1_fused_top4": 1,
+        "zone2_fused_top4": 1,
+        "balanced_fused_top4": 1,
+        "random_top4": 1
+      },
+      "auc": {
+        "fused": 0.47833333333333333,
+        "dl": 0.53,
+        "dirichlet": 0.47333333333333333,
+        "cooccurrence": 0.5125,
+        "momentum": 0.41083333333333333,
+        "hot50": 0.495
+      },
+      "diagnostics": {
+        "fused_repeat_count": 2,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 3,
+        "fused_mean_omission": 0.75,
+        "dl_loss": 0.5567977981907981
+      }
+    },
+    {
+      "period": 2026286,
+      "date": "2026-10-27",
+      "actual_numbers": [
+        1,
+        3,
+        5,
+        9,
+        17,
+        22,
+        27,
+        30,
+        37,
+        47,
+        51,
+        52,
+        55,
+        56,
+        58,
+        68,
+        69,
+        72,
+        75,
+        80
+      ],
+      "selectors": {
+        "fused_top4": [
+          7,
+          9,
+          41,
+          44
+        ],
+        "dl_top4": [
+          5,
+          8,
+          21,
+          24
+        ],
+        "dirichlet_top4": [
+          9,
+          44,
+          54,
+          73
+        ],
+        "cooc_top4": [
+          9,
+          41,
+          44,
+          73
+        ],
+        "momentum_top4": [
+          1,
+          9,
+          11,
+          71
+        ],
+        "spectral_top4": [
+          9,
+          11,
+          44,
+          72
+        ],
+        "borda4_top4": [
+          4,
+          20,
+          64,
+          77
+        ],
+        "borda3_top4": [
+          28,
+          57,
+          64,
+          77
+        ],
+        "borda_dl_spectral_top4": [
+          4,
+          20,
+          64,
+          79
+        ],
+        "hot50_top4": [
+          9,
+          31,
+          44,
+          73
+        ],
+        "cold50_top4": [
+          14,
+          42,
+          57,
+          69
+        ],
+        "norepeat_fused_top4": [
+          1,
+          7,
+          8,
+          11
+        ],
+        "repeatonly_fused_top4": [
+          9,
+          41,
+          44,
+          61
+        ],
+        "zone1_fused_top4": [
+          9,
+          31,
+          44,
+          73
+        ],
+        "zone2_fused_top4": [
+          7,
+          9,
+          41,
+          44
+        ],
+        "balanced_fused_top4": [
+          8,
+          9,
+          41,
+          44
+        ],
+        "random_top4": [
+          16,
+          39,
+          54,
+          65
+        ]
+      },
+      "hits": {
+        "fused_top4": 1,
+        "dl_top4": 1,
+        "dirichlet_top4": 1,
+        "cooc_top4": 1,
+        "momentum_top4": 2,
+        "spectral_top4": 2,
+        "borda4_top4": 0,
+        "borda3_top4": 0,
+        "borda_dl_spectral_top4": 0,
+        "hot50_top4": 1,
+        "cold50_top4": 1,
+        "norepeat_fused_top4": 1,
+        "repeatonly_fused_top4": 1,
+        "zone1_fused_top4": 1,
+        "zone2_fused_top4": 1,
+        "balanced_fused_top4": 1,
+        "random_top4": 0
+      },
+      "auc": {
+        "fused": 0.565,
+        "dl": 0.4175,
+        "dirichlet": 0.5033333333333333,
+        "cooccurrence": 0.5758333333333333,
+        "momentum": 0.6791666666666667,
+        "hot50": 0.5566666666666666
+      },
+      "diagnostics": {
+        "fused_repeat_count": 3,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 3,
+        "fused_mean_omission": 0.25,
+        "dl_loss": 0.5433642055307116
+      }
+    },
+    {
+      "period": 2026287,
+      "date": "2026-10-28",
+      "actual_numbers": [
+        2,
+        9,
+        16,
+        19,
+        24,
+        25,
+        50,
+        55,
+        56,
+        58,
+        64,
+        66,
+        67,
+        68,
+        70,
+        73,
+        75,
+        76,
+        77,
+        79
+      ],
+      "selectors": {
+        "fused_top4": [
+          9,
+          41,
+          44,
+          72
+        ],
+        "dl_top4": [
+          12,
+          21,
+          33,
+          41
+        ],
+        "dirichlet_top4": [
+          9,
+          44,
+          72,
+          73
+        ],
+        "cooc_top4": [
+          9,
+          44,
+          72,
+          73
+        ],
+        "momentum_top4": [
+          1,
+          9,
+          69,
+          71
+        ],
+        "spectral_top4": [
+          1,
+          9,
+          44,
+          72
+        ],
+        "borda4_top4": [
+          4,
+          46,
+          64,
+          77
+        ],
+        "borda3_top4": [
+          28,
+          42,
+          57,
+          77
+        ],
+        "borda_dl_spectral_top4": [
+          4,
+          10,
+          46,
+          64
+        ],
+        "hot50_top4": [
+          9,
+          31,
+          44,
+          73
+        ],
+        "cold50_top4": [
+          14,
+          19,
+          25,
+          28
+        ],
+        "norepeat_fused_top4": [
+          7,
+          41,
+          44,
+          61
+        ],
+        "repeatonly_fused_top4": [
+          1,
+          9,
+          52,
+          72
+        ],
+        "zone1_fused_top4": [
+          9,
+          27,
+          41,
+          72
+        ],
+        "zone2_fused_top4": [
+          9,
+          41,
+          44,
+          72
+        ],
+        "balanced_fused_top4": [
+          9,
+          41,
+          44,
+          72
+        ],
+        "random_top4": [
+          19,
+          42,
+          59,
+          76
+        ]
+      },
+      "hits": {
+        "fused_top4": 1,
+        "dl_top4": 0,
+        "dirichlet_top4": 2,
+        "cooc_top4": 2,
+        "momentum_top4": 1,
+        "spectral_top4": 1,
+        "borda4_top4": 2,
+        "borda3_top4": 1,
+        "borda_dl_spectral_top4": 1,
+        "hot50_top4": 2,
+        "cold50_top4": 2,
+        "norepeat_fused_top4": 0,
+        "repeatonly_fused_top4": 1,
+        "zone1_fused_top4": 1,
+        "zone2_fused_top4": 1,
+        "balanced_fused_top4": 1,
+        "random_top4": 2
+      },
+      "auc": {
+        "fused": 0.4191666666666667,
+        "dl": 0.425,
+        "dirichlet": 0.4525,
+        "cooccurrence": 0.43833333333333335,
+        "momentum": 0.4725,
+        "hot50": 0.47
+      },
+      "diagnostics": {
+        "fused_repeat_count": 2,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 2,
+        "fused_mean_omission": 0.5,
+        "dl_loss": 0.5387985536030361
+      }
+    },
+    {
+      "period": 2026288,
+      "date": "2026-10-29",
+      "actual_numbers": [
+        5,
+        10,
+        14,
+        19,
+        22,
+        23,
+        26,
+        27,
+        28,
+        39,
+        40,
+        47,
+        50,
+        53,
+        59,
+        61,
+        66,
+        73,
+        75,
+        79
+      ],
+      "selectors": {
+        "fused_top4": [
+          9,
+          44,
+          72,
+          73
+        ],
+        "dl_top4": [
+          2,
+          33,
+          62,
+          73
+        ],
+        "dirichlet_top4": [
+          9,
+          44,
+          72,
+          73
+        ],
+        "cooc_top4": [
+          9,
+          44,
+          72,
+          73
+        ],
+        "momentum_top4": [
+          9,
+          58,
+          69,
+          75
+        ],
+        "spectral_top4": [
+          1,
+          9,
+          44,
+          72
+        ],
+        "borda4_top4": [
+          4,
+          10,
+          20,
+          42
+        ],
+        "borda3_top4": [
+          4,
+          42,
+          46,
+          57
+        ],
+        "borda_dl_spectral_top4": [
+          4,
+          10,
+          20,
+          64
+        ],
+        "hot50_top4": [
+          9,
+          31,
+          44,
+          73
+        ],
+        "cold50_top4": [
+          14,
+          28,
+          42,
+          57
+        ],
+        "norepeat_fused_top4": [
+          1,
+          7,
+          44,
+          72
+        ],
+        "repeatonly_fused_top4": [
+          9,
+          55,
+          56,
+          73
+        ],
+        "zone1_fused_top4": [
+          9,
+          27,
+          44,
+          72
+        ],
+        "zone2_fused_top4": [
+          9,
+          44,
+          72,
+          73
+        ],
+        "balanced_fused_top4": [
+          9,
+          44,
+          72,
+          73
+        ],
+        "random_top4": [
+          7,
+          22,
+          44,
+          60
+        ]
+      },
+      "hits": {
+        "fused_top4": 1,
+        "dl_top4": 1,
+        "dirichlet_top4": 1,
+        "cooc_top4": 1,
+        "momentum_top4": 1,
+        "spectral_top4": 0,
+        "borda4_top4": 1,
+        "borda3_top4": 0,
+        "borda_dl_spectral_top4": 1,
+        "hot50_top4": 1,
+        "cold50_top4": 2,
+        "norepeat_fused_top4": 0,
+        "repeatonly_fused_top4": 1,
+        "zone1_fused_top4": 1,
+        "zone2_fused_top4": 1,
+        "balanced_fused_top4": 1,
+        "random_top4": 1
+      },
+      "auc": {
+        "fused": 0.4725,
+        "dl": 0.43916666666666665,
+        "dirichlet": 0.455,
+        "cooccurrence": 0.4633333333333333,
+        "momentum": 0.5525,
+        "hot50": 0.43083333333333335
+      },
+      "diagnostics": {
+        "fused_repeat_count": 2,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 2,
+        "fused_mean_omission": 0.75,
+        "dl_loss": 0.560014145714896
+      }
+    },
+    {
+      "period": 2026289,
+      "date": "2026-10-30",
+      "actual_numbers": [
+        2,
+        4,
+        5,
+        6,
+        7,
+        11,
+        16,
+        17,
+        18,
+        33,
+        34,
+        36,
+        47,
+        56,
+        58,
+        62,
+        68,
+        73,
+        76,
+        78
+      ],
+      "selectors": {
+        "fused_top4": [
+          9,
+          27,
+          61,
+          73
+        ],
+        "dl_top4": [
+          6,
+          15,
+          27,
+          53
+        ],
+        "dirichlet_top4": [
+          7,
+          9,
+          44,
+          73
+        ],
+        "cooc_top4": [
+          9,
+          44,
+          61,
+          73
+        ],
+        "momentum_top4": [
+          5,
+          58,
+          69,
+          75
+        ],
+        "spectral_top4": [
+          9,
+          44,
+          61,
+          73
+        ],
+        "borda4_top4": [
+          4,
+          33,
+          42,
+          57
+        ],
+        "borda3_top4": [
+          4,
+          46,
+          49,
+          57
+        ],
+        "borda_dl_spectral_top4": [
+          28,
+          33,
+          42,
+          71
+        ],
+        "hot50_top4": [
+          9,
+          31,
+          44,
+          73
+        ],
+        "cold50_top4": [
+          12,
+          42,
+          57,
+          69
+        ],
+        "norepeat_fused_top4": [
+          1,
+          9,
+          44,
+          55
+        ],
+        "repeatonly_fused_top4": [
+          27,
+          61,
+          73,
+          75
+        ],
+        "zone1_fused_top4": [
+          9,
+          27,
+          44,
+          73
+        ],
+        "zone2_fused_top4": [
+          9,
+          27,
+          61,
+          73
+        ],
+        "balanced_fused_top4": [
+          9,
+          44,
+          56,
+          73
+        ],
+        "random_top4": [
+          16,
+          37,
+          54,
+          80
+        ]
+      },
+      "hits": {
+        "fused_top4": 1,
+        "dl_top4": 1,
+        "dirichlet_top4": 2,
+        "cooc_top4": 1,
+        "momentum_top4": 2,
+        "spectral_top4": 1,
+        "borda4_top4": 2,
+        "borda3_top4": 1,
+        "borda_dl_spectral_top4": 1,
+        "hot50_top4": 1,
+        "cold50_top4": 0,
+        "norepeat_fused_top4": 0,
+        "repeatonly_fused_top4": 1,
+        "zone1_fused_top4": 1,
+        "zone2_fused_top4": 1,
+        "balanced_fused_top4": 2,
+        "random_top4": 1
+      },
+      "auc": {
+        "fused": 0.5383333333333333,
+        "dl": 0.48083333333333333,
+        "dirichlet": 0.5083333333333333,
+        "cooccurrence": 0.5366666666666666,
+        "momentum": 0.4925,
+        "hot50": 0.54
+      },
+      "diagnostics": {
+        "fused_repeat_count": 3,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 4,
+        "fused_mean_omission": 0.25,
+        "dl_loss": 0.5497366956302098
+      }
+    },
+    {
+      "period": 2026290,
+      "date": "2026-10-31",
+      "actual_numbers": [
+        3,
+        4,
+        12,
+        19,
+        24,
+        25,
+        27,
+        28,
+        31,
+        32,
+        33,
+        40,
+        43,
+        49,
+        51,
+        52,
+        63,
+        69,
+        71,
+        72
+      ],
+      "selectors": {
+        "fused_top4": [
+          7,
+          9,
+          61,
+          73
+        ],
+        "dl_top4": [
+          27,
+          61,
+          62,
+          73
+        ],
+        "dirichlet_top4": [
+          7,
+          9,
+          44,
+          73
+        ],
+        "cooc_top4": [
+          9,
+          44,
+          56,
+          73
+        ],
+        "momentum_top4": [
+          5,
+          34,
+          58,
+          75
+        ],
+        "spectral_top4": [
+          7,
+          9,
+          56,
+          73
+        ],
+        "borda4_top4": [
+          38,
+          42,
+          46,
+          57
+        ],
+        "borda3_top4": [
+          38,
+          46,
+          49,
+          57
+        ],
+        "borda_dl_spectral_top4": [
+          38,
+          42,
+          64,
+          71
+        ],
+        "hot50_top4": [
+          9,
+          31,
+          66,
+          73
+        ],
+        "cold50_top4": [
+          12,
+          14,
+          21,
+          69
+        ],
+        "norepeat_fused_top4": [
+          9,
+          27,
+          44,
+          61
+        ],
+        "repeatonly_fused_top4": [
+          7,
+          11,
+          56,
+          73
+        ],
+        "zone1_fused_top4": [
+          9,
+          27,
+          44,
+          73
+        ],
+        "zone2_fused_top4": [
+          7,
+          9,
+          61,
+          73
+        ],
+        "balanced_fused_top4": [
+          9,
+          44,
+          56,
+          73
+        ],
+        "random_top4": [
+          28,
+          42,
+          65,
+          72
+        ]
+      },
+      "hits": {
+        "fused_top4": 0,
+        "dl_top4": 1,
+        "dirichlet_top4": 0,
+        "cooc_top4": 0,
+        "momentum_top4": 0,
+        "spectral_top4": 0,
+        "borda4_top4": 0,
+        "borda3_top4": 1,
+        "borda_dl_spectral_top4": 1,
+        "hot50_top4": 1,
+        "cold50_top4": 2,
+        "norepeat_fused_top4": 1,
+        "repeatonly_fused_top4": 0,
+        "zone1_fused_top4": 1,
+        "zone2_fused_top4": 0,
+        "balanced_fused_top4": 0,
+        "random_top4": 2
+      },
+      "auc": {
+        "fused": 0.3433333333333333,
+        "dl": 0.48083333333333333,
+        "dirichlet": 0.3458333333333333,
+        "cooccurrence": 0.3375,
+        "momentum": 0.5175,
+        "hot50": 0.35333333333333333
+      },
+      "diagnostics": {
+        "fused_repeat_count": 2,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 4,
+        "fused_mean_omission": 0.75,
+        "dl_loss": 0.5478715385709491
+      }
+    },
+    {
+      "period": 2026291,
+      "date": "2026-11-01",
+      "actual_numbers": [
+        3,
+        13,
+        16,
+        21,
+        24,
+        26,
+        29,
+        34,
+        40,
+        42,
+        50,
+        54,
+        58,
+        59,
+        60,
+        61,
+        64,
+        66,
+        67,
+        78
+      ],
+      "selectors": {
+        "fused_top4": [
+          7,
+          9,
+          56,
+          73
+        ],
+        "dl_top4": [
+          2,
+          8,
+          21,
+          41
+        ],
+        "dirichlet_top4": [
+          7,
+          9,
+          27,
+          73
+        ],
+        "cooc_top4": [
+          9,
+          27,
+          72,
+          73
+        ],
+        "momentum_top4": [
+          5,
+          58,
+          69,
+          75
+        ],
+        "spectral_top4": [
+          9,
+          27,
+          56,
+          73
+        ],
+        "borda4_top4": [
+          26,
+          38,
+          46,
+          57
+        ],
+        "borda3_top4": [
+          38,
+          42,
+          46,
+          57
+        ],
+        "borda_dl_spectral_top4": [
+          10,
+          26,
+          46,
+          57
+        ],
+        "hot50_top4": [
+          9,
+          31,
+          72,
+          73
+        ],
+        "cold50_top4": [
+          14,
+          21,
+          38,
+          42
+        ],
+        "norepeat_fused_top4": [
+          7,
+          9,
+          56,
+          73
+        ],
+        "repeatonly_fused_top4": [
+          25,
+          27,
+          52,
+          72
+        ],
+        "zone1_fused_top4": [
+          9,
+          27,
+          56,
+          73
+        ],
+        "zone2_fused_top4": [
+          7,
+          9,
+          56,
+          73
+        ],
+        "balanced_fused_top4": [
+          9,
+          56,
+          72,
+          73
+        ],
+        "random_top4": [
+          50,
+          71,
+          72,
+          76
+        ]
+      },
+      "hits": {
+        "fused_top4": 0,
+        "dl_top4": 1,
+        "dirichlet_top4": 0,
+        "cooc_top4": 0,
+        "momentum_top4": 1,
+        "spectral_top4": 0,
+        "borda4_top4": 1,
+        "borda3_top4": 1,
+        "borda_dl_spectral_top4": 1,
+        "hot50_top4": 0,
+        "cold50_top4": 2,
+        "norepeat_fused_top4": 0,
+        "repeatonly_fused_top4": 0,
+        "zone1_fused_top4": 0,
+        "zone2_fused_top4": 0,
+        "balanced_fused_top4": 0,
+        "random_top4": 1
+      },
+      "auc": {
+        "fused": 0.4483333333333333,
+        "dl": 0.465,
+        "dirichlet": 0.45666666666666667,
+        "cooccurrence": 0.4175,
+        "momentum": 0.5141666666666667,
+        "hot50": 0.43583333333333335
+      },
+      "diagnostics": {
+        "fused_repeat_count": 0,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 3,
+        "fused_mean_omission": 1.5,
+        "dl_loss": 0.5554742046764919
+      }
+    },
+    {
+      "period": 2026292,
+      "date": "2026-11-02",
+      "actual_numbers": [
+        2,
+        5,
+        10,
+        17,
+        22,
+        25,
+        26,
+        36,
+        43,
+        45,
+        50,
+        51,
+        52,
+        57,
+        62,
+        64,
+        68,
+        70,
+        71,
+        75
+      ],
+      "selectors": {
+        "fused_top4": [
+          7,
+          9,
+          61,
+          73
+        ],
+        "dl_top4": [
+          2,
+          11,
+          62,
+          66
+        ],
+        "dirichlet_top4": [
+          7,
+          9,
+          27,
+          73
+        ],
+        "cooc_top4": [
+          9,
+          61,
+          66,
+          73
+        ],
+        "momentum_top4": [
+          3,
+          5,
+          16,
+          58
+        ],
+        "spectral_top4": [
+          9,
+          27,
+          61,
+          73
+        ],
+        "borda4_top4": [
+          20,
+          38,
+          49,
+          57
+        ],
+        "borda3_top4": [
+          20,
+          38,
+          46,
+          57
+        ],
+        "borda_dl_spectral_top4": [
+          20,
+          49,
+          64,
+          70
+        ],
+        "hot50_top4": [
+          9,
+          31,
+          50,
+          73
+        ],
+        "cold50_top4": [
+          14,
+          21,
+          57,
+          69
+        ],
+        "norepeat_fused_top4": [
+          7,
+          9,
+          27,
+          73
+        ],
+        "repeatonly_fused_top4": [
+          50,
+          61,
+          66,
+          78
+        ],
+        "zone1_fused_top4": [
+          9,
+          27,
+          50,
+          73
+        ],
+        "zone2_fused_top4": [
+          7,
+          9,
+          61,
+          73
+        ],
+        "balanced_fused_top4": [
+          9,
+          66,
+          73,
+          78
+        ],
+        "random_top4": [
+          13,
+          21,
+          29,
+          74
+        ]
+      },
+      "hits": {
+        "fused_top4": 0,
+        "dl_top4": 2,
+        "dirichlet_top4": 0,
+        "cooc_top4": 0,
+        "momentum_top4": 1,
+        "spectral_top4": 0,
+        "borda4_top4": 1,
+        "borda3_top4": 1,
+        "borda_dl_spectral_top4": 2,
+        "hot50_top4": 1,
+        "cold50_top4": 1,
+        "norepeat_fused_top4": 0,
+        "repeatonly_fused_top4": 1,
+        "zone1_fused_top4": 1,
+        "zone2_fused_top4": 0,
+        "balanced_fused_top4": 0,
+        "random_top4": 0
+      },
+      "auc": {
+        "fused": 0.48333333333333334,
+        "dl": 0.555,
+        "dirichlet": 0.42083333333333334,
+        "cooccurrence": 0.4583333333333333,
+        "momentum": 0.5583333333333333,
+        "hot50": 0.44333333333333336
+      },
+      "diagnostics": {
+        "fused_repeat_count": 1,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 4,
+        "fused_mean_omission": 2.0,
+        "dl_loss": 0.547968008688518
+      }
+    },
+    {
+      "period": 2026293,
+      "date": "2026-11-03",
+      "actual_numbers": [
+        19,
+        23,
+        25,
+        34,
+        39,
+        42,
+        43,
+        44,
+        45,
+        48,
+        53,
+        54,
+        56,
+        57,
+        62,
+        73,
+        74,
+        75,
+        77,
+        78
+      ],
+      "selectors": {
+        "fused_top4": [
+          9,
+          50,
+          56,
+          73
+        ],
+        "dl_top4": [
+          24,
+          46,
+          50,
+          71
+        ],
+        "dirichlet_top4": [
+          7,
+          9,
+          27,
+          73
+        ],
+        "cooc_top4": [
+          9,
+          50,
+          51,
+          73
+        ],
+        "momentum_top4": [
+          3,
+          5,
+          25,
+          58
+        ],
+        "spectral_top4": [
+          9,
+          27,
+          50,
+          73
+        ],
+        "borda4_top4": [
+          20,
+          48,
+          57,
+          77
+        ],
+        "borda3_top4": [
+          20,
+          38,
+          46,
+          65
+        ],
+        "borda_dl_spectral_top4": [
+          12,
+          20,
+          57,
+          77
+        ],
+        "hot50_top4": [
+          9,
+          31,
+          50,
+          73
+        ],
+        "cold50_top4": [
+          14,
+          21,
+          32,
+          69
+        ],
+        "norepeat_fused_top4": [
+          9,
+          56,
+          72,
+          73
+        ],
+        "repeatonly_fused_top4": [
+          2,
+          50,
+          52,
+          68
+        ],
+        "zone1_fused_top4": [
+          9,
+          24,
+          50,
+          73
+        ],
+        "zone2_fused_top4": [
+          9,
+          50,
+          56,
+          73
+        ],
+        "balanced_fused_top4": [
+          9,
+          50,
+          56,
+          73
+        ],
+        "random_top4": [
+          21,
+          36,
+          55,
+          63
+        ]
+      },
+      "hits": {
+        "fused_top4": 2,
+        "dl_top4": 0,
+        "dirichlet_top4": 1,
+        "cooc_top4": 1,
+        "momentum_top4": 1,
+        "spectral_top4": 1,
+        "borda4_top4": 3,
+        "borda3_top4": 0,
+        "borda_dl_spectral_top4": 2,
+        "hot50_top4": 1,
+        "cold50_top4": 0,
+        "norepeat_fused_top4": 2,
+        "repeatonly_fused_top4": 0,
+        "zone1_fused_top4": 1,
+        "zone2_fused_top4": 2,
+        "balanced_fused_top4": 2,
+        "random_top4": 0
+      },
+      "auc": {
+        "fused": 0.4891666666666667,
+        "dl": 0.415,
+        "dirichlet": 0.5483333333333333,
+        "cooccurrence": 0.4825,
+        "momentum": 0.475,
+        "hot50": 0.5016666666666667
+      },
+      "diagnostics": {
+        "fused_repeat_count": 1,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 2,
+        "fused_mean_omission": 2.75,
+        "dl_loss": 0.5367639447961535
+      }
+    },
+    {
+      "period": 2026294,
+      "date": "2026-11-04",
+      "actual_numbers": [
+        3,
+        7,
+        10,
+        16,
+        21,
+        25,
+        29,
+        33,
+        35,
+        43,
+        45,
+        52,
+        58,
+        60,
+        64,
+        68,
+        69,
+        72,
+        76,
+        80
+      ],
+      "selectors": {
+        "fused_top4": [
+          9,
+          50,
+          56,
+          73
+        ],
+        "dl_top4": [
+          2,
+          54,
+          62,
+          73
+        ],
+        "dirichlet_top4": [
+          9,
+          27,
+          56,
+          73
+        ],
+        "cooc_top4": [
+          9,
+          56,
+          73,
+          78
+        ],
+        "momentum_top4": [
+          5,
+          25,
+          58,
+          75
+        ],
+        "spectral_top4": [
+          9,
+          56,
+          73,
+          78
+        ],
+        "borda4_top4": [
+          20,
+          38,
+          46,
+          65
+        ],
+        "borda3_top4": [
+          20,
+          38,
+          46,
+          65
+        ],
+        "borda_dl_spectral_top4": [
+          4,
+          20,
+          77,
+          79
+        ],
+        "hot50_top4": [
+          9,
+          31,
+          54,
+          73
+        ],
+        "cold50_top4": [
+          14,
+          20,
+          21,
+          69
+        ],
+        "norepeat_fused_top4": [
+          9,
+          27,
+          50,
+          52
+        ],
+        "repeatonly_fused_top4": [
+          25,
+          56,
+          73,
+          78
+        ],
+        "zone1_fused_top4": [
+          9,
+          27,
+          56,
+          73
+        ],
+        "zone2_fused_top4": [
+          9,
+          50,
+          56,
+          73
+        ],
+        "balanced_fused_top4": [
+          9,
+          50,
+          56,
+          73
+        ],
+        "random_top4": [
+          2,
+          26,
+          51,
+          73
+        ]
+      },
+      "hits": {
+        "fused_top4": 0,
+        "dl_top4": 0,
+        "dirichlet_top4": 0,
+        "cooc_top4": 0,
+        "momentum_top4": 2,
+        "spectral_top4": 0,
+        "borda4_top4": 0,
+        "borda3_top4": 0,
+        "borda_dl_spectral_top4": 0,
+        "hot50_top4": 0,
+        "cold50_top4": 2,
+        "norepeat_fused_top4": 1,
+        "repeatonly_fused_top4": 1,
+        "zone1_fused_top4": 0,
+        "zone2_fused_top4": 0,
+        "balanced_fused_top4": 0,
+        "random_top4": 0
+      },
+      "auc": {
+        "fused": 0.5508333333333333,
+        "dl": 0.5658333333333333,
+        "dirichlet": 0.5575,
+        "cooccurrence": 0.4875,
+        "momentum": 0.5466666666666666,
+        "hot50": 0.4558333333333333
+      },
+      "diagnostics": {
+        "fused_repeat_count": 2,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 2,
+        "fused_mean_omission": 1.75,
+        "dl_loss": 0.5591752529144287
+      }
+    },
+    {
+      "period": 2026295,
+      "date": "2026-11-05",
+      "actual_numbers": [
+        5,
+        6,
+        7,
+        11,
+        12,
+        16,
+        18,
+        21,
+        24,
+        32,
+        33,
+        36,
+        38,
+        44,
+        47,
+        56,
+        57,
+        61,
+        75,
+        77
+      ],
+      "selectors": {
+        "fused_top4": [
+          9,
+          25,
+          56,
+          73
+        ],
+        "dl_top4": [
+          15,
+          17,
+          21,
+          54
+        ],
+        "dirichlet_top4": [
+          9,
+          27,
+          72,
+          73
+        ],
+        "cooc_top4": [
+          9,
+          72,
+          73,
+          78
+        ],
+        "momentum_top4": [
+          3,
+          25,
+          58,
+          75
+        ],
+        "spectral_top4": [
+          9,
+          25,
+          56,
+          73
+        ],
+        "borda4_top4": [
+          6,
+          13,
+          20,
+          65
+        ],
+        "borda3_top4": [
+          20,
+          38,
+          46,
+          65
+        ],
+        "borda_dl_spectral_top4": [
+          4,
+          18,
+          20,
+          79
+        ],
+        "hot50_top4": [
+          9,
+          31,
+          54,
+          73
+        ],
+        "cold50_top4": [
+          12,
+          14,
+          21,
+          46
+        ],
+        "norepeat_fused_top4": [
+          9,
+          27,
+          56,
+          73
+        ],
+        "repeatonly_fused_top4": [
+          25,
+          43,
+          52,
+          72
+        ],
+        "zone1_fused_top4": [
+          9,
+          25,
+          56,
+          73
+        ],
+        "zone2_fused_top4": [
+          9,
+          25,
+          56,
+          73
+        ],
+        "balanced_fused_top4": [
+          9,
+          56,
+          72,
+          73
+        ],
+        "random_top4": [
+          1,
+          33,
+          56,
+          70
+        ]
+      },
+      "hits": {
+        "fused_top4": 1,
+        "dl_top4": 1,
+        "dirichlet_top4": 0,
+        "cooc_top4": 0,
+        "momentum_top4": 1,
+        "spectral_top4": 1,
+        "borda4_top4": 1,
+        "borda3_top4": 1,
+        "borda_dl_spectral_top4": 1,
+        "hot50_top4": 0,
+        "cold50_top4": 2,
+        "norepeat_fused_top4": 1,
+        "repeatonly_fused_top4": 0,
+        "zone1_fused_top4": 1,
+        "zone2_fused_top4": 1,
+        "balanced_fused_top4": 1,
+        "random_top4": 2
+      },
+      "auc": {
+        "fused": 0.45416666666666666,
+        "dl": 0.5516666666666666,
+        "dirichlet": 0.4141666666666667,
+        "cooccurrence": 0.44583333333333336,
+        "momentum": 0.5366666666666666,
+        "hot50": 0.36083333333333334
+      },
+      "diagnostics": {
+        "fused_repeat_count": 1,
+        "fused_max_zone_count": 1,
+        "fused_odd_count": 3,
+        "fused_mean_omission": 2.25,
+        "dl_loss": 0.5479634319032941
+      }
+    },
+    {
+      "period": 2026296,
+      "date": "2026-11-06",
+      "actual_numbers": [
+        1,
+        2,
+        4,
+        7,
+        13,
+        15,
+        19,
+        30,
+        34,
+        42,
+        44,
+        45,
+        48,
+        50,
+        54,
+        63,
+        67,
+        71,
+        73,
+        74
+      ],
+      "selectors": {
+        "fused_top4": [
+          9,
+          16,
+          27,
+          73
+        ],
+        "dl_top4": [
+          23,
+          24,
+          27,
+          32
+        ],
+        "dirichlet_top4": [
+          7,
+          9,
+          27,
+          73
+        ],
+        "cooc_top4": [
+          9,
+          44,
+          56,
+          73
+        ],
+        "momentum_top4": [
+          5,
+          25,
+          58,
+          75
+        ],
+        "spectral_top4": [
+          9,
+          16,
+          56,
+          73
+        ],
+        "borda4_top4": [
+          13,
+          20,
+          46,
+          65
+        ],
+        "borda3_top4": [
+          13,
+          20,
+          46,
+          65
+        ],
+        "borda_dl_spectral_top4": [
+          13,
+          20,
+          65,
+          67
+        ],
+        "hot50_top4": [
+          7,
+          9,
+          72,
+          73
+        ],
+        "cold50_top4": [
+          14,
+          20,
+          28,
+          46
+        ],
+        "norepeat_fused_top4": [
+          9,
+          27,
+          43,
+          73
+        ],
+        "repeatonly_fused_top4": [
+          7,
+          16,
+          56,
+          75
+        ],
+        "zone1_fused_top4": [
+          9,
+          27,
+          56,
+          73
+        ],
+        "zone2_fused_top4": [
+          9,
+          16,
+          27,
+          73
+        ],
+        "balanced_fused_top4": [
+          9,
+          16,
+          56,
+          73
+        ],
+        "random_top4": [
+          5,
+          49,
+          57,
+          78
+        ]
+      },
+      "hits": {
+        "fused_top4": 1,
+        "dl_top4": 0,
+        "dirichlet_top4": 2,
+        "cooc_top4": 2,
+        "momentum_top4": 0,
+        "spectral_top4": 1,
+        "borda4_top4": 1,
+        "borda3_top4": 1,
+        "borda_dl_spectral_top4": 2,
+        "hot50_top4": 2,
+        "cold50_top4": 0,
+        "norepeat_fused_top4": 1,
+        "repeatonly_fused_top4": 1,
+        "zone1_fused_top4": 1,
+        "zone2_fused_top4": 1,
+        "balanced_fused_top4": 1,
+        "random_top4": 0
+      },
+      "auc": {
+        "fused": 0.4033333333333333,
+        "dl": 0.36583333333333334,
+        "dirichlet": 0.5216666666666666,
+        "cooccurrence": 0.4483333333333333,
+        "momentum": 0.31916666666666665,
+        "hot50": 0.4866666666666667
+      },
+      "diagnostics": {
+        "fused_repeat_count": 1,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 3,
+        "fused_mean_omission": 3.75,
+        "dl_loss": 0.5421991348266602
+      }
+    },
+    {
+      "period": 2026297,
+      "date": "2026-11-07",
+      "actual_numbers": [
+        2,
+        5,
+        11,
+        13,
+        17,
+        23,
+        25,
+        36,
+        41,
+        42,
+        43,
+        45,
+        48,
+        49,
+        50,
+        58,
+        66,
+        72,
+        76,
+        79
+      ],
+      "selectors": {
+        "fused_top4": [
+          7,
+          16,
+          44,
+          73
+        ],
+        "dl_top4": [
+          8,
+          11,
+          48,
+          50
+        ],
+        "dirichlet_top4": [
+          7,
+          9,
+          44,
+          73
+        ],
+        "cooc_top4": [
+          7,
+          9,
+          44,
+          73
+        ],
+        "momentum_top4": [
+          16,
+          19,
+          25,
+          75
+        ],
+        "spectral_top4": [
+          7,
+          16,
+          44,
+          73
+        ],
+        "borda4_top4": [
+          13,
+          20,
+          65,
+          79
+        ],
+        "borda3_top4": [
+          20,
+          38,
+          46,
+          65
+        ],
+        "borda_dl_spectral_top4": [
+          13,
+          53,
+          65,
+          79
+        ],
+        "hot50_top4": [
+          7,
+          9,
+          50,
+          73
+        ],
+        "cold50_top4": [
+          20,
+          28,
+          46,
+          69
+        ],
+        "norepeat_fused_top4": [
+          9,
+          16,
+          43,
+          56
+        ],
+        "repeatonly_fused_top4": [
+          7,
+          44,
+          50,
+          73
+        ],
+        "zone1_fused_top4": [
+          16,
+          25,
+          44,
+          73
+        ],
+        "zone2_fused_top4": [
+          7,
+          16,
+          44,
+          73
+        ],
+        "balanced_fused_top4": [
+          7,
+          16,
+          44,
+          73
+        ],
+        "random_top4": [
+          11,
+          19,
+          37,
+          44
+        ]
+      },
+      "hits": {
+        "fused_top4": 0,
+        "dl_top4": 3,
+        "dirichlet_top4": 0,
+        "cooc_top4": 0,
+        "momentum_top4": 1,
+        "spectral_top4": 0,
+        "borda4_top4": 2,
+        "borda3_top4": 0,
+        "borda_dl_spectral_top4": 2,
+        "hot50_top4": 1,
+        "cold50_top4": 0,
+        "norepeat_fused_top4": 1,
+        "repeatonly_fused_top4": 1,
+        "zone1_fused_top4": 1,
+        "zone2_fused_top4": 0,
+        "balanced_fused_top4": 0,
+        "random_top4": 1
+      },
+      "auc": {
+        "fused": 0.5933333333333334,
+        "dl": 0.5575,
+        "dirichlet": 0.5758333333333333,
+        "cooccurrence": 0.5908333333333333,
+        "momentum": 0.5583333333333333,
+        "hot50": 0.615
+      },
+      "diagnostics": {
+        "fused_repeat_count": 3,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 2,
+        "fused_mean_omission": 0.25,
+        "dl_loss": 0.5581270456314087
+      }
+    },
+    {
+      "period": 2026298,
+      "date": "2026-11-08",
+      "actual_numbers": [
+        2,
+        5,
+        8,
+        12,
+        16,
+        20,
+        25,
+        27,
+        28,
+        29,
+        31,
+        35,
+        36,
+        42,
+        43,
+        49,
+        57,
+        58,
+        72,
+        75
+      ],
+      "selectors": {
+        "fused_top4": [
+          43,
+          45,
+          50,
+          73
+        ],
+        "dl_top4": [
+          3,
+          33,
+          34,
+          50
+        ],
+        "dirichlet_top4": [
+          7,
+          9,
+          43,
+          73
+        ],
+        "cooc_top4": [
+          7,
+          44,
+          50,
+          73
+        ],
+        "momentum_top4": [
+          5,
+          25,
+          33,
+          43
+        ],
+        "spectral_top4": [
+          7,
+          43,
+          50,
+          73
+        ],
+        "borda4_top4": [
+          20,
+          37,
+          65,
+          79
+        ],
+        "borda3_top4": [
+          20,
+          38,
+          46,
+          65
+        ],
+        "borda_dl_spectral_top4": [
+          20,
+          37,
+          65,
+          79
+        ],
+        "hot50_top4": [
+          2,
+          9,
+          50,
+          73
+        ],
+        "cold50_top4": [
+          20,
+          28,
+          46,
+          69
+        ],
+        "norepeat_fused_top4": [
+          7,
+          16,
+          44,
+          73
+        ],
+        "repeatonly_fused_top4": [
+          25,
+          43,
+          45,
+          50
+        ],
+        "zone1_fused_top4": [
+          7,
+          25,
+          43,
+          73
+        ],
+        "zone2_fused_top4": [
+          25,
+          43,
+          50,
+          73
+        ],
+        "balanced_fused_top4": [
+          2,
+          43,
+          50,
+          73
+        ],
+        "random_top4": [
+          6,
+          30,
+          39,
+          65
+        ]
+      },
+      "hits": {
+        "fused_top4": 1,
+        "dl_top4": 0,
+        "dirichlet_top4": 1,
+        "cooc_top4": 0,
+        "momentum_top4": 3,
+        "spectral_top4": 1,
+        "borda4_top4": 1,
+        "borda3_top4": 1,
+        "borda_dl_spectral_top4": 1,
+        "hot50_top4": 1,
+        "cold50_top4": 2,
+        "norepeat_fused_top4": 1,
+        "repeatonly_fused_top4": 2,
+        "zone1_fused_top4": 2,
+        "zone2_fused_top4": 2,
+        "balanced_fused_top4": 2,
+        "random_top4": 0
+      },
+      "auc": {
+        "fused": 0.545,
+        "dl": 0.5333333333333333,
+        "dirichlet": 0.5133333333333333,
+        "cooccurrence": 0.535,
+        "momentum": 0.6208333333333333,
+        "hot50": 0.4775
+      },
+      "diagnostics": {
+        "fused_repeat_count": 3,
+        "fused_max_zone_count": 3,
+        "fused_odd_count": 3,
+        "fused_mean_omission": 0.25,
+        "dl_loss": 0.5544036541666303
+      }
+    },
+    {
+      "period": 2026299,
+      "date": "2026-11-09",
+      "actual_numbers": [
+        1,
+        7,
+        10,
+        13,
+        23,
+        25,
+        26,
+        28,
+        45,
+        46,
+        47,
+        49,
+        61,
+        63,
+        64,
+        72,
+        73,
+        77,
+        78,
+        79
+      ],
+      "selectors": {
+        "fused_top4": [
+          2,
+          16,
+          25,
+          43
+        ],
+        "dl_top4": [
+          8,
+          11,
+          33,
+          44
+        ],
+        "dirichlet_top4": [
+          9,
+          16,
+          43,
+          73
+        ],
+        "cooc_top4": [
+          2,
+          43,
+          72,
+          73
+        ],
+        "momentum_top4": [
+          25,
+          36,
+          42,
+          43
+        ],
+        "spectral_top4": [
+          2,
+          16,
+          25,
+          43
+        ],
+        "borda4_top4": [
+          20,
+          46,
+          65,
+          79
+        ],
+        "borda3_top4": [
+          14,
+          20,
+          46,
+          65
+        ],
+        "borda_dl_spectral_top4": [
+          4,
+          46,
+          74,
+          79
+        ],
+        "hot50_top4": [
+          2,
+          9,
+          72,
+          73
+        ],
+        "cold50_top4": [
+          20,
+          28,
+          46,
+          69
+        ],
+        "norepeat_fused_top4": [
+          7,
+          44,
+          45,
+          73
+        ],
+        "repeatonly_fused_top4": [
+          2,
+          16,
+          25,
+          43
+        ],
+        "zone1_fused_top4": [
+          2,
+          25,
+          43,
+          73
+        ],
+        "zone2_fused_top4": [
+          2,
+          16,
+          25,
+          43
+        ],
+        "balanced_fused_top4": [
+          2,
+          16,
+          25,
+          43
+        ],
+        "random_top4": [
+          17,
+          20,
+          35,
+          60
+        ]
+      },
+      "hits": {
+        "fused_top4": 1,
+        "dl_top4": 0,
+        "dirichlet_top4": 1,
+        "cooc_top4": 2,
+        "momentum_top4": 1,
+        "spectral_top4": 1,
+        "borda4_top4": 2,
+        "borda3_top4": 1,
+        "borda_dl_spectral_top4": 2,
+        "hot50_top4": 2,
+        "cold50_top4": 2,
+        "norepeat_fused_top4": 3,
+        "repeatonly_fused_top4": 1,
+        "zone1_fused_top4": 2,
+        "zone2_fused_top4": 1,
+        "balanced_fused_top4": 1,
+        "random_top4": 0
+      },
+      "auc": {
+        "fused": 0.48333333333333334,
+        "dl": 0.3908333333333333,
+        "dirichlet": 0.5,
+        "cooccurrence": 0.5083333333333333,
+        "momentum": 0.51,
+        "hot50": 0.55
+      },
+      "diagnostics": {
+        "fused_repeat_count": 4,
+        "fused_max_zone_count": 2,
+        "fused_odd_count": 2,
+        "fused_mean_omission": 0.0,
+        "dl_loss": 0.5589533150196075
+      }
+    }
+  ],
+  "selector_summary": {
+    "fused_top4": {
+      "mean_hits": 0.75,
+      "sd": 0.7729538324626148,
+      "se": 0.09978791068383017,
+      "lift": 0.75,
+      "z_vs_random": -2.5053135022748854,
+      "p_value": 0.012234289934886407,
+      "p_ge2_observed": 0.16666666666666666,
+      "p_ge2_expected": 0.25894674945307855,
+      "p_ge2_binom_p": 0.12844445007016886,
+      "p_ge3_observed": 0.016666666666666666,
+      "zero_rate": 0.43333333333333335
+    },
+    "dl_top4": {
+      "mean_hits": 0.7166666666666667,
+      "sd": 0.8044719642367519,
+      "se": 0.10385688399932362,
+      "lift": 0.7166666666666667,
+      "z_vs_random": -2.7281131728848957,
+      "p_value": 0.0063697750090962015,
+      "p_ge2_observed": 0.15,
+      "p_ge2_expected": 0.25894674945307855,
+      "p_ge2_binom_p": 0.06491978165820356,
+      "p_ge3_observed": 0.03333333333333333,
+      "zero_rate": 0.4666666666666667
+    },
+    "dirichlet_top4": {
+      "mean_hits": 0.8333333333333334,
+      "sd": 0.8060505654884771,
+      "se": 0.10406068054459808,
+      "lift": 0.8333333333333334,
+      "z_vs_random": -1.6016296049038141,
+      "p_value": 0.10923754017754653,
+      "p_ge2_observed": 0.21666666666666667,
+      "p_ge2_expected": 0.25894674945307855,
+      "p_ge2_binom_p": 0.5590512857405496,
+      "p_ge3_observed": 0.016666666666666666,
+      "zero_rate": 0.4
+    },
+    "cooc_top4": {
+      "mean_hits": 0.9,
+      "sd": 0.9150344996737666,
+      "se": 0.1181304459480578,
+      "lift": 0.9,
+      "z_vs_random": -0.8465218191419525,
+      "p_value": 0.39726170711741055,
+      "p_ge2_observed": 0.26666666666666666,
+      "p_ge2_expected": 0.25894674945307855,
+      "p_ge2_binom_p": 0.9895610070891733,
+      "p_ge3_observed": 0.05,
+      "zero_rate": 0.4166666666666667
+    },
+    "momentum_top4": {
+      "mean_hits": 1.0,
+      "sd": 0.8025383458814721,
+      "se": 0.10360725494305964,
+      "lift": 1.0,
+      "z_vs_random": 0.0,
+      "p_value": 1.0,
+      "p_ge2_observed": 0.25,
+      "p_ge2_expected": 0.25894674945307855,
+      "p_ge2_binom_p": 1.0,
+      "p_ge3_observed": 0.03333333333333333,
+      "zero_rate": 0.2833333333333333
+    },
+    "spectral_top4": {
+      "mean_hits": 0.8333333333333334,
+      "sd": 0.8668404866978302,
+      "se": 0.11190862562663427,
+      "lift": 0.8333333333333334,
+      "z_vs_random": -1.4893102808958092,
+      "p_value": 0.1364056817126932,
+      "p_ge2_observed": 0.2,
+      "p_ge2_expected": 0.25894674945307855,
+      "p_ge2_binom_p": 0.37330694679984994,
+      "p_ge3_observed": 0.05,
+      "zero_rate": 0.4166666666666667
+    },
+    "borda4_top4": {
+      "mean_hits": 1.2166666666666666,
+      "sd": 0.8653727846986956,
+      "se": 0.11171914611330615,
+      "lift": 1.2166666666666666,
+      "z_vs_random": 1.9393870630457746,
+      "p_value": 0.05245422461716279,
+      "p_ge2_observed": 0.36666666666666664,
+      "p_ge2_expected": 0.25894674945307855,
+      "p_ge2_binom_p": 0.0858419070661029,
+      "p_ge3_observed": 0.06666666666666667,
+      "zero_rate": 0.21666666666666667
+    },
+    "borda3_top4": {
+      "mean_hits": 0.8666666666666667,
+      "sd": 0.8123342942715872,
+      "se": 0.10487190644223374,
+      "lift": 0.8666666666666667,
+      "z_vs_random": -1.2713922904298196,
+      "p_value": 0.2035891239767881,
+      "p_ge2_observed": 0.16666666666666666,
+      "p_ge2_expected": 0.25894674945307855,
+      "p_ge2_binom_p": 0.12844445007016886,
+      "p_ge3_observed": 0.05,
+      "zero_rate": 0.35
+    },
+    "borda_dl_spectral_top4": {
+      "mean_hits": 1.0833333333333333,
+      "sd": 0.7431419023347088,
+      "se": 0.09593920705370752,
+      "lift": 1.0833333333333333,
+      "z_vs_random": 0.8686056086192436,
+      "p_value": 0.3850628857163432,
+      "p_ge2_observed": 0.2833333333333333,
+      "p_ge2_expected": 0.25894674945307855,
+      "p_ge2_binom_p": 0.7600900887581558,
+      "p_ge3_observed": 0.016666666666666666,
+      "zero_rate": 0.21666666666666667
+    },
+    "hot50_top4": {
+      "mean_hits": 0.9166666666666666,
+      "sd": 0.6712413662397546,
+      "se": 0.0866568877577361,
+      "lift": 0.9166666666666666,
+      "z_vs_random": -0.9616469675936865,
+      "p_value": 0.33622697009530944,
+      "p_ge2_observed": 0.18333333333333332,
+      "p_ge2_expected": 0.25894674945307855,
+      "p_ge2_binom_p": 0.22934203544625842,
+      "p_ge3_observed": 0.0,
+      "zero_rate": 0.26666666666666666
+    },
+    "cold50_top4": {
+      "mean_hits": 1.1666666666666667,
+      "sd": 0.8470620545708475,
+      "se": 0.10935524101857101,
+      "lift": 1.1666666666666667,
+      "z_vs_random": 1.5240848551407147,
+      "p_value": 0.12748751542324122,
+      "p_ge2_observed": 0.38333333333333336,
+      "p_ge2_expected": 0.25894674945307855,
+      "p_ge2_binom_p": 0.04632109905849013,
+      "p_ge3_observed": 0.03333333333333333,
+      "zero_rate": 0.25
+    },
+    "norepeat_fused_top4": {
+      "mean_hits": 0.7833333333333333,
+      "sd": 0.7611691868917491,
+      "se": 0.0982665194825995,
+      "lift": 0.7833333333333333,
+      "z_vs_random": -2.204887970058132,
+      "p_value": 0.027461956884975013,
+      "p_ge2_observed": 0.16666666666666666,
+      "p_ge2_expected": 0.25894674945307855,
+      "p_ge2_binom_p": 0.12844445007016886,
+      "p_ge3_observed": 0.016666666666666666,
+      "zero_rate": 0.4
+    },
+    "repeatonly_fused_top4": {
+      "mean_hits": 0.9,
+      "sd": 0.8171882342333934,
+      "se": 0.1054985473967526,
+      "lift": 0.9,
+      "z_vs_random": -0.9478803497068636,
+      "p_value": 0.3431903696375446,
+      "p_ge2_observed": 0.18333333333333332,
+      "p_ge2_expected": 0.25894674945307855,
+      "p_ge2_binom_p": 0.22934203544625842,
+      "p_ge3_observed": 0.05,
+      "zero_rate": 0.3333333333333333
+    },
+    "zone1_fused_top4": {
+      "mean_hits": 0.7666666666666667,
+      "sd": 0.7448504949901058,
+      "se": 0.09615978541703436,
+      "lift": 0.7666666666666667,
+      "z_vs_random": -2.4265167847597873,
+      "p_value": 0.015244545135924818,
+      "p_ge2_observed": 0.11666666666666667,
+      "p_ge2_expected": 0.25894674945307855,
+      "p_ge2_binom_p": 0.011617873091348211,
+      "p_ge3_observed": 0.03333333333333333,
+      "zero_rate": 0.38333333333333336
+    },
+    "zone2_fused_top4": {
+      "mean_hits": 0.7833333333333333,
+      "sd": 0.7831199372753781,
+      "se": 0.10110034917168453,
+      "lift": 0.7833333333333333,
+      "z_vs_random": -2.1430852459147505,
+      "p_value": 0.03210625395435527,
+      "p_ge2_observed": 0.18333333333333332,
+      "p_ge2_expected": 0.25894674945307855,
+      "p_ge2_binom_p": 0.22934203544625842,
+      "p_ge3_observed": 0.016666666666666666,
+      "zero_rate": 0.4166666666666667
+    },
+    "balanced_fused_top4": {
+      "mean_hits": 0.7833333333333333,
+      "sd": 0.7385663314751767,
+      "se": 0.0953485033957622,
+      "lift": 0.7833333333333333,
+      "z_vs_random": -2.2723656790642033,
+      "p_value": 0.02306443286764408,
+      "p_ge2_observed": 0.18333333333333332,
+      "p_ge2_expected": 0.25894674945307855,
+      "p_ge2_binom_p": 0.22934203544625842,
+      "p_ge3_observed": 0.0,
+      "zero_rate": 0.4
+    },
+    "random_top4": {
+      "mean_hits": 0.8333333333333334,
+      "sd": 0.7402854847084714,
+      "se": 0.09557044512383317,
+      "lift": 0.8333333333333334,
+      "z_vs_random": -1.743914307929739,
+      "p_value": 0.08117403332641736,
+      "p_ge2_observed": 0.2,
+      "p_ge2_expected": 0.25894674945307855,
+      "p_ge2_binom_p": 0.37330694679984994,
+      "p_ge3_observed": 0.0,
+      "zero_rate": 0.36666666666666664
+    }
+  },
+  "auc_summary": {
+    "fused": {
+      "mean_auc": 0.48229166666666673,
+      "sd": 0.06639539175379087,
+      "se": 0.008571608217578311,
+      "z_vs_random": -2.0659289230016054,
+      "p_value": 0.0388351913913335
+    },
+    "dl": {
+      "mean_auc": 0.4803750000000001,
+      "sd": 0.07136043907232567,
+      "se": 0.009212593070172212,
+      "z_vs_random": -2.1302362809815327,
+      "p_value": 0.03315211113939636
+    },
+    "dirichlet": {
+      "mean_auc": 0.48974999999999996,
+      "sd": 0.06788666541277667,
+      "se": 0.008764130819107971,
+      "z_vs_random": -1.169539822209466,
+      "p_value": 0.24218620670484262
+    },
+    "cooccurrence": {
+      "mean_auc": 0.4809027777777778,
+      "sd": 0.0701720195474645,
+      "se": 0.009059168769235711,
+      "z_vs_random": -2.1080545807994007,
+      "p_value": 0.03502626852391669
+    },
+    "momentum": {
+      "mean_auc": 0.5016527777777778,
+      "sd": 0.0860765288829939,
+      "se": 0.011112432095439235,
+      "z_vs_random": 0.14873231742456897,
+      "p_value": 0.8817648592363208
+    },
+    "hot50": {
+      "mean_auc": 0.4858333333333334,
+      "sd": 0.06033100785230242,
+      "se": 0.007788699622395872,
+      "z_vs_random": -1.8188744403406347,
+      "p_value": 0.06893058813570666
+    }
+  },
+  "diagnostics_summary": {
+    "fused_repeat_count_mean": 1.9333333333333333,
+    "fused_repeat_count_corr_with_hits": 0.33250515433165484,
+    "fused_max_zone_count_mean": 2.033333333333333,
+    "fused_max_zone_count_corr_with_hits": 0.022561238165847562,
+    "fused_odd_count_mean": 2.783333333333333,
+    "fused_odd_count_corr_with_hits": 0.04246294071652385,
+    "fused_mean_omission_mean": 1.0666666666666667,
+    "fused_mean_omission_corr_with_hits": -0.15181586892762147,
+    "dl_loss_mean": 0.5509884473113786
+  }
+}

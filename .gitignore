@@ -40,3 +40,8 @@ ENV/
 # Temporary / OS files
 .DS_Store
 Thumbs.db
+
+# Test / tool caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/

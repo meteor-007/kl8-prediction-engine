@@ -20,6 +20,14 @@ from kl8.layer5_combinatorial.covering import (
     solve,
     verify_guarantee,
 )
+from kl8.layer5_combinatorial.shrinkage import (
+    MorphologyFilterConfig,
+    ShrinkageEngine,
+    ShrinkageReport,
+    build_wechat_shrinkage_text,
+    format_shrinkage_console_summary,
+    run_30_shrinkage,
+)
 from kl8.layer5_combinatorial.tickets import build_ticket_plan, postprocess
 
 
@@ -54,12 +62,18 @@ def build_tickets(
 
 __all__ = [
     "GuaranteeResult",
+    "MorphologyFilterConfig",
+    "ShrinkageEngine",
+    "ShrinkageReport",
     "build_ticket_plan",
     "build_tickets",
+    "build_wechat_shrinkage_text",
     "coverage_ratio",
+    "format_shrinkage_console_summary",
     "lookup_table",
     "m_target",
     "postprocess",
+    "run_30_shrinkage",
     "solve",
     "verify_guarantee",
 ]
