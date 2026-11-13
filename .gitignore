@@ -49,3 +49,6 @@ Thumbs.db
 # Daily runner logs and lock
 output/logs/
 output/.daily_run.lock
+
+# Local data backups
+*.bak

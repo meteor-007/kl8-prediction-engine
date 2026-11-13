@@ -1,0 +1,8 @@
+# KL8 prediction engine dependencies (Python 3.11, Windows)
+# Versions pinned to the verified local environment (2026-11-13).
+# Verified locally as torch 2.13.0+cpu. CPU-only install on Windows:
+#   pip install torch==2.13.0 --index-url https://download.pytorch.org/whl/cpu
+numpy==2.4.6
+openpyxl==3.1.5
+torch==2.13.0
+pytest==9.1.1
